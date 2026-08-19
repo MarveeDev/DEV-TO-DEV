@@ -1,0 +1,528 @@
+﻿=== ROADMAP GROUPING ===
+
+Roadmap: Computer Science (computer-science)
+Node Count: 15
+  - [f76fe362-1457-4399-b1a7-cb3d94715f0f] Computer Architecture
+  - [4400fc11-9425-4ccf-b170-82e4a43e7aec] Discrete Mathematics
+  - [e4e1bd7b-8617-4dac-b243-1aad7a5756ac] Stacks & Queues
+  - [9b01e6a5-71a4-46e6-8ec2-8ca79bbb17af] Complexity & Big O
+  - [26e7e2ed-2214-4325-918a-cad5c513c1a6] Computer Networks
+  - [fc792f8a-9ba5-4c93-9a77-7cf9969fb98b] Dynamic Programming
+  - [dad87655-2c48-4ac3-99ee-8b82d093d4d6] Programming Fundamentals
+  - [99bbe1e6-ff75-4f32-88d7-04597543136a] Git & Version Control
+  - [df74e250-d57b-4212-be6e-d3c131ab6671] Sorting & Searching
+  - [2ed7de72-3647-47a5-afab-140788e2470e] Operating Systems
+  - [a24a7356-1a98-4a70-8db8-5b3de0cc097d] Computer Fundamentals
+  - [f02f2841-c820-4dee-854b-0e7b19ceb0ed] Binary & Number Systems
+  - [1476172e-3ba2-43ee-b0d0-b90c3ff043a1] Arrays & Linked Lists
+  - [b3951972-a9f2-4435-9301-c9d73c2cdebf] Trees & Graphs
+  - [6814e0ae-687b-4e08-97ad-6b0a7088a766] Databases
+
+Roadmap: Software Engineering (software-engineering)
+Node Count: 15
+  - [cd4efb1a-5f17-45dc-95b0-8614505934b9] Version Control (Git)
+  - [e24fed91-6df9-48c5-bcbd-4b329880ffe5] CI/CD
+  - [27514966-1d6b-456b-ab33-06599b489611] Web Fundamentals
+  - [9880296a-723e-4d55-bf22-1e04e8643d86] Frontend Frameworks
+  - [90b878b8-a560-4c22-a451-1c37a3aaa77b] Backend Fundamentals
+  - [bf11cdbf-55f7-4ead-a9a2-9f2b513876fc] RESTful APIs
+  - [d8968cd1-a02f-4645-ab53-50910690cc2d] Design Patterns
+  - [7a4d4811-a1c4-4d9f-803d-dd4fe08e73e9] Containerization
+  - [a45fe94d-0c97-4bb7-a5a6-8f5a554abfee] Language Fundamentals
+  - [57ade220-9c75-4015-ae6c-8b57e4b4695c] Deployment & Hosting
+  - [c38dcf96-8a4c-43af-8ab2-f6ce92dd05bf] Databases & ORMs
+  - [88b4feed-c9a8-4668-8fd3-b8ecfd31da90] Unit Testing
+  - [244fea6b-7880-4a11-a670-6dd16b088e0a] Integration & E2E Testing
+  - [7e07c1db-3136-41b3-b7d3-ff6bdf77d389] Clean Code & Refactoring
+  - [0c9a8b25-2a9c-4a75-b586-9b9826144d85] System Architecture
+
+Roadmap: Cybersecurity (cybersecurity)
+Node Count: 13
+  - [b31648a0-941b-4fb3-a6e1-c005d88dfbb9] Cryptography
+  - [7e7175c9-5fe3-4f48-8c39-7da3ea3fe198] Penetration Testing
+  - [f7a616d6-3616-4df4-94ea-be77f6f383f0] Security Fundamentals
+  - [93d80cc4-fc74-4a11-950b-6b3f79e95ca4] OS Security
+  - [869562e7-b073-4f9f-9743-7bac18290581] Networking Basics
+  - [9859e4c7-dd38-4d30-91ff-4263370646aa] Web Application Security
+  - [5001e87a-6822-4150-b2b2-6f94f921a358] Incident Response
+  - [6a3f94e1-a6ef-4195-b915-ed779733a7b9] Cloud Security
+  - [d8b0a252-1367-4832-a257-91ca4f803fc3] Network Security
+  - [997b723b-b82f-44e5-a898-d34308750d4e] Secure Coding & SAST
+  - [12df49f9-397d-4a73-8c0e-f3556fcdb3d7] SOC Operations
+  - [afd163e5-e7cc-4445-a98c-46e1eeebc865] Identity & Access Management
+  - [15a63738-2e9f-4bb2-87e6-a945bd13181f] Malware Analysis
+
+Roadmap: AI & Machine Learning (ai-machine-learning)
+Node Count: 12
+  - [01e7794f-cf76-4577-a8da-56437d818df6] Data Preprocessing
+  - [c204c897-151a-421b-9c89-873bc9cae006] Python for Data Science
+  - [1cefaab0-ca0a-4cbb-a025-52b22fac3f6a] Data Visualization
+  - [3de91561-6096-43ce-bfc0-0c0900e4e1d1] Generative AI & LLMs
+  - [d5932c0c-0a1e-474e-88c0-476623b7b618] Deep Learning Basics
+  - [10214f3c-b9f2-40f8-b69e-6c9e1a74ffd5] Supervised Learning
+  - [71926d4f-6c4e-4a1a-a254-728a86f1d8cb] Computer Vision
+  - [56e56035-b93d-4d14-a2d2-6ab48e09de86] Math for ML
+  - [1b457815-c6bc-4385-8925-fc672f678456] Unsupervised Learning
+  - [23ce1801-602c-4a4a-9f8d-47cc7f6ae7ec] Model Evaluation
+  - [fcd3765e-7aea-4cce-b1e8-4637a4614a50] Natural Language Processing
+  - [cdd2f451-efdc-4247-9ca6-fe208af4bfdb] MLOps
+
+Roadmap: Cloud Engineering (cloud-engineering)
+Node Count: 18
+  - [71ea33f2-3a80-4687-96a5-0f51f752b94e] Networking Fundamentals
+  - [23cf6b77-afa7-463c-8b3c-e6925513a338] Storage & Databases
+  - [c19c9970-d25b-433e-9779-a29ca0b72668] Identity & Security
+  - [21ba0360-bc18-49ac-a408-e9c54acdb9f2] Containers & Orchestration
+  - [14c50352-d934-4cee-bf86-bf6279c5d5f0] Cloud Databases
+  - [12dc0870-c3ab-4b64-88dc-09377beee764] Linux Basics
+  - [600587d6-5ff3-49e2-87d9-87726d1845f0] Compute Services
+  - [e12f4a76-6388-4161-ba93-2d737fea38e8] Storage
+  - [7c75a57e-7921-406a-bbf6-00200986038c] Virtual Networks
+  - [b394d335-58b9-4dcf-8936-e275502c01eb] Cloud Computing Concepts
+  - [1db2ec2e-7775-4c76-a71c-632c18c89397] Load Balancing & CDN
+  - [730c0567-5a60-454f-9109-f29f9175466f] Containers
+  - [8ab7617f-d578-4fb5-a68e-1e2aa0483c25] Kubernetes
+  - [4db8178e-7949-4b37-9af7-c229cb564320] IAM & Security
+  - [2676c214-3646-4241-bd59-86e3e5effafa] Secrets Management
+  - [7828e648-7d8b-4aae-bd17-a1923039db49] Infrastructure as Code
+  - [0e95030e-613a-4f5b-a4af-3c46b658bf07] Cloud CI/CD
+  - [c72dc0e8-a76d-44a9-abd5-b68b74f97e45] Monitoring & Observability
+
+Roadmap: Data Engineering (data-engineering)
+Node Count: 11
+  - [86a31808-f903-47a2-bbed-50c5f8d4dcc6] Stream Processing
+  - [127ac502-5024-4721-b939-0a788e7d981b] Data Pipelines & Airflow
+  - [cd369bd7-4e54-4567-8684-61efcbc2a348] ELT & Data Transformation
+  - [c6cdb263-0f55-41f0-96c2-1091e490ff29] Advanced SQL
+  - [a16f424c-4425-4179-8b90-175cadae4fa2] Data Lakes
+  - [e4b11b69-15a0-4cb6-af87-b9b74c80d3b1] Batch Processing
+  - [20d0ca67-8e32-4173-8758-39e755060992] Data Orchestration
+  - [f7a396f9-a1f0-4449-a054-6d491f7cd334] Python for Data Engineering
+  - [c023e865-4dea-4a17-8639-59d6335ee4e3] Data Modeling
+  - [aff4c911-69af-4c15-9464-2f0699f1be2d] Data Warehousing
+  - [ed68d7ed-d3c2-4981-80c4-bcbfda06b170] Data Governance & Security
+
+Roadmap: DevOps & SRE (devops-sre)
+Node Count: 13
+  - [51caaa46-8cee-4910-a82d-a6237e171851] Kubernetes Administration
+  - [dc4c5b85-b1a8-46ed-a803-e5c934085208] Observability & SRE
+  - [e7494f8a-7fd8-4da0-ae0e-5856c2ef5278] Scripting & Automation
+  - [400a590d-2c28-4974-93c9-ee322c474472] GitOps
+  - [904dcaa0-4c7e-49c3-b855-c732dd705140] Networking for DevOps
+  - [f9e73d63-e624-45a8-91d7-21abb669f8a6] Service Mesh
+  - [bca422d1-4571-40b7-b157-84036ba865df] Advanced CI/CD
+  - [9dd8e711-1ee0-4c52-8b52-d80eba7b4d63] Containers
+  - [c027c01b-07f5-492a-a5b7-19a64ba25114] Infrastructure as Code
+  - [e03b2c74-6f7e-4710-8546-7c8815cc5aeb] Configuration Management
+  - [b8c08605-e5ca-48e4-a288-cba44d81e8e9] Observability
+  - [561885a0-4cd9-42fe-a6da-7d28750cbd9f] Advanced Linux
+  - [20e24218-a696-497b-82af-ca3575ec091f] Site Reliability Engineering
+
+Roadmap: Network Engineering (network-engineering)
+Node Count: 11
+  - [d63058f9-5225-4948-9d99-d5e35bfd6bd7] Network Fundamentals
+  - [a67830fa-eea1-4047-9ca7-3d698199a715] IP Addressing & Subnetting
+  - [1b198b05-6a23-45d5-8f4c-5b21e2beb2c3] Wireless Networking
+  - [a193e491-5125-4fb4-b9a4-38b49a8eddcc] Network Automation
+  - [c53dbce1-857f-4645-b627-4b1902c12a1d] Switching & VLANs
+  - [a847f14c-feca-43a4-b98e-dd70a5d5523e] Software Defined Networking
+  - [06fcfe81-4654-4ebe-bd44-a75c1d1ded49] Network Media & Hardware
+  - [c06fc9c3-abde-4d2d-8228-d08633e65e23] Routing Protocols
+  - [83827645-a465-4c56-9155-4203168a86fe] Network Security
+  - [85855961-e0f8-403e-9084-8d7cfdd9e7f3] Voice over IP (VoIP)
+  - [420407fa-e8a5-45cc-9e9f-565ba0dc663c] Cloud Networking
+
+Roadmap: Embedded Systems (embedded-systems)
+Node Count: 10
+  - [98f97b5c-6580-4f81-a774-3b879c72febd] Microcontroller Architecture
+  - [948dce4e-e737-4eb4-a9f1-351a3eb52156] C Programming for Embedded
+  - [e2d67f1e-d10d-4851-9618-2bb77f7810b8] Basic Electronics
+  - [301ee07d-ea6e-43fc-b4c9-d412af3c7d1c] Peripherals & I/O
+  - [40f173e4-07ff-4f49-8390-e44fb62f8c5a] Communication Protocols
+  - [d6237080-ed51-4ed7-89f5-b515be3ee4d8] Low Power Design
+  - [0955d240-e7f7-4306-9242-a5123536514b] Hardware Testing & Debugging
+  - [26946f95-671e-4fac-8ce7-7f34843459b5] Embedded Linux
+  - [fb99e27a-096f-4e32-b439-e036f5a319fe] Embedded IoT
+  - [78532985-0957-4605-834a-f0c1d34b0a70] Real-Time Operating Systems
+
+Roadmap: Robotics Engineering (robotics-engineering)
+Node Count: 11
+  - [fed9dc22-86ac-4815-b9c6-91036e445f89] Robotic Vision
+  - [8358777f-b647-4575-a255-f816a6cd39de] State Estimation
+  - [3653b56e-6a08-41ec-8626-8e2f3d544ca4] SLAM & Navigation
+  - [c72d3948-ffa7-48ab-a7d8-85e7083cff49] Programming for Robotics
+  - [4975814b-8565-490d-a9cd-1416eb2aab59] ROS Basics
+  - [697456bf-29a3-4135-ae08-848513d8c42b] Control Theory
+  - [d103a10d-295e-4213-aa25-4e588b4a6b79] Machine Learning for Robotics
+  - [7078ef5e-e39f-4180-9fe7-d4068870baba] Math for Robotics
+  - [91f166fe-6328-4ff3-861e-3e71bc484757] Robotics Hardware
+  - [35a32b63-80be-4a6f-ab27-320748c0d654] Sensors & Actuators
+  - [5c26f7f9-6397-4efd-a43b-8a255c17c0f0] Kinematics & Dynamics
+
+Roadmap: Telecommunications (telecommunications)
+Node Count: 15
+  - [62d4fd9b-8c24-4f02-a760-f0d01f63cd9e] Signals & Systems
+  - [667c178d-bdca-4802-9a03-1d6c722c06ac] Analog & Digital Communications
+  - [4d60e5ce-1ddc-47ed-8f90-dc1ae72467b4] Wireless & Cellular
+  - [c895c6b6-6b96-43bf-bf64-427367685f19] Optical Networking
+  - [ad9a0af1-5f6e-4831-a477-0b67cf48cac3] VoIP & SIP
+  - [e65147ea-f70e-49cc-b702-dc8c22b91fb8] Applied Mathematics
+  - [7185b09e-8794-4a43-8642-9daec5e210d7] Analog Communications
+  - [d87de388-33da-4361-b30c-61333041826d] Telecomm Networks
+  - [696dcd25-7ac2-4049-95b9-9d16b6eced04] Satellite Communications
+  - [3cf5ef78-4aac-4222-9593-e6bb3ef36f65] Optical Communications
+  - [8d7ca7bc-10eb-493d-9012-05bf8c73835c] IP Networking
+  - [d22d8cbd-d111-4c69-ad9e-82be01f065bb] Wireless Communications
+  - [540fffc1-c7b1-4701-8001-74cb7eb0adf1] Digital Communications
+  - [13bec22f-72e0-4fee-b565-92003a3a4ec9] Mobile Networks (4G/5G)
+  - [0b36599e-ff26-48c8-bee7-6baa863bdc4e] Digital Signal Processing
+
+Roadmap: Electronics Engineering (electronics-engineering)
+Node Count: 14
+  - [6691a2bf-0d84-4336-9d32-60981b72f887] PCB Design
+  - [a1267ce5-4a3a-442e-a795-f1cd12cc12b2] Circuit Theory
+  - [2a1ee83e-ce3a-4f3c-ab23-915ca74821f9] Digital Logic Design
+  - [796527d5-2363-4415-95f0-eafb84c026b2] Signal Integrity
+  - [ca16a4a0-9339-4207-b287-1e051f7e4d6d] Digital Electronics
+  - [66264240-a54b-4b52-be17-9a8bf92d1f4c] Engineering Mathematics
+  - [72780ff4-9b1b-4adc-be8c-32ac4ccec04d] Signals & Systems
+  - [4164d3ea-933f-4d2c-a253-784a19474224] Microprocessors
+  - [65790769-2cf6-414a-83f6-b49892ae32da] VLSI Design
+  - [0da306ff-4841-4a61-ac3c-1ff2e80f058f] Physics for Electronics
+  - [ffd11a09-05bd-4c7d-b3b0-c99908a29765] Circuit Analysis
+  - [eb8803d1-4e78-44f9-905c-75ce5b414327] Analog Electronics
+  - [bb3bdabb-c3ce-4857-b8a7-e001b44b1529] Power Electronics
+  - [4049d20d-f287-4f55-b5b9-27467109d35e] RF & Microwave
+
+Roadmap: IoT Engineering (iot-engineering)
+Node Count: 16
+  - [57eb4f67-f575-42dc-a601-45989c4f1d17] Embedded Systems Basics
+  - [47c92200-5dfa-43f1-9bbe-6c7121efcc85] IoT Sensors & Data
+  - [ee5c489d-2eb6-4d70-96b4-086b794c10c6] Wireless Protocols
+  - [02b86f68-945d-40fa-bcaf-9a61c983255b] IoT Messaging
+  - [e8236ff6-f21c-45ed-bbee-0790f1031148] IoT Cloud Platforms
+  - [db42416d-3b61-484b-a5ad-36fe3126edb9] IoT Networking
+  - [abc3df1d-b52c-485b-9804-77b62db8da90] Cloud Integration
+  - [311c10cf-8ab0-404c-8401-b8748191aea8] Embedded Hardware
+  - [7eb015d1-9a55-4104-87ab-0986dbcf8cc2] Low Power Wireless
+  - [e2187267-b250-4a36-b2bb-5a9a5378c12d] Time-Series Data
+  - [9f88f856-599e-44d6-826b-0fca8baac8ef] IoT Security
+  - [1f0af588-1194-4062-b153-e55b57401104] Edge AI / TinyML
+  - [0599f205-66dd-49c6-a14b-18afef1c129f] IoT Fundamentals
+  - [96ea03f5-8ba1-46c9-ba2d-a6d3cacf1b9e] Edge Programming
+  - [7fed294c-c529-47b6-9631-6968a2d161c0] IoT Protocols
+  - [9717ea8b-374a-4ab7-9f13-5f7065b31875] Sensors & Actuators
+
+Roadmap: Game Development (game-development)
+Node Count: 13
+  - [76fcdff1-cd60-43be-aef4-0d7bbb3015b6] Physics Simulation
+  - [6e11f314-8a92-4bfb-8e1f-d605dfe78ee2] C++ & Performance
+  - [8003d8af-857e-47ac-b6a9-a61fb23a7eeb] Game Engine Architecture
+  - [c1adf6b0-3d39-4f52-a166-a7836ccd27d7] Performance Optimization
+  - [8c09a00a-d72e-42e1-a03c-0d497f3a0b41] Graphics Programming
+  - [fd0bc0d4-7cd4-4bc6-afee-6b2339fcee9a] Game Architecture
+  - [ddc0332a-671a-4b4b-a089-e88a9d494294] Programming Foundations
+  - [02e94115-3a9f-42f2-b87b-dd334274ed48] Game Engines
+  - [27113482-7f4c-4709-ba7a-056d7908e094] Game AI
+  - [55600785-d63c-43c8-b04d-7ea371b0f883] Math for Games
+  - [8a0664a7-10eb-4268-ac21-7085349e5150] Data Structures & Algos
+  - [fed797e9-35ba-43ce-818e-96e0f5c2c323] Audio Programming
+  - [680eb533-c4a5-4331-9af1-4ce842e8b63d] Multiplayer Networking
+
+Roadmap: Systems Engineering (systems-engineering)
+Node Count: 14
+  - [63030c23-40e9-4d49-9410-92f7e75330dd] Requirements Engineering
+  - [023d5c0f-ee7c-414f-9f24-fe25c4269a2f] Model-Based Systems Engineering
+  - [d39a65c9-77f1-4d25-a6de-1d289da70634] System Architecture Design
+  - [c4d04558-3411-4e7f-b08a-fa64e6d97be1] Product Lifecycle Management
+  - [971f243d-882a-46be-a207-eb1522851837] Configuration Management
+  - [030466de-877e-4667-a311-261414210836] Systems Thinking
+  - [d01bdc78-af37-4832-81d0-eab56eda9276] System Architecture
+  - [682c9a2a-9883-4183-9ebc-2603f4df9100] Verification & Validation
+  - [7070a704-e854-43d0-8a5d-78690c00de59] Risk Management
+  - [e594c53c-d616-45a0-8cbe-8e52e2046e6b] Operations & Maintenance
+  - [528b859e-93a6-4bae-ac79-756bac791be1] Model-Based Systems Eng (MBSE)
+  - [3be42780-d66f-49cc-8dfb-5cb6c15c4203] Reliability & Safety
+  - [df7cd5e6-1ec1-4946-966c-ddbf4b16c77b] Distributed Systems
+  - [ffa22e38-6978-44ab-baa5-53330cc8f7c8] Interface Management
+
+=== 22 ADDITIONAL NODES INVESTIGATION ===
+
+Node ID: 23cf6b77-afa7-463c-8b3c-e6925513a338
+Title: Storage & Databases
+Roadmap ID: 00b3d23c-52dc-498f-b81a-4e98df97415d
+Roadmap Name: Cloud Engineering
+Roadmap Slug: cloud-engineering
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: c19c9970-d25b-433e-9779-a29ca0b72668
+Title: Identity & Security
+Roadmap ID: 00b3d23c-52dc-498f-b81a-4e98df97415d
+Roadmap Name: Cloud Engineering
+Roadmap Slug: cloud-engineering
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: 21ba0360-bc18-49ac-a408-e9c54acdb9f2
+Title: Containers & Orchestration
+Roadmap ID: 00b3d23c-52dc-498f-b81a-4e98df97415d
+Roadmap Name: Cloud Engineering
+Roadmap Slug: cloud-engineering
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: 127ac502-5024-4721-b939-0a788e7d981b
+Title: Data Pipelines & Airflow
+Roadmap ID: b31aae8e-f354-4bf6-ad0d-845e524b0e06
+Roadmap Name: Data Engineering
+Roadmap Slug: data-engineering
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: dc4c5b85-b1a8-46ed-a803-e5c934085208
+Title: Observability & SRE
+Roadmap ID: 2953b465-5213-4991-b42b-d42638da9845
+Roadmap Name: DevOps & SRE
+Roadmap Slug: devops-sre
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: 6e11f314-8a92-4bfb-8e1f-d605dfe78ee2
+Title: C++ & Performance
+Roadmap ID: 2fd88254-4dca-4f78-a3bd-dd9e710b2ca0
+Roadmap Name: Game Development
+Roadmap Slug: game-development
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: 8003d8af-857e-47ac-b6a9-a61fb23a7eeb
+Title: Game Engine Architecture
+Roadmap ID: 2fd88254-4dca-4f78-a3bd-dd9e710b2ca0
+Roadmap Name: Game Development
+Roadmap Slug: game-development
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: 667c178d-bdca-4802-9a03-1d6c722c06ac
+Title: Analog & Digital Communications
+Roadmap ID: 150fce41-409e-4589-9736-94d90d1e49ce
+Roadmap Name: Telecommunications
+Roadmap Slug: telecommunications
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: 4d60e5ce-1ddc-47ed-8f90-dc1ae72467b4
+Title: Wireless & Cellular
+Roadmap ID: 150fce41-409e-4589-9736-94d90d1e49ce
+Roadmap Name: Telecommunications
+Roadmap Slug: telecommunications
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: c895c6b6-6b96-43bf-bf64-427367685f19
+Title: Optical Networking
+Roadmap ID: 150fce41-409e-4589-9736-94d90d1e49ce
+Roadmap Name: Telecommunications
+Roadmap Slug: telecommunications
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: ad9a0af1-5f6e-4831-a477-0b67cf48cac3
+Title: VoIP & SIP
+Roadmap ID: 150fce41-409e-4589-9736-94d90d1e49ce
+Roadmap Name: Telecommunications
+Roadmap Slug: telecommunications
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: a1267ce5-4a3a-442e-a795-f1cd12cc12b2
+Title: Circuit Theory
+Roadmap ID: 9e251923-e192-45d4-920b-a474dbd0c37c
+Roadmap Name: Electronics Engineering
+Roadmap Slug: electronics-engineering
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: false
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: 2a1ee83e-ce3a-4f3c-ab23-915ca74821f9
+Title: Digital Logic Design
+Roadmap ID: 9e251923-e192-45d4-920b-a474dbd0c37c
+Roadmap Name: Electronics Engineering
+Roadmap Slug: electronics-engineering
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: 796527d5-2363-4415-95f0-eafb84c026b2
+Title: Signal Integrity
+Roadmap ID: 9e251923-e192-45d4-920b-a474dbd0c37c
+Roadmap Name: Electronics Engineering
+Roadmap Slug: electronics-engineering
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: 57eb4f67-f575-42dc-a601-45989c4f1d17
+Title: Embedded Systems Basics
+Roadmap ID: 5b1ad2d5-971e-4a0e-ac76-5deeda832fb7
+Roadmap Name: IoT Engineering
+Roadmap Slug: iot-engineering
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: false
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: 47c92200-5dfa-43f1-9bbe-6c7121efcc85
+Title: IoT Sensors & Data
+Roadmap ID: 5b1ad2d5-971e-4a0e-ac76-5deeda832fb7
+Roadmap Name: IoT Engineering
+Roadmap Slug: iot-engineering
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: ee5c489d-2eb6-4d70-96b4-086b794c10c6
+Title: Wireless Protocols
+Roadmap ID: 5b1ad2d5-971e-4a0e-ac76-5deeda832fb7
+Roadmap Name: IoT Engineering
+Roadmap Slug: iot-engineering
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: 02b86f68-945d-40fa-bcaf-9a61c983255b
+Title: IoT Messaging
+Roadmap ID: 5b1ad2d5-971e-4a0e-ac76-5deeda832fb7
+Roadmap Name: IoT Engineering
+Roadmap Slug: iot-engineering
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: e8236ff6-f21c-45ed-bbee-0790f1031148
+Title: IoT Cloud Platforms
+Roadmap ID: 5b1ad2d5-971e-4a0e-ac76-5deeda832fb7
+Roadmap Name: IoT Engineering
+Roadmap Slug: iot-engineering
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: 023d5c0f-ee7c-414f-9f24-fe25c4269a2f
+Title: Model-Based Systems Engineering
+Roadmap ID: b0244f1d-2dd2-44a6-a7a1-ef149e8b9b71
+Roadmap Name: Systems Engineering
+Roadmap Slug: systems-engineering
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: d39a65c9-77f1-4d25-a6de-1d289da70634
+Title: System Architecture Design
+Roadmap ID: b0244f1d-2dd2-44a6-a7a1-ef149e8b9b71
+Roadmap Name: Systems Engineering
+Roadmap Slug: systems-engineering
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+Node ID: c4d04558-3411-4e7f-b08a-fa64e6d97be1
+Title: Product Lifecycle Management
+Roadmap ID: b0244f1d-2dd2-44a6-a7a1-ef149e8b9b71
+Roadmap Name: Systems Engineering
+Roadmap Slug: systems-engineering
+Active Roadmap: true
+Has Learning Content: false
+Has Prerequisites: true
+Has Skills: false
+Has Reading Resource: false
+Has Video Resource: false
+
+=== VERIFICATION ===
+Total Roadmaps: 15
+Orphan Nodes: 0
+Duplicate Roadmaps Exist: false
+Duplicate Nodes Exist: false
+
+=== METRICS ===
+SOURCE NODE COUNT: 0
+DATABASE NODE COUNT: 201
+ACTIVE ROADMAP NODE COUNT: 201
+ORPHAN NODE COUNT: 0
+STUB NODE COUNT: 22
+DUPLICATE NODE COUNT: 0
+

@@ -1,0 +1,483 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [vector]
+}
+
+// Minimal model for foundation
+model User {
+  id        String   @id @default(uuid())
+  email     String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authIdentities      AuthIdentity[]
+  sessions            Session[]
+  developerProfile    DeveloperProfile?
+  sentConnections     Connection[]      @relation("SentConnections")
+  receivedConnections Connection[]      @relation("ReceivedConnections")
+  notifications       Notification[]
+  posts               Post[]
+  mediaAttachments    MediaAttachment[]
+}
+
+model AuthIdentity {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider          String // "github", "google"
+  providerAccountId String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model DeveloperProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  username        String   @unique
+  displayName     String
+  bio             String?
+  avatarUrl       String?
+  location        String?
+  websiteUrl      String?
+  githubUrl       String?
+  experienceLevel String? // BEGINNER, INTERMEDIATE, ADVANCED, EXPERT
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  skills              DeveloperSkill[]
+  learningGoals       DeveloperLearningGoal[]
+  score               DeveloperScore?
+  ownedProjects       Project[]               @relation("ProjectOwner")
+  contributions       ProjectContributor[]
+  projectJoinRequests ProjectJoinRequest[]
+  questions           Question[]              @relation("QuestionAuthor")
+  answers             Answer[]                @relation("AnswerAuthor")
+  questionVotes       QuestionVote[]
+  answerVotes         AnswerVote[]
+  roadmapProgress     RoadmapProgress[]
+}
+
+model SkillCategory {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  skills Skill[]
+}
+
+model Skill {
+  id         String         @id @default(uuid())
+  name       String         @unique
+  slug       String         @unique
+  categoryId String?
+  category   SkillCategory? @relation(fields: [categoryId], references: [id])
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  developers DeveloperSkill[]
+  projects   ProjectSkill[]
+  questions  QuestionSkill[]
+  posts      PostSkill[]
+  roadmaps   RoadmapNodeSkill[]
+}
+
+model DeveloperSkill {
+  id                 String           @id @default(uuid())
+  developerProfileId String
+  developerProfile   DeveloperProfile @relation(fields: [developerProfileId], references: [id], onDelete: Cascade)
+  skillId            String
+  skill              Skill            @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  createdAt          DateTime         @default(now())
+
+  @@unique([developerProfileId, skillId])
+}
+
+model LearningGoal {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  developers DeveloperLearningGoal[]
+}
+
+model DeveloperLearningGoal {
+  id                 String           @id @default(uuid())
+  developerProfileId String
+  developerProfile   DeveloperProfile @relation(fields: [developerProfileId], references: [id], onDelete: Cascade)
+  learningGoalId     String
+  learningGoal       LearningGoal     @relation(fields: [learningGoalId], references: [id], onDelete: Cascade)
+  createdAt          DateTime         @default(now())
+
+  @@unique([developerProfileId, learningGoalId])
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+model Connection {
+  id          String           @id @default(uuid())
+  requesterId String
+  addresseeId String
+  status      ConnectionStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  requester User @relation("SentConnections", fields: [requesterId], references: [id], onDelete: Cascade)
+  addressee User @relation("ReceivedConnections", fields: [addresseeId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, addresseeId])
+}
+
+enum NotificationType {
+  CONNECTION_REQUEST
+  CONNECTION_ACCEPTED
+  CONNECTION_REJECTED
+  SYSTEM
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String?
+  message   String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  title     String   @default("Untitled Post")
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  skills      PostSkill[]
+  attachments MediaAttachment[]
+}
+
+model PostSkill {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  skillId   String
+  skill     Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([postId, skillId])
+}
+
+model DeveloperScore {
+  id                   String           @id @default(uuid())
+  developerProfileId   String           @unique
+  developerProfile     DeveloperProfile @relation(fields: [developerProfileId], references: [id], onDelete: Cascade)
+  score                Int              @default(0)
+  streak               Int              @default(0)
+  postsCount           Int              @default(0)
+  connectionsCount     Int              @default(0)
+  projectsCount        Int              @default(0)
+  lastActivityDate     DateTime?
+  dailyPostCount       Int              @default(0)
+  dailyConnectionCount Int              @default(0)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+}
+
+enum ProjectStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+  ARCHIVED
+}
+
+model Project {
+  id           String           @id @default(uuid())
+  title        String
+  slug         String           @unique
+  description  String
+  status       ProjectStatus    @default(ACTIVE)
+  githubUrl    String?
+  demoUrl      String?
+  thumbnailUrl String?
+  ownerId      String
+  owner        DeveloperProfile @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  skills       ProjectSkill[]
+  contributors ProjectContributor[]
+  joinRequests ProjectJoinRequest[]
+}
+
+model ProjectSkill {
+  id        String   @id @default(uuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  skillId   String
+  skill     Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([projectId, skillId])
+}
+
+model ProjectContributor {
+  id                 String           @id @default(uuid())
+  projectId          String
+  project            Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  developerProfileId String
+  developerProfile   DeveloperProfile @relation(fields: [developerProfileId], references: [id], onDelete: Cascade)
+  joinedAt           DateTime         @default(now())
+
+  @@unique([projectId, developerProfileId])
+}
+
+enum ProjectRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model ProjectJoinRequest {
+  id                 String               @id @default(uuid())
+  projectId          String
+  project            Project              @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  developerProfileId String
+  developerProfile   DeveloperProfile     @relation(fields: [developerProfileId], references: [id], onDelete: Cascade)
+  status             ProjectRequestStatus @default(PENDING)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+
+  @@unique([projectId, developerProfileId])
+}
+
+enum QuestionStatus {
+  OPEN
+  CLOSED
+}
+
+model Question {
+  id          String         @id @default(uuid())
+  title       String
+  description String
+  status      QuestionStatus @default(OPEN)
+
+  authorId String
+  author   DeveloperProfile @relation("QuestionAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  answers Answer[]
+  votes   QuestionVote[]
+  skills  QuestionSkill[]
+
+  acceptedAnswerId String? @unique
+  acceptedAnswer   Answer? @relation("AcceptedAnswer", fields: [acceptedAnswerId], references: [id], onDelete: SetNull)
+
+  resolvedAt   DateTime?
+  resolvedById String?
+
+  attachments MediaAttachment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model QuestionVote {
+  id         String   @id @default(uuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  developerProfileId String
+  developerProfile   DeveloperProfile @relation(fields: [developerProfileId], references: [id], onDelete: Cascade)
+
+  value Int
+
+  createdAt DateTime @default(now())
+
+  @@unique([questionId, developerProfileId])
+}
+
+model QuestionSkill {
+  id         String   @id @default(uuid())
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  skillId String
+  skill   Skill  @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([questionId, skillId])
+}
+
+model Answer {
+  id      String @id @default(uuid())
+  content String
+
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   DeveloperProfile @relation("AnswerAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  votes AnswerVote[]
+
+  acceptedFor Question? @relation("AcceptedAnswer")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AnswerVote {
+  id       String @id @default(uuid())
+  answerId String
+  answer   Answer @relation(fields: [answerId], references: [id], onDelete: Cascade)
+
+  developerProfileId String
+  developerProfile   DeveloperProfile @relation(fields: [developerProfileId], references: [id], onDelete: Cascade)
+
+  value Int
+
+  createdAt DateTime @default(now())
+
+  @@unique([answerId, developerProfileId])
+}
+
+model Roadmap {
+  id             String   @id @default(uuid())
+  title          String
+  slug           String   @unique
+  description    String
+  category       String
+  difficulty     String
+  estimatedHours Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  nodes    RoadmapNode[]
+  progress RoadmapProgress[]
+}
+
+model RoadmapNode {
+  id             String   @id @default(uuid())
+  roadmapId      String
+  roadmap        Roadmap  @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  title                      String
+  description                String
+  learningObjectives         String[]
+  topics                     String[]
+  practicalExercise          String?
+  recommendedBookTitle       String?
+  recommendedBookAuthor      String?
+  recommendedBookUrl         String?
+  recommendedBookDescription String?
+  resourceType               String?
+  videoTitle                 String?
+  videoInstructor            String?
+  videoUrl                   String?
+  videoDescription           String?
+  videoDuration              String?
+  videoPlatform              String?
+  videoType                  String?
+  stage                      String
+  order                      Int
+  estimatedHours             Int
+  createdAt                  DateTime @default(now())
+  updatedAt                  DateTime @updatedAt
+
+  skills          RoadmapNodeSkill[]
+  progress        RoadmapProgress[]
+  prerequisites   RoadmapNodePrerequisite[] @relation("NodePrerequisites")
+  prerequisiteFor RoadmapNodePrerequisite[] @relation("PrerequisiteFor")
+}
+
+model RoadmapNodePrerequisite {
+  id               String      @id @default(uuid())
+  nodeId           String
+  node             RoadmapNode @relation("NodePrerequisites", fields: [nodeId], references: [id], onDelete: Cascade)
+  prerequisiteId   String
+  prerequisiteNode RoadmapNode @relation("PrerequisiteFor", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+  createdAt        DateTime    @default(now())
+
+  @@unique([nodeId, prerequisiteId])
+}
+
+model RoadmapNodeSkill {
+  id        String      @id @default(uuid())
+  nodeId    String
+  node      RoadmapNode @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  skillId   String
+  skill     Skill       @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  createdAt DateTime    @default(now())
+
+  @@unique([nodeId, skillId])
+}
+
+model RoadmapProgress {
+  id                 String           @id @default(uuid())
+  developerProfileId String
+  developerProfile   DeveloperProfile @relation(fields: [developerProfileId], references: [id], onDelete: Cascade)
+  roadmapId          String
+  roadmap            Roadmap          @relation(fields: [roadmapId], references: [id], onDelete: Cascade)
+  nodeId             String
+  node               RoadmapNode      @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  completedAt        DateTime         @default(now())
+
+  @@unique([developerProfileId, nodeId])
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+model MediaAttachment {
+  id         String    @id @default(uuid())
+  url        String
+  publicId   String    // Cloudinary public ID for deletion
+  type       MediaType
+  mimeType   String
+  filename   String
+  size       Int
+  createdAt  DateTime  @default(now())
+
+  uploaderId String
+  uploader   User      @relation(fields: [uploaderId], references: [id], onDelete: Cascade)
+
+  postId     String?
+  post       Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  questionId String?
+  question   Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+

@@ -1,0 +1,1 @@
+import { Pool } from 'pg'; const pool = new Pool({ connectionString: 'postgresql://postgres:postgres@localhost:5432/devtodev?schema=public' }); pool.query('SELECT count(*) FROM "RoadmapNode"').then(res => console.log('Nodes:', res.rows[0].count)).finally(() => pool.end());
