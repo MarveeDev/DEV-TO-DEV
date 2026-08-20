@@ -13,9 +13,7 @@ export default async function LoginPage({
       <div style={{ width: '100%', maxWidth: '400px', padding: '24px' }}>
         <Card padding="lg" style={{ textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
-            <div style={{ width: '48px', height: '48px', background: 'var(--primary-light)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontWeight: 'bold', fontSize: '24px' }}>
-              &lt;/&gt;
-            </div>
+            <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ height: '48px', width: 'auto', objectFit: 'contain' }} />
           </div>
           
           <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--foreground)', marginBottom: '8px' }}>Welcome back</h1>

@@ -28,8 +28,8 @@ export default function DesktopHeader({ isAuthenticated, loading, onLogout }: De
       boxSizing: 'border-box'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
-        <Link href={isAuthenticated ? '/dashboard' : '/'} style={{ fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.5px', textDecoration: 'none', fontSize: '18px' }}>
-          DEV-TO-DEV
+        <Link href={isAuthenticated ? '/dashboard' : '/'} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+          <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
         </Link>
         {isAuthenticated && (
           <Link href="/search" style={{ textDecoration: 'none' }}>

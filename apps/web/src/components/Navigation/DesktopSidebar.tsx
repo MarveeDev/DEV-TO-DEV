@@ -89,7 +89,7 @@ export default function DesktopSidebar({ currentPath, onLogout }: DesktopSidebar
         boxSizing: 'border-box'
       }}>
         <div style={{ width: '100%', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-          <Terminal size={28} color="var(--primary)" strokeWidth={2.5} />
+          <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ width: '32px', height: 'auto', objectFit: 'contain' }} />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, width: '100%', alignItems: 'center', paddingTop: '24px' }}>

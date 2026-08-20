@@ -78,8 +78,8 @@ export default function NavigationRoot() {
       {/* Mobile Unauthenticated Header */}
       {!loading && !isAuthenticated && (
         <header className="unauth-mobile-header">
-          <div style={{ fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.5px' }}>
-            DEV-TO-DEV
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ height: '28px', width: 'auto', objectFit: 'contain' }} />
           </div>
           <a href="/login" style={{ background: 'var(--primary)', color: '#ffffff', padding: '8px 16px', borderRadius: 'var(--radius-sm)', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
             Login
@@ -90,8 +90,8 @@ export default function NavigationRoot() {
       {/* Mobile Authenticated Header */}
       {!loading && isAuthenticated && (
         <header className="unauth-mobile-header" style={{ padding: '12px 16px' }}>
-          <div style={{ fontWeight: 800, color: 'var(--primary)', letterSpacing: '0.5px', fontSize: '18px' }}>
-            DEV-TO-DEV
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ height: '28px', width: 'auto', objectFit: 'contain' }} />
           </div>
           <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }} />
         </header>
