@@ -43,15 +43,18 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
   }, [pathname, searchParams]);
 
   const goBack = (fallback: string) => {
+    console.log('[NAVIGATION] goBack requested, fallback:', fallback);
+    console.log('[NAVIGATION] current history:', history);
     if (history.length > 1) {
+      console.log('[NAVIGATION] using router.back()');
       router.back();
     } else {
-      // We don't have in-app history to pop. Use fallback safely.
       if (pathname === fallback) {
-        // Prevent pushing the exact same route
         const parentPath = pathname.split('/').slice(0, -1).join('/') || '/';
+        console.log('[NAVIGATION] fallback matched pathname, using parent:', parentPath);
         router.push(parentPath);
       } else {
+        console.log('[NAVIGATION] using fallback:', fallback);
         router.push(fallback);
       }
     }
