@@ -32,18 +32,21 @@ export default function DesktopHeader({ isAuthenticated, loading, onLogout }: De
           DEV-TO-DEV
         </Link>
         {isAuthenticated && (
-          <div style={{
-            background: 'var(--background)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '8px 16px',
-            display: 'flex',
-            alignItems: 'center',
-            width: '300px',
-            color: 'var(--foreground-muted)'
-          }}>
-            <span style={{ fontSize: '14px' }}>Search developers, projects...</span>
-          </div>
+          <Link href="/search" style={{ textDecoration: 'none' }}>
+            <div style={{
+              background: 'var(--background)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '8px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              width: '300px',
+              color: 'var(--foreground-muted)',
+              cursor: 'pointer'
+            }}>
+              <span style={{ fontSize: '14px' }}>Search developers, projects...</span>
+            </div>
+          </Link>
         )}
       </div>
 

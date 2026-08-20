@@ -20,9 +20,11 @@ import { QuestionsModule } from './questions/questions.module';
 import { RoadmapsModule } from './roadmaps/roadmaps.module';
 import { SkillsModule } from './skills/skills.module';
 import { MediaModule } from './media/media.module';
+import { TrendingModule } from './trending/trending.module';
+import { VideosModule } from './videos/videos.module';
 
 @Module({
-  imports: [PrismaModule, RedisModule, SessionsModule, AuthModule, ProfileModule, ConnectionsModule, DevelopersModule, NotificationsModule, PostsModule, ScoreModule, ProjectsModule, QuestionsModule, RoadmapsModule, SkillsModule, MediaModule],
+  imports: [PrismaModule, RedisModule, SessionsModule, AuthModule, ProfileModule, ConnectionsModule, DevelopersModule, NotificationsModule, PostsModule, ScoreModule, ProjectsModule, QuestionsModule, RoadmapsModule, SkillsModule, MediaModule, TrendingModule, VideosModule],
   controllers: [AppController],
   providers: [AppService],
 })

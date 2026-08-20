@@ -15,6 +15,10 @@
     "typescript": "^5.0.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": []
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma",
+      "unrs-resolver"
+    ]
   }
 }

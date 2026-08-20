@@ -3,10 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { House, Compass, Plus, Bell, UserRound } from 'lucide-react';
-import MobileCreatePopover from './MobileCreatePopover';
 
 export default function MobileBottomNav({ currentPath }: { currentPath: string }) {
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -67,8 +65,8 @@ export default function MobileBottomNav({ currentPath }: { currentPath: string }
           </Link>
         ))}
 
-        <button 
-          onClick={() => setIsCreateOpen(!isCreateOpen)}
+        <Link 
+          href="/actions"
           aria-label="Create"
           style={{
             display: 'flex',
@@ -77,9 +75,7 @@ export default function MobileBottomNav({ currentPath }: { currentPath: string }
             justifyContent: 'center',
             width: '20%',
             height: '100%',
-            border: 'none',
-            background: 'transparent',
-            cursor: 'pointer'
+            textDecoration: 'none',
           }}
         >
           <div style={{
@@ -94,7 +90,7 @@ export default function MobileBottomNav({ currentPath }: { currentPath: string }
           }}>
             <Plus size={24} strokeWidth={2.5} />
           </div>
-        </button>
+        </Link>
 
         {trailingItems.map(item => (
           <Link key={item.name} href={item.path} aria-label={item.ariaLabel} style={{
@@ -124,10 +120,6 @@ export default function MobileBottomNav({ currentPath }: { currentPath: string }
           </Link>
         ))}
       </nav>
-
-      {isCreateOpen && (
-        <MobileCreatePopover onClose={() => setIsCreateOpen(false)} />
-      )}
     </>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, Suspense } from 'react';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 
 interface NavigationContextType {
@@ -15,13 +15,9 @@ const NavigationContext = createContext<NavigationContextType>({
   goBack: () => {},
 });
 
-export function NavigationProvider({ children }: { children: React.ReactNode }) {
+function NavigationTracker({ setHistory }: { setHistory: React.Dispatch<React.SetStateAction<string[]>> }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const router = useRouter();
-  
-  const [history, setHistory] = useState<string[]>([]);
-  const isNavigatingBack = useRef(false);
 
   useEffect(() => {
     const currentUrl = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
@@ -40,7 +36,17 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
       // Otherwise, it's a PUSH. Add to stack.
       return [...prev, currentUrl];
     });
-  }, [pathname, searchParams]);
+  }, [pathname, searchParams, setHistory]);
+
+  return null;
+}
+
+export function NavigationProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  
+  const [history, setHistory] = useState<string[]>([]);
+  const isNavigatingBack = useRef(false);
 
   const goBack = (fallback: string) => {
     console.log('[NAVIGATION] goBack requested, fallback:', fallback);
@@ -62,6 +68,9 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
 
   return (
     <NavigationContext.Provider value={{ history, canGoBack: history.length > 1, goBack }}>
+      <Suspense fallback={null}>
+        <NavigationTracker setHistory={setHistory} />
+      </Suspense>
       {children}
     </NavigationContext.Provider>
   );
