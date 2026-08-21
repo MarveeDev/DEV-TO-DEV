@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { Settings } from 'lucide-react';
 import DesktopHeader from './DesktopHeader';
 import DesktopSidebar from './DesktopSidebar';
 import MobileBottomNav from './MobileBottomNav';
@@ -93,7 +95,12 @@ export default function NavigationRoot() {
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ height: '28px', width: 'auto', objectFit: 'contain' }} />
           </div>
-          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <Link href="/settings" style={{ color: 'var(--foreground)', display: 'flex', alignItems: 'center' }}>
+              <Settings size={24} strokeWidth={2} />
+            </Link>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }} />
+          </div>
         </header>
       )}
     </>

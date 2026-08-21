@@ -134,14 +134,14 @@ export default function DesktopSidebar({ currentPath, onLogout }: DesktopSidebar
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
-          <div className="sidebar-icon-container" style={getStyle('/settings')}>
+          <Link href="/settings" className="sidebar-icon-container" style={{...getStyle('/settings'), textDecoration: 'none'}}>
             <Settings size={24} strokeWidth={2} />
             <div className="sidebar-tooltip" style={{
                   position: 'absolute', left: '60px', background: 'var(--foreground)', color: 'var(--surface)',
                   padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '12px', fontWeight: 600,
                   opacity: 0, visibility: 'hidden', transform: 'translateX(-10px)', transition: 'all 0.2s', whiteSpace: 'nowrap'
                 }}>Settings</div>
-          </div>
+          </Link>
           <button onClick={onLogout} className="sidebar-icon-container" style={{ ...getStyle(''), border: 'none' }}>
             <LogOut size={24} strokeWidth={2} />
             <div className="sidebar-tooltip" style={{

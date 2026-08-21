@@ -99,4 +99,34 @@ export class ProfileService {
   async getAllGoals() {
     return this.prisma.learningGoal.findMany({ orderBy: { name: 'asc' } });
   }
+
+  async getProfile(userId: string) {
+    const profile = await this.prisma.developerProfile.findUnique({
+      where: { userId },
+    });
+    if (!profile) throw new BadRequestException('Profile not found');
+    return profile;
+  }
+
+  async updateProfile(userId: string, data: any) {
+    const profile = await this.prisma.developerProfile.findUnique({
+      where: { userId },
+    });
+    
+    if (!profile) {
+      throw new BadRequestException('Profile not found');
+    }
+
+    return this.prisma.developerProfile.update({
+      where: { userId },
+      data: {
+        displayName: data.displayName,
+        bio: data.bio,
+        location: data.location,
+        websiteUrl: data.websiteUrl,
+        githubUrl: data.githubUrl,
+        experienceLevel: data.experienceLevel,
+      },
+    });
+  }
 }
