@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import BackButton from '../../components/Navigation/BackButton';
+import DiscoverTabs from '../../components/Navigation/DiscoverTabs';
 import { Map, Clock, ArrowRight, Activity, Filter, Search, ChevronDown } from 'lucide-react';
 
 export default function RoadmapsPage() {
@@ -55,6 +56,8 @@ export default function RoadmapsPage() {
           </p>
         </div>
       </div>
+
+      <DiscoverTabs />
 
       <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
         <div style={{ flex: '1 1 300px', position: 'relative' }}>

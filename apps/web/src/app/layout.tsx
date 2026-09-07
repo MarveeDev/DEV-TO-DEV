@@ -28,8 +28,10 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+import Link from "next/link";
 import NavigationRoot from "../components/Navigation/NavigationRoot";
 import { NavigationProvider } from "../components/Navigation/NavigationProvider";
+import CookieConsent from "../components/CookieConsent";
 
 export default function RootLayout({
   children,
@@ -44,7 +46,16 @@ export default function RootLayout({
           <main className="page-container">
             {children}
           </main>
+          <footer className="site-footer">
+            <nav>
+              <Link href="/privacy">Privacy Policy</Link>
+              <Link href="/terms">Terms &amp; Conditions</Link>
+              <Link href="/cookie-policy">Cookie Policy</Link>
+            </nav>
+            <p>© {new Date().getFullYear()} DEV-TO-DEV. All rights reserved.</p>
+          </footer>
         </NavigationProvider>
+        <CookieConsent />
       </body>
     </html>
   );

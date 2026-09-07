@@ -25,7 +25,12 @@ model User {
   receivedConnections Connection[]      @relation("ReceivedConnections")
   notifications       Notification[]
   posts               Post[]
+  postComments        PostComment[]
+  postLikes           PostLike[]
   mediaAttachments    MediaAttachment[]
+  conversationsAsUserA Conversation[]   @relation("ConversationsAsUserA")
+  conversationsAsUserB Conversation[]   @relation("ConversationsAsUserB")
+  sentMessages         Message[]        @relation("SentMessages")
 }
 
 model AuthIdentity {
@@ -75,6 +80,7 @@ model DeveloperProfile {
   questionVotes       QuestionVote[]
   answerVotes         AnswerVote[]
   roadmapProgress     RoadmapProgress[]
+  marketplaceListings MarketplaceListing[]
 }
 
 model SkillCategory {
@@ -186,6 +192,8 @@ model Post {
 
   skills      PostSkill[]
   attachments MediaAttachment[]
+  comments    PostComment[]
+  likes       PostLike[]
 }
 
 model PostSkill {
@@ -197,6 +205,29 @@ model PostSkill {
   createdAt DateTime @default(now())
 
   @@unique([postId, skillId])
+}
+
+model PostComment {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([postId, createdAt])
+}
+
+model PostLike {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
 }
 
 model DeveloperScore {
@@ -479,5 +510,65 @@ model MediaAttachment {
 
   questionId String?
   question   Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+
+
+enum MarketplaceListingType {
+  DIGITAL_PRODUCT
+  SERVICE
+}
+
+model MarketplaceListing {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  category    String
+  type        MarketplaceListingType
+  price       Float    @default(0.0)
+  imageUrl    String?
+  externalUrl String?
+  tags        String[]
+  
+  sellerId    String
+  seller      DeveloperProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([sellerId])
+  @@index([category])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// Private 1:1 conversation between two users. userAId/userBId are stored in a
+// canonical (sorted) order so the pair is unique regardless of who starts it.
+model Conversation {
+  id        String   @id @default(uuid())
+  userAId   String
+  userBId   String
+  userA     User     @relation("ConversationsAsUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB     User     @relation("ConversationsAsUserB", fields: [userBId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  read           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  @@index([conversationId, createdAt])
 }
 

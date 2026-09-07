@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Card from './Card';
-import Button from './Button';
+import { Heart, MessageCircle, Share2 } from 'lucide-react';
 
 interface PostAuthor {
   id: string;
@@ -11,21 +11,94 @@ interface PostAuthor {
   };
 }
 
+interface PostAttachment {
+  id: string;
+  url: string;
+  type: string;
+}
+
 interface PostProps {
   id: string;
   title?: string;
   content: string;
-  skills?: { id: string, name: string }[];
-  attachments?: { id: string, url: string, type: string }[];
+  skills?: { id: string, name: string, slug?: string }[];
+  attachments?: PostAttachment[];
   createdAt: string;
   author: PostAuthor;
   currentUserId?: string;
   onDelete?: (id: string) => void;
+  likeCount?: number;
+  likedByMe?: boolean;
 }
 
-export default function PostCard({ id, title, content, skills, attachments, createdAt, author, currentUserId, onDelete }: PostProps) {
+const isImageType = (type: string) => (type || '').toLowerCase() === 'image';
+const isVideoType = (type: string) => (type || '').toLowerCase() === 'video';
+
+export default function PostCard({ id, title, content, skills, attachments, createdAt, author, currentUserId, onDelete, likeCount = 0, likedByMe = false }: PostProps) {
   const isOwner = currentUserId === author.id;
-  
+  const [liked, setLiked] = useState(likedByMe);
+  const [likesCount, setLikesCount] = useState(likeCount);
+  const [likePending, setLikePending] = useState(false);
+
+  const images = (attachments || []).filter((att) => isImageType(att.type));
+  const videos = (attachments || []).filter((att) => isVideoType(att.type));
+  const otherAttachments = (attachments || []).filter((att) => !isImageType(att.type) && !isVideoType(att.type));
+
+  const handleLikeToggle = async () => {
+    if (likePending) return;
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikesCount(c => c + (wasLiked ? -1 : 1));
+    setLikePending(true);
+    try {
+      const res = await fetch(`/api/v1/posts/${id}/like`, {
+        method: wasLiked ? 'DELETE' : 'POST',
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data && typeof data.likeCount === 'number') {
+          setLikesCount(data.likeCount);
+        }
+      } else {
+        setLiked(wasLiked);
+        setLikesCount(c => c + (wasLiked ? 1 : -1));
+      }
+    } catch (err) {
+      setLiked(wasLiked);
+      setLikesCount(c => c + (wasLiked ? 1 : -1));
+    } finally {
+      setLikePending(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/posts/${id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ url });
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
+      }
+    } catch {
+      // share cancelled or unavailable
+    }
+  };
+
+  const engagementItemStyle: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    background: 'transparent',
+    border: 'none',
+    padding: '6px 10px',
+    cursor: 'pointer',
+    color: 'var(--foreground-muted)',
+    fontSize: '13px',
+    fontWeight: 600,
+    textDecoration: 'none',
+    borderRadius: '8px',
+  };
+
   return (
     <Card padding="md" style={{ marginBottom: '16px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
@@ -77,57 +150,84 @@ export default function PostCard({ id, title, content, skills, attachments, crea
             {title}
           </h3>
         )}
-        <p style={{ fontSize: '15px', color: 'var(--foreground)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap', marginBottom: (skills && skills.length > 0) || (attachments && attachments.length > 0) ? '16px' : '0' }}>
+        <p style={{ fontSize: '15px', color: 'var(--foreground)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap', marginBottom: '16px' }}>
           {content}
         </p>
-        
-        {attachments && attachments.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: skills && skills.length > 0 ? '16px' : '0' }}>
-            {attachments.map(att => (
-              <div key={att.id} style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                {att.type === 'image' ? (
-                  <img src={att.url} alt="Attachment" style={{ maxWidth: '100%', maxHeight: '300px', display: 'block', objectFit: 'contain' }} />
-                ) : att.type === 'video' ? (
-                  <video src={att.url} controls style={{ maxWidth: '100%', maxHeight: '300px', display: 'block' }} />
-                ) : (
-                  <a href={att.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', padding: '12px', background: 'var(--background)', color: 'var(--primary)', textDecoration: 'underline', fontSize: '14px' }}>
-                    View Attachment
-                  </a>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
 
-        {skills && skills.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            {skills.map(skill => (
-              <span 
-                key={skill.id} 
-                style={{
-                  fontSize: '12px',
-                  padding: '4px 10px',
-                  background: 'var(--primary-light)',
-                  color: 'var(--primary)',
-                  borderRadius: '999px',
-                  fontWeight: 600,
-                  display: 'inline-block',
-                  transition: 'all 0.1s ease',
-                  cursor: 'pointer'
-                }} 
-                className="skill-pill"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/skills/${(skill as any).slug || skill.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-                }}
-              >
-                {skill.name}
-              </span>
-            ))}
-          </div>
-        )}
+        {images.map(att => (
+          <img
+            key={att.id}
+            src={att.url}
+            alt="Post attachment"
+            style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '12px', marginBottom: '16px' }}
+          />
+        ))}
+
+        {videos.map(att => (
+          <video
+            key={att.id}
+            src={att.url}
+            controls
+            style={{ width: '100%', height: 'auto', borderRadius: '12px', marginBottom: '16px', display: 'block' }}
+          />
+        ))}
       </Link>
+
+      {otherAttachments.map(att => (
+        <a
+          key={att.id}
+          href={att.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ display: 'block', padding: '12px', background: 'var(--background)', color: 'var(--primary)', textDecoration: 'underline', fontSize: '14px', marginBottom: '16px' }}
+        >
+          View Attachment
+        </a>
+      ))}
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '12px', borderTop: '1px solid var(--border)', marginBottom: skills && skills.length > 0 ? '12px' : '0' }}>
+        <button onClick={handleLikeToggle} disabled={likePending} style={{ ...engagementItemStyle, color: liked ? 'var(--primary)' : 'var(--foreground-muted)' }}>
+          <Heart size={18} fill={liked ? 'currentColor' : 'none'} />
+          <span>{liked ? 'Unlike' : 'Like'}{likesCount > 0 ? ` (${likesCount})` : ''}</span>
+        </button>
+        <Link href={`/posts/${id}?comments=1`} style={engagementItemStyle}>
+          <MessageCircle size={18} />
+          <span>Comment</span>
+        </Link>
+        <button onClick={handleShare} style={engagementItemStyle}>
+          <Share2 size={18} />
+          <span>Share</span>
+        </button>
+      </div>
+
+      {skills && skills.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+          {skills.map(skill => (
+            <span 
+              key={skill.id} 
+              style={{
+                fontSize: '12px',
+                padding: '4px 10px',
+                background: 'var(--primary-light)',
+                color: 'var(--primary)',
+                borderRadius: '999px',
+                fontWeight: 600,
+                display: 'inline-block',
+                transition: 'all 0.1s ease',
+                cursor: 'pointer'
+              }} 
+              className="skill-pill"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                window.location.href = `/skills/${skill.slug || skill.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+              }}
+            >
+              {skill.name}
+            </span>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }

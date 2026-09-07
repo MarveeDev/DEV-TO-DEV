@@ -11,6 +11,7 @@ import {
   Bell, 
   User, 
   Settings, 
+  Store,
   LogOut,
   Terminal,
   Map
@@ -39,6 +40,7 @@ export default function DesktopSidebar({ currentPath, onLogout }: DesktopSidebar
   const navItems = [
     { name: 'Home', path: '/dashboard', icon: House },
     { name: 'Discover', path: '/developers', icon: Compass },
+    { name: 'Marketplace', path: '/marketplace', icon: Store },
     { name: 'Roadmaps', path: '/roadmaps', icon: Map },
     { name: 'Projects', path: '/projects', icon: Folder },
     { name: 'Questions', path: '/questions', icon: CircleHelp },

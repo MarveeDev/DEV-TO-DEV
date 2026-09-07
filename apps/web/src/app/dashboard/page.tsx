@@ -35,44 +35,56 @@ export default function DashboardPage() {
 
   if (loading) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--foreground-muted)' }}>Loading your dashboard...</div>;
 
-  const profile = user.developerProfile;
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      
-        {/* Welcome Section */}
+      <style>{`
+        .stat-card-link { display: block; height: 100%; text-decoration: none; border-radius: var(--radius-md); transition: transform 0.15s ease; }
+        .stat-card-link:hover { transform: translateY(-2px); }
+        .stat-card-link:hover > div { box-shadow: var(--shadow-md); }
+        .stat-card-link:active { transform: scale(0.99); }
+      `}</style>
+
+        {/* Header Section */}
         <section>
           <h1 className="text-wrap-safe" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)', marginBottom: '8px' }}>
-            Welcome back, {profile.displayName.split(' ')[0]}
+            Dashboard
           </h1>
-          <p style={{ color: 'var(--foreground-muted)', fontSize: '16px' }}>Here is what is happening in your network today.</p>
+          <p style={{ color: 'var(--foreground-muted)', fontSize: '16px' }}>Here&apos;s what&apos;s happening in your network today.</p>
         </section>
 
         <div className="dashboard-stats-grid">
           
-          <Card padding="md" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <span style={{ color: 'var(--foreground-muted)', fontSize: '14px', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Developer Score</span>
-            <span style={{ fontSize: '36px', fontWeight: 800, color: 'var(--primary)' }}>{stats.score}</span>
-            <span style={{ fontSize: '13px', color: 'var(--foreground-muted)' }}>Top 5% this month</span>
-          </Card>
+          <Link href="/profile" className="stat-card-link">
+            <Card padding="md" style={{ display: 'flex', flexDirection: 'column', gap: '8px', height: '100%' }}>
+              <span style={{ color: 'var(--foreground-muted)', fontSize: '14px', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Developer Score</span>
+              <span style={{ fontSize: '36px', fontWeight: 800, color: 'var(--primary)' }}>{stats.score}</span>
+              <span style={{ fontSize: '13px', color: 'var(--foreground-muted)' }}>Top 5% this month</span>
+            </Card>
+          </Link>
           
-          <Card padding="md" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <span style={{ color: 'var(--foreground-muted)', fontSize: '14px', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Connections</span>
-            <span style={{ fontSize: '36px', fontWeight: 800, color: 'var(--foreground)' }}>{stats.connections}</span>
-            <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 500 }}>+12 this week</span>
-          </Card>
+          <Link href="/network" className="stat-card-link">
+            <Card padding="md" style={{ display: 'flex', flexDirection: 'column', gap: '8px', height: '100%' }}>
+              <span style={{ color: 'var(--foreground-muted)', fontSize: '14px', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Connections</span>
+              <span style={{ fontSize: '36px', fontWeight: 800, color: 'var(--foreground)' }}>{stats.connections}</span>
+              <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 500 }}>+12 this week</span>
+            </Card>
+          </Link>
           
-          <Card padding="md" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <span style={{ color: 'var(--foreground-muted)', fontSize: '14px', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Projects</span>
-            <span style={{ fontSize: '36px', fontWeight: 800, color: 'var(--foreground)' }}>{stats.projects}</span>
-            <span style={{ fontSize: '13px', color: 'var(--foreground-muted)' }}>2 active</span>
-          </Card>
+          <Link href="/projects" className="stat-card-link">
+            <Card padding="md" style={{ display: 'flex', flexDirection: 'column', gap: '8px', height: '100%' }}>
+              <span style={{ color: 'var(--foreground-muted)', fontSize: '14px', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Projects</span>
+              <span style={{ fontSize: '36px', fontWeight: 800, color: 'var(--foreground)' }}>{stats.projects}</span>
+              <span style={{ fontSize: '13px', color: 'var(--foreground-muted)' }}>2 active</span>
+            </Card>
+          </Link>
           
-          <Card padding="md" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <span style={{ color: 'var(--foreground-muted)', fontSize: '14px', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Problems Solved</span>
-            <span style={{ fontSize: '36px', fontWeight: 800, color: 'var(--foreground)' }}>{stats.solved}</span>
-            <span style={{ fontSize: '13px', color: 'var(--foreground-muted)' }}>Across 4 topics</span>
-          </Card>
+          <Link href="/questions" className="stat-card-link">
+            <Card padding="md" style={{ display: 'flex', flexDirection: 'column', gap: '8px', height: '100%' }}>
+              <span style={{ color: 'var(--foreground-muted)', fontSize: '14px', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Problems Solved</span>
+              <span style={{ fontSize: '36px', fontWeight: 800, color: 'var(--foreground)' }}>{stats.solved}</span>
+              <span style={{ fontSize: '13px', color: 'var(--foreground-muted)' }}>Across 4 topics</span>
+            </Card>
+          </Link>
 
         </div>
 

@@ -132,10 +132,7 @@ export default function RoadmapDetailsPage({ params }: { params: Promise<{ slug:
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {nodes.map((node: any) => {
                     const isCompleted = progress.some(p => p.nodeId === node.id);
-                    const isLocked = node.prerequisites?.length > 0 && 
-                      !node.prerequisites.every((prereq: any) => 
-                        progress.some(p => p.nodeId === prereq.prerequisiteId)
-                      );
+                    const isLocked = false;
 
                     return (
                       <Link href={`/roadmaps/${encodeURIComponent(slug)}/${node.id}`} key={node.id} style={{ textDecoration: 'none' }}>

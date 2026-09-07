@@ -2,7 +2,7 @@ import React, { useRef, useState } from 'react';
 import Button from './Button';
 
 interface MediaUploaderProps {
-  onUploadSuccess: (mediaId: string) => void;
+  onUploadSuccess: (mediaId: string, url: string) => void;
   onError: (error: string) => void;
 }
 
@@ -35,7 +35,7 @@ export function MediaUploader({ onUploadSuccess, onError }: MediaUploaderProps) 
       }
 
       const data = await res.json();
-      onUploadSuccess(data.id);
+      onUploadSuccess(data.id, data.url);
     } catch (err: any) {
       onError(err.message || 'An error occurred during upload');
     } finally {

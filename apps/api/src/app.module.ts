@@ -22,9 +22,11 @@ import { SkillsModule } from './skills/skills.module';
 import { MediaModule } from './media/media.module';
 import { TrendingModule } from './trending/trending.module';
 import { VideosModule } from './videos/videos.module';
+import { MarketplaceModule } from './marketplace/marketplace.module';
+import { MessagesModule } from './messages/messages.module';
 
 @Module({
-  imports: [PrismaModule, RedisModule, SessionsModule, AuthModule, ProfileModule, ConnectionsModule, DevelopersModule, NotificationsModule, PostsModule, ScoreModule, ProjectsModule, QuestionsModule, RoadmapsModule, SkillsModule, MediaModule, TrendingModule, VideosModule],
+  imports: [PrismaModule, RedisModule, SessionsModule, AuthModule, ProfileModule, ConnectionsModule, DevelopersModule, NotificationsModule, PostsModule, ScoreModule, ProjectsModule, QuestionsModule, RoadmapsModule, SkillsModule, MediaModule, TrendingModule, VideosModule, MarketplaceModule, MessagesModule],
   controllers: [AppController],
   providers: [AppService],
 })

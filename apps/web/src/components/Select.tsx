@@ -118,7 +118,7 @@ export default function Select({
           width: fullWidth && !label ? '100%' : undefined,
           borderRadius: 'var(--radius-md)',
           border: '1px solid var(--border)',
-          background: 'var(--card-bg)',
+          background: 'var(--card-bg, var(--surface))',
           color: 'var(--foreground)',
           fontSize: '14px',
           fontWeight: 500,
@@ -159,12 +159,13 @@ export default function Select({
           style={{
             position: 'absolute',
             top: 'calc(100% + 6px)',
-            right: 0,
-            minWidth: '160px',
+            left: 0,
+            minWidth: '100%',
+            maxWidth: '100vw',
             margin: 0,
             padding: '4px',
             listStyle: 'none',
-            background: 'var(--card-bg)',
+            background: 'var(--card-bg, var(--surface))',
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius-md)',
             boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
@@ -213,7 +214,7 @@ export default function Select({
                   e.currentTarget.style.background = isSelected ? 'var(--primary-light)' : 'transparent';
                 }}
               >
-                <span>{opt.label}</span>
+                <span style={{ whiteSpace: 'normal', wordBreak: 'break-word', display: 'block', paddingRight: '12px' }}>{opt.label}</span>
                 {isSelected && (
                   <svg
                     width="14"

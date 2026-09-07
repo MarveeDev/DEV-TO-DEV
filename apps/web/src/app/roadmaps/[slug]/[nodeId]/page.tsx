@@ -55,9 +55,7 @@ export default function RoadmapNodePage({ params }: { params: Promise<{ slug: st
     }
   };
 
-  const isLocked = node?.prerequisites?.length > 0 && !node.prerequisites.every((prereq: any) =>
-    progress.some(p => p.nodeId === prereq.prerequisiteId)
-  );
+  const isLocked = false;
 
   const handleToggleComplete = async () => {
     if (!user) {

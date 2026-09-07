@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Card from '../../components/Card';
@@ -17,6 +17,10 @@ export default function NetworkPage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Refs controlling the continuous auto-scroll (Network page only).
+  const autoScrollPausedRef = useRef(false);   // true while hovering / touching / tab hidden
+  const autoScrollCooldownRef = useRef(0);      // timestamp until which auto-scroll stays paused
 
   useEffect(() => {
     fetch('/api/v1/auth/me')
@@ -66,13 +70,74 @@ export default function NetworkPage() {
     }
   };
 
+  // Continuous, gentle auto-scroll of the network feed.
+  // Pauses on hover/touch/keyboard interaction and when the tab is hidden,
+  // respects prefers-reduced-motion, and loops back to the top at the bottom.
+  // Uses passive listeners and never intercepts pointer events, so every
+  // button/link stays fully clickable on both mobile and desktop.
+  useEffect(() => {
+    if (loading || typeof window === 'undefined') return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    let rafId = 0;
+    const SPEED = 0.4; // px per frame — a subtle drift (~24px/s at 60fps)
+
+    const scrollableDistance = () =>
+      document.documentElement.scrollHeight - window.innerHeight;
+    const cooldown = (ms: number) => {
+      autoScrollCooldownRef.current = Date.now() + ms;
+    };
+
+    const step = () => {
+      const paused = autoScrollPausedRef.current || Date.now() < autoScrollCooldownRef.current;
+      if (!paused && scrollableDistance() > 4) {
+        if (window.scrollY >= scrollableDistance() - 1) {
+          window.scrollTo({ top: 0, behavior: 'smooth' }); // loop to top
+          cooldown(1200); // let the reset animation finish before resuming
+        } else {
+          window.scrollBy(0, SPEED);
+        }
+      }
+      rafId = requestAnimationFrame(step);
+    };
+    rafId = requestAnimationFrame(step);
+
+    const onTouchStart = () => { autoScrollPausedRef.current = true; };
+    const onTouchEnd = () => { autoScrollPausedRef.current = false; cooldown(2000); };
+    const onWheel = () => cooldown(2000);
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp', 'Home', 'End', ' ', 'Tab'].includes(e.key)) {
+        cooldown(2000);
+      }
+    };
+    const onVisibility = () => { autoScrollPausedRef.current = document.hidden; };
+
+    window.addEventListener('touchstart', onTouchStart, { passive: true });
+    window.addEventListener('touchend', onTouchEnd, { passive: true });
+    window.addEventListener('wheel', onWheel, { passive: true });
+    window.addEventListener('keydown', onKeyDown);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [loading]);
+
   if (loading) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--foreground-muted)' }}>Loading network...</div>;
 
   const incomingRequests = requests.filter(r => r.addressee.id === currentUserId && r.status === 'PENDING');
   const outgoingRequests = requests.filter(r => r.requester.id === currentUserId && r.status === 'PENDING');
 
   return (
-    <div>
+    <div
+      onMouseEnter={() => { autoScrollPausedRef.current = true; }}
+      onMouseLeave={() => { autoScrollPausedRef.current = false; }}
+    >
       <div style={{ maxWidth: '800px', margin: '0 auto' }}>
         
         <div className="page-header" style={{ marginBottom: '24px' }}>
@@ -163,7 +228,10 @@ export default function NetworkPage() {
                         </div>
                       </div>
                     </div>
-                    <div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <Link href={`/messages/${partner.profile.username}`} style={{ textDecoration: 'none' }}>
+                        <Button variant="primary" size="sm">Message</Button>
+                      </Link>
                       <Button onClick={() => handleAction(conn.id, 'delete')} variant="outline" size="sm">Remove</Button>
                     </div>
                   </Card>

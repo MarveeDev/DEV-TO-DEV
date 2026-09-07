@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Settings } from 'lucide-react';
+import { Settings, Store } from 'lucide-react';
 import DesktopHeader from './DesktopHeader';
 import DesktopSidebar from './DesktopSidebar';
 import MobileBottomNav from './MobileBottomNav';
@@ -80,26 +80,29 @@ export default function NavigationRoot() {
       {/* Mobile Unauthenticated Header */}
       {!loading && !isAuthenticated && (
         <header className="unauth-mobile-header">
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ height: '28px', width: 'auto', objectFit: 'contain' }} />
-          </div>
           <a href="/login" style={{ background: 'var(--primary)', color: '#ffffff', padding: '8px 16px', borderRadius: 'var(--radius-sm)', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
             Login
           </a>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ height: '28px', width: 'auto', objectFit: 'contain' }} />
+          </div>
         </header>
       )}
 
       {/* Mobile Authenticated Header */}
       {!loading && isAuthenticated && (
         <header className="unauth-mobile-header" style={{ padding: '12px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ height: '28px', width: 'auto', objectFit: 'contain' }} />
-          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <Link href="/marketplace" style={{ color: 'var(--foreground)', display: 'flex', alignItems: 'center' }}>
+              <Store size={24} strokeWidth={2} />
+            </Link>
             <Link href="/settings" style={{ color: 'var(--foreground)', display: 'flex', alignItems: 'center' }}>
               <Settings size={24} strokeWidth={2} />
             </Link>
             <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ height: '28px', width: 'auto', objectFit: 'contain' }} />
           </div>
         </header>
       )}

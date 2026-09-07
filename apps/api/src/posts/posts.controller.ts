@@ -20,6 +20,13 @@ export class PostsController {
     return userId;
   }
 
+  private async getViewerIdOrNull(req: Request): Promise<string | undefined> {
+    const token = req.cookies['session_id'];
+    if (!token) return undefined;
+    const userId = await this.sessionsService.validateSession(token);
+    return userId || undefined;
+  }
+
   @Post()
   async createPost(@Req() req: Request, @Body() body: CreatePostDto) {
     const userId = await this.getUserIdOrThrow(req);
@@ -28,20 +35,46 @@ export class PostsController {
 
   @Get()
   async getPosts(
+    @Req() req: Request,
     @Query('username') username?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
+    const viewerId = await this.getViewerIdOrNull(req);
     return this.postsService.getPosts({
       username,
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 20,
-    });
+    }, viewerId);
   }
 
   @Get(':id')
-  async getPostById(@Param('id') id: string) {
-    return this.postsService.getPostById(id);
+  async getPostById(@Req() req: Request, @Param('id') id: string) {
+    const viewerId = await this.getViewerIdOrNull(req);
+    return this.postsService.getPostById(id, viewerId);
+  }
+
+  @Get(':id/comments')
+  async getComments(@Param('id') id: string) {
+    return this.postsService.getComments(id);
+  }
+
+  @Post(':id/comments')
+  async createComment(@Req() req: Request, @Param('id') id: string, @Body('content') content: string) {
+    const userId = await this.getUserIdOrThrow(req);
+    return this.postsService.createComment(userId, id, content);
+  }
+
+  @Post(':id/like')
+  async likePost(@Req() req: Request, @Param('id') id: string) {
+    const userId = await this.getUserIdOrThrow(req);
+    return this.postsService.likePost(userId, id);
+  }
+
+  @Delete(':id/like')
+  async unlikePost(@Req() req: Request, @Param('id') id: string) {
+    const userId = await this.getUserIdOrThrow(req);
+    return this.postsService.unlikePost(userId, id);
   }
 
   @Patch(':id')
