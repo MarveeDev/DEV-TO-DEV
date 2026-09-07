@@ -11,13 +11,23 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { randomBytes } from 'crypto';
 import { SessionsService } from '../sessions/sessions.service';
+import { MailService } from '../mail/mail.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly sessionsService: SessionsService,
+    private readonly mailService: MailService,
   ) {}
+
+  private get apiUrl(): string {
+    return process.env.API_URL || 'http://localhost:3001';
+  }
+
+  private get frontendUrl(): string {
+    return process.env.FRONTEND_URL || 'http://localhost:3000';
+  }
 
   @Get('github')
   async githubAuth(@Req() req: Request, @Res() res: Response) {
@@ -35,7 +45,7 @@ export class AuthController {
     await this.authService.storeOAuthState(state, currentUserId || 'new_login');
 
     const clientId = process.env.GITHUB_CLIENT_ID;
-    const redirectUri = `http://localhost:3001/api/v1/auth/github/callback`;
+    const redirectUri = `${this.apiUrl}/api/v1/auth/github/callback`;
     const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=read:user user:email&state=${state}`;
 
     return res.redirect(url);
@@ -64,6 +74,16 @@ export class AuthController {
 
       // Create session
       const token = await this.sessionsService.createSession(user.id);
+
+      // Send sign-in notification (fire-and-forget; only for actual sign-ins, not account linking)
+      if (intent === 'new_login') {
+        void this.mailService.sendSignInNotification({
+          to: user.email,
+          provider: 'github',
+          isNewUser,
+          timestamp: new Date(),
+        });
+      }
       
       res.cookie('session_id', token, {
         httpOnly: true,
@@ -75,12 +95,12 @@ export class AuthController {
 
       // Redirect to frontend onboarding if new user, otherwise profile
       if (isNewUser) {
-        return res.redirect('http://localhost:3000/onboarding');
+        return res.redirect(`${this.frontendUrl}/onboarding`);
       }
-      return res.redirect('http://localhost:3000/dashboard');
+      return res.redirect(`${this.frontendUrl}/dashboard`);
     } catch (e) {
       // Safe error redirect
-      return res.redirect(`http://localhost:3000/login?error=${encodeURIComponent(e.message)}`);
+      return res.redirect(`${this.frontendUrl}/login?error=${encodeURIComponent(e.message)}`);
     }
   }
 
@@ -96,7 +116,7 @@ export class AuthController {
     await this.authService.storeOAuthState(state, currentUserId || 'new_login');
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const redirectUri = `http://localhost:3001/api/v1/auth/google/callback`;
+    const redirectUri = `${this.apiUrl}/api/v1/auth/google/callback`;
     const scope = encodeURIComponent('openid email profile');
     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=${state}&access_type=offline`;
 
@@ -124,6 +144,16 @@ export class AuthController {
       if (!user) throw new Error('Authentication failed');
 
       const token = await this.sessionsService.createSession(user.id);
+
+      // Send sign-in notification (fire-and-forget; only for actual sign-ins, not account linking)
+      if (intent === 'new_login') {
+        void this.mailService.sendSignInNotification({
+          to: user.email,
+          provider: 'google',
+          isNewUser,
+          timestamp: new Date(),
+        });
+      }
       
       res.cookie('session_id', token, {
         httpOnly: true,
@@ -134,11 +164,11 @@ export class AuthController {
       });
 
       if (isNewUser) {
-        return res.redirect('http://localhost:3000/onboarding');
+        return res.redirect(`${this.frontendUrl}/onboarding`);
       }
-      return res.redirect('http://localhost:3000/dashboard');
+      return res.redirect(`${this.frontendUrl}/dashboard`);
     } catch (e) {
-      return res.redirect(`http://localhost:3000/login?error=${encodeURIComponent(e.message)}`);
+      return res.redirect(`${this.frontendUrl}/login?error=${encodeURIComponent(e.message)}`);
     }
   }
 

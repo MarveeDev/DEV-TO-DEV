@@ -131,7 +131,7 @@ export class AuthService {
   async processGoogleCallback(code: string, intent: string) {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    const redirectUri = 'http://localhost:3001/api/v1/auth/google/callback';
+    const redirectUri = `${process.env.API_URL || 'http://localhost:3001'}/api/v1/auth/google/callback`;
 
     if (!clientId || !clientSecret) {
       throw new Error('Google OAuth credentials not configured');
