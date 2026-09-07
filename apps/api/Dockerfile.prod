@@ -7,7 +7,7 @@ RUN npm install -g pnpm@11.13.1
 
 COPY . .
 
-RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN pnpm install --frozen-lockfile
 RUN pnpm --filter api exec prisma generate
 RUN pnpm --filter api build
 
