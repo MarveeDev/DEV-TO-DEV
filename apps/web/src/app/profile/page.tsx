@@ -92,7 +92,7 @@ export default function ProfilePage() {
 
             <div>
               <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px', margin: '0 0 16px 0' }}>My Posts</h2>
-              <MyPosts username={profile.username} currentUserId={user.id} />
+              <MyPosts username={profile?.username} currentUserId={user.id} />
             </div>
           </div>
 
@@ -116,7 +116,7 @@ export default function ProfilePage() {
   );
 }
 
-function MyPosts({ username, currentUserId }: { username: string, currentUserId: string }) {
+function MyPosts({ username, currentUserId }: { username?: string, currentUserId: string }) {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
