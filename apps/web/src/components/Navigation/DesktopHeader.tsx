@@ -59,9 +59,6 @@ export default function DesktopHeader({ isAuthenticated, loading, onLogout }: De
             </Link>
           )
         )}
-        <Link href={isAuthenticated ? '/dashboard' : '/'} style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-          <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
-        </Link>
       </div>
     </header>
   );
