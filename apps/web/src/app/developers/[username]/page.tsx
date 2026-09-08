@@ -41,7 +41,7 @@ export default function PublicDeveloperProfilePage() {
 
   const handleConnect = async () => {
     try {
-      const res = await fetch(`/api/v1/connections/${username}`, { method: 'POST' });
+      const res = await fetch(`/api/v1/connections/${encodeURIComponent(String(username))}`, { method: 'POST' });
       if (res.ok) {
         setConnectionStatus('PENDING');
       } else {

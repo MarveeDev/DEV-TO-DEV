@@ -63,7 +63,7 @@ export default function DevelopersDiscoveryPage() {
 
   const handleConnect = async (username: string) => {
     try {
-      const res = await fetch(`/api/v1/connections/${username}`, { method: 'POST' });
+      const res = await fetch(`/api/v1/connections/${encodeURIComponent(username)}`, { method: 'POST' });
       if (res.ok) {
         setMatches(matches.map(m => m.developer.username === username ? { ...m, connectionStatus: 'PENDING' } : m));
         setSearchResults(searchResults.map(s => s.username === username ? { ...s, publicConnectionStatus: 'PENDING' } : s));
