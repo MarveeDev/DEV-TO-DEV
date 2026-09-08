@@ -25,6 +25,50 @@ export class AuthService {
     return intent;
   }
 
+  private oauthProfileKey(userId: string): string {
+    return `oauth:profile:${userId}`;
+  }
+
+  async storeOAuthProfile(
+    userId: string,
+    data: {
+      username?: string;
+      displayName?: string;
+      avatarUrl?: string;
+      location?: string;
+      websiteUrl?: string;
+    },
+  ): Promise<void> {
+    const filtered: Record<string, string> = {};
+    for (const [key, value] of Object.entries(data)) {
+      if (value) filtered[key] = value;
+    }
+    if (Object.keys(filtered).length === 0) return;
+
+    const redis = this.redisService.getClient();
+    // Transient snapshot, consumed during onboarding; expires after 24h otherwise.
+    await redis.setex(this.oauthProfileKey(userId), 60 * 60 * 24, JSON.stringify(filtered));
+  }
+
+  async getOAuthProfile(
+    userId: string,
+  ): Promise<{
+    username?: string;
+    displayName?: string;
+    avatarUrl?: string;
+    location?: string;
+    websiteUrl?: string;
+  } | null> {
+    const redis = this.redisService.getClient();
+    const raw = await redis.get(this.oauthProfileKey(userId));
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
   async processGitHubCallback(code: string, intent: string) {
     const clientId = process.env.GITHUB_CLIENT_ID;
     const clientSecret = process.env.GITHUB_CLIENT_SECRET;
@@ -100,6 +144,14 @@ export class AuthService {
             },
           },
         },
+      });
+
+      await this.storeOAuthProfile(newUser.id, {
+        username: githubUser.login,
+        displayName: githubUser.name || githubUser.login,
+        avatarUrl: githubUser.avatar_url,
+        location: githubUser.location,
+        websiteUrl: githubUser.blog,
       });
 
       return { user: newUser, isNewUser: true };
@@ -192,6 +244,11 @@ export class AuthService {
         },
       });
 
+      await this.storeOAuthProfile(newUser.id, {
+        displayName: googleUser.name,
+        avatarUrl: googleUser.picture,
+      });
+
       return { user: newUser, isNewUser: true };
     } else {
       const currentUserId = intent;
@@ -217,7 +274,7 @@ export class AuthService {
   }
 
   async getUser(userId: string) {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: {
         authIdentities: true,
@@ -229,5 +286,14 @@ export class AuthService {
         },
       },
     });
+
+    if (!user) return null;
+
+    // Only new (not-yet-onboarded) users have a pending OAuth profile snapshot.
+    const pendingProfile = user.developerProfile
+      ? null
+      : await this.getOAuthProfile(userId);
+
+    return { ...user, pendingProfile };
   }
 }

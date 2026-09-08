@@ -53,6 +53,22 @@ export default function OnboardingPage() {
       .catch(console.error);
   }, []);
 
+  useEffect(() => {
+    fetch('/api/v1/auth/me')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        const pending = data?.pendingProfile;
+        if (pending) {
+          setFormData(prev => ({
+            ...prev,
+            username: prev.username || pending.username || '',
+            displayName: prev.displayName || pending.displayName || '',
+          }));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const res = await fetch('/api/v1/profile/onboard', {

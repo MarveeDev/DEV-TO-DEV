@@ -1,9 +1,13 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class ProfileService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
+  ) {}
 
   async createProfile(userId: string, data: any) {
     // Basic validation
@@ -13,11 +17,21 @@ export class ProfileService {
 
     const { username, displayName, bio, experienceLevel, skills, goals } = data;
 
+    const oauthProfile = await this.consumeOAuthProfile(userId);
+
     // Check username uniqueness
     const existing = await this.prisma.developerProfile.findUnique({ where: { username } });
     if (existing && existing.userId !== userId) {
       throw new BadRequestException('Username is already taken');
     }
+
+    const oauthFields = oauthProfile
+      ? {
+          avatarUrl: oauthProfile.avatarUrl ?? undefined,
+          location: oauthProfile.location ?? undefined,
+          websiteUrl: oauthProfile.websiteUrl ?? undefined,
+        }
+      : {};
 
     // Upsert Profile
     const profile = await this.prisma.developerProfile.upsert({
@@ -27,6 +41,7 @@ export class ProfileService {
         displayName,
         bio,
         experienceLevel,
+        ...oauthFields,
       },
       create: {
         userId,
@@ -34,6 +49,7 @@ export class ProfileService {
         displayName,
         bio,
         experienceLevel,
+        ...oauthFields,
       },
     });
 
@@ -83,6 +99,19 @@ export class ProfileService {
       where: { id: profile.id },
       include: { skills: { include: { skill: true } }, learningGoals: { include: { learningGoal: true } } },
     });
+  }
+
+  private async consumeOAuthProfile(userId: string) {
+    const redis = this.redisService.getClient();
+    const key = `oauth:profile:${userId}`;
+    const raw = await redis.get(key);
+    if (!raw) return null;
+    await redis.del(key);
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
   }
 
   async getAllSkills() {
