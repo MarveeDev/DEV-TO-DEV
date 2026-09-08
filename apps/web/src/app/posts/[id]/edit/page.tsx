@@ -7,8 +7,10 @@ import Button from '../../../../components/Button';
 import BackButton from '../../../../components/Navigation/BackButton';
 import { Edit2 } from 'lucide-react';
 
-export default function EditPostPage({ params }: { params: { id: string } }) {
+export default function EditPostPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
   const router = useRouter();
+  const unwrappedParams = React.use(params as any) as { id: string };
+  const id = unwrappedParams.id;
   
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -18,7 +20,7 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`/api/v1/posts/${params.id}`)
+    fetch(`/api/v1/posts/${id}`)
       .then(async res => {
         if (!res.ok) throw new Error('Post not found');
         return res.json();
@@ -32,7 +34,7 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
       })
       .catch(err => setError(err.message))
       .finally(() => setInitializing(false));
-  }, [params.id]);
+  }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +53,7 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/v1/posts/${params.id}`, {
+      const res = await fetch(`/api/v1/posts/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, content, skills: skillsArray })
@@ -62,7 +64,7 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
         throw new Error(data.message || 'Failed to update post');
       }
 
-      router.push(`/posts/${params.id}`);
+      router.push(`/posts/${id}`);
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -74,7 +76,7 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', paddingBottom: '40px' }}>
       <div className="page-header" style={{ marginBottom: '24px' }}>
-        <BackButton fallback={`/posts/${params.id}`} />
+        <BackButton fallback={`/posts/${id}`} />
         <div className="page-header-content">
           <h1 style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Edit2 size={28} color="var(--primary)" />
@@ -137,7 +139,7 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
           </div>
 
           <div style={{ paddingTop: '8px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
-            <Button variant="outline" type="button" onClick={() => router.push(`/posts/${params.id}`)} disabled={loading}>Cancel</Button>
+            <Button variant="outline" type="button" onClick={() => router.push(`/posts/${id}`)} disabled={loading}>Cancel</Button>
             <Button variant="primary" type="submit" disabled={loading}>
               {loading ? 'Saving...' : 'Save Changes'}
             </Button>

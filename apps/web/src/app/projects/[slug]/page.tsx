@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Card from '../../../components/Card';
@@ -8,8 +8,10 @@ import Button from '../../../components/Button';
 import Badge from '../../../components/Badge';
 import BackButton from '../../../components/Navigation/BackButton';
 
-export default function ProjectDetailsPage({ params }: { params: { slug: string } }) {
+export default function ProjectDetailsPage({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
   const router = useRouter();
+  const unwrappedParams = React.use(params as any) as { slug: string };
+  const slug = unwrappedParams.slug;
   const [project, setProject] = useState<any>(null);
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +29,7 @@ export default function ProjectDetailsPage({ params }: { params: { slug: string 
         setCurrentUser(user);
       }
 
-      const projRes = await fetch(`/api/v1/projects/${params.slug}`);
+      const projRes = await fetch(`/api/v1/projects/${slug}`);
       if (!projRes.ok) throw new Error('Project not found');
       const projData = await projRes.json();
       setProject(projData);
@@ -60,7 +62,7 @@ export default function ProjectDetailsPage({ params }: { params: { slug: string 
 
   useEffect(() => {
     fetchProjectAndUser();
-  }, [params.slug]);
+  }, [slug]);
 
   if (loading) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--foreground-muted)' }}>Loading project...</div>;
   if (error || !project) return <div style={{ padding: '60px', textAlign: 'center', color: 'red' }}>{error || 'Project not found'}</div>;

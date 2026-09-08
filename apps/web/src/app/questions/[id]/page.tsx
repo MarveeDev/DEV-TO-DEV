@@ -20,9 +20,9 @@ export default function QuestionDetailsPage() {
   const [submittingAnswer, setSubmittingAnswer] = useState(false);
 
   useEffect(() => {
-    fetch('/api/v1/auth/session')
+    fetch('/api/v1/auth/me')
       .then(res => res.ok ? res.json() : null)
-      .then(data => setCurrentUser(data?.user))
+      .then(data => setCurrentUser(data))
       .catch(() => setCurrentUser(null));
   }, []);
 
@@ -63,7 +63,7 @@ export default function QuestionDetailsPage() {
   };
 
   const handleAcceptAnswer = async (answerId: string) => {
-    if (!currentUser || currentUser.id !== question?.authorId) return;
+    if (!currentUser || currentUser.developerProfile?.id !== question?.authorId) return;
     
     try {
       const res = await fetch(`/api/v1/questions/${question.id}/answers/${answerId}/accept`, {
@@ -76,7 +76,7 @@ export default function QuestionDetailsPage() {
   };
 
   const handleResolveQuestion = async () => {
-    if (!currentUser || currentUser.id !== question?.authorId) return;
+    if (!currentUser || currentUser.developerProfile?.id !== question?.authorId) return;
     
     try {
       const res = await fetch(`/api/v1/questions/${question.id}/resolve`, {
@@ -135,7 +135,7 @@ export default function QuestionDetailsPage() {
   if (loading) return <div style={{ padding: '40px' }}>Loading question...</div>;
   if (!question) return <div style={{ padding: '40px' }}>Question not found.</div>;
 
-  const isQuestionOwner = currentUser?.id === question.authorId;
+  const isQuestionOwner = currentUser?.developerProfile?.id === question.authorId;
 
   return (
     <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '60px' }}>
@@ -200,9 +200,9 @@ export default function QuestionDetailsPage() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
               {question.attachments.map((att: any) => (
                 <div key={att.id} style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                  {att.type === 'image' ? (
+                  {att.type?.toLowerCase() === 'image' ? (
                     <img src={att.url} alt="Attachment" style={{ maxWidth: '100%', maxHeight: '400px', display: 'block', objectFit: 'contain' }} />
-                  ) : att.type === 'video' ? (
+                  ) : att.type?.toLowerCase() === 'video' ? (
                     <video src={att.url} controls style={{ maxWidth: '100%', maxHeight: '400px', display: 'block' }} />
                   ) : (
                     <a href={att.url} target="_blank" rel="noopener noreferrer" style={{ display: 'block', padding: '12px', background: 'var(--background)', color: 'var(--primary)', textDecoration: 'underline', fontSize: '14px' }}>
@@ -279,7 +279,7 @@ export default function QuestionDetailsPage() {
                     {isQuestionOwner && answer.id !== question.acceptedAnswerId && (
                       <Button variant="outline" size="sm" onClick={() => handleAcceptAnswer(answer.id)}>Accept</Button>
                     )}
-                    {currentUser?.id === answer.authorId && (
+                    {currentUser?.developerProfile?.id === answer.authorId && (
                       <Button variant="outline" size="sm" onClick={() => handleDeleteAnswer(answer.id)} style={{ color: 'var(--danger)' }}><Trash size={14}/></Button>
                     )}
                   </div>

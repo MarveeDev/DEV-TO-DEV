@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, KeyboardEvent } from 'react';
+import React, { useState, useEffect, useRef, KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Card from '../../../../components/Card';
 import Button from '../../../../components/Button';
@@ -123,8 +123,10 @@ function CustomStatusSelect({ value, onChange }: { value: string, onChange: (val
   );
 }
 
-export default function EditProjectPage({ params }: { params: { slug: string } }) {
+export default function EditProjectPage({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
   const router = useRouter();
+  const unwrappedParams = React.use(params as any) as { slug: string };
+  const slug = unwrappedParams.slug;
   const [projectId, setProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -153,12 +155,12 @@ export default function EditProjectPage({ params }: { params: { slug: string } }
           return;
         }
 
-        const projRes = await fetch(`/api/v1/projects/${params.slug}`);
+        const projRes = await fetch(`/api/v1/projects/${slug}`);
         if (!projRes.ok) throw new Error('Project not found');
         const projData = await projRes.json();
         
-        if (projData.ownerId !== user.id) {
-          router.push(`/projects/${params.slug}`);
+        if (projData.owner?.id !== user.id) {
+          router.push(`/projects/${slug}`);
           return;
         }
 
@@ -179,7 +181,7 @@ export default function EditProjectPage({ params }: { params: { slug: string } }
     };
 
     fetchProjectAndUser();
-  }, [params.slug, router]);
+  }, [slug, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -205,7 +207,7 @@ export default function EditProjectPage({ params }: { params: { slug: string } }
         throw new Error(data.message || 'Failed to update project');
       }
 
-      router.push(`/projects/${data.slug || params.slug}`);
+      router.push(`/projects/${data.slug || slug}`);
     } catch (err: any) {
       setError(err.message);
       setSubmitting(false);
@@ -218,7 +220,7 @@ export default function EditProjectPage({ params }: { params: { slug: string } }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', maxWidth: '600px', margin: '0 auto' }}>
       <section className="page-header">
-        <BackButton fallback={`/projects/${params.slug}`} />
+        <BackButton fallback={`/projects/${slug}`} />
         <div className="page-header-content">
           <h1 className="text-wrap-safe" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)' }}>
             Edit Project
@@ -294,7 +296,7 @@ export default function EditProjectPage({ params }: { params: { slug: string } }
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
-            <Button type="button" variant="outline" onClick={() => router.push(`/projects/${params.slug}`)}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={() => router.push(`/projects/${slug}`)}>Cancel</Button>
             <Button type="submit" variant="primary" disabled={submitting}>
               {submitting ? 'Saving...' : 'Save Changes'}
             </Button>

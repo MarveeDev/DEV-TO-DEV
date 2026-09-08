@@ -111,7 +111,7 @@ export default function ListingDetailsPage() {
               <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--foreground-muted)', marginBottom: '16px' }}>
                 Listed by
               </div>
-              <Link href={`/profile/${listing.seller.username}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Link href={`/developers/${listing.seller.username}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 {listing.seller.avatarUrl ? (
                   <img src={listing.seller.avatarUrl} alt={listing.seller.displayName} style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
                 ) : (

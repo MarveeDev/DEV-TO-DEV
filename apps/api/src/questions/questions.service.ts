@@ -134,15 +134,15 @@ export class QuestionsService {
     const profile = await this.prisma.developerProfile.findUnique({ where: { userId } });
     if (!profile) throw new NotFoundException('Developer profile not found');
 
+    const skillConnections = await this.resolveSkillConnections(data.skills);
+
     const question = await this.prisma.question.create({
       data: {
         title: data.title,
         description: data.description,
         authorId: profile.id,
-        skills: data.skills?.length > 0 ? {
-          create: data.skills.map((skillId: string) => ({
-            skill: { connect: { id: skillId } }
-          }))
+        skills: skillConnections.length > 0 ? {
+          create: skillConnections
         } : undefined,
       },
       include: {
@@ -175,6 +175,33 @@ export class QuestionsService {
     }
 
     return question;
+  }
+
+  private async resolveSkillConnections(skillNames?: string[]): Promise<{ skill: { connect: { id: string } } }[]> {
+    if (!skillNames || skillNames.length === 0) return [];
+
+    const connections: { skill: { connect: { id: string } } }[] = [];
+    for (const skillName of skillNames) {
+      const nameStr = String(skillName).trim();
+      if (!nameStr) continue;
+
+      let skill = await this.prisma.skill.findFirst({
+        where: { name: { equals: nameStr, mode: 'insensitive' } }
+      });
+
+      if (!skill) {
+        skill = await this.prisma.skill.create({
+          data: {
+            name: nameStr,
+            slug: nameStr.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+          }
+        });
+      }
+
+      connections.push({ skill: { connect: { id: skill.id } } });
+    }
+
+    return connections;
   }
 
   async updateQuestion(userId: string, id: string, data: any) {

@@ -44,8 +44,8 @@ export default function SearchPage() {
         // Developers endpoint returns { developers: [], meta: {} } or { data: [], meta: {} } depending on standard
         // Let's assume standard { data: [] } or raw array based on typical DEV-TO-DEV API patterns
         developers: Array.isArray(developers) ? developers : (developers.data || developers.developers || []),
-        projects: Array.isArray(projects) ? projects : (projects.data || projects.projects || []),
-        questions: Array.isArray(questions) ? questions : (questions.data || questions.questions || [])
+        projects: Array.isArray(projects) ? projects : (projects.items || []),
+        questions: Array.isArray(questions) ? questions : (questions.items || [])
       });
     } catch (err) {
       console.error('Search error:', err);
