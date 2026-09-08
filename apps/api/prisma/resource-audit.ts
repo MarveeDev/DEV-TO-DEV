@@ -1,6 +1,11 @@
 import { PrismaClient } from '@prisma/client';
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:postgres@postgres:5432/devtodev?schema=public';
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const nodes = await prisma.roadmapNode.findMany();
@@ -30,8 +35,8 @@ async function main() {
   console.log(`Nodes with Invalid URL: ${invalidUrl}`);
   console.log('----------------------------------------------------');
   
-  if (missingResource === 0 && invalidUrl === 0 && nodes.length === 179) {
-    console.log('[SUCCESS] All 179 nodes have valid recommended resources!');
+  if (missingResource === 0 && invalidUrl === 0 && nodes.length === 201) {
+    console.log('[SUCCESS] All 201 nodes have valid recommended resources!');
   } else {
     console.log('[FAILED] Audit did not pass entirely.');
   }
