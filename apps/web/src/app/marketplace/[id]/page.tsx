@@ -12,6 +12,7 @@ export default function ListingDetailsPage() {
   const router = useRouter();
   const [listing, setListing] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -33,6 +34,35 @@ export default function ListingDetailsPage() {
       fetchListing();
     }
   }, [params.id, router]);
+
+  useEffect(() => {
+    fetch('/api/v1/auth/me')
+      .then(res => res.ok ? res.json() : null)
+      .then(data => setCurrentUser(data))
+      .catch(() => {});
+  }, []);
+
+  const isSeller = currentUser?.developerProfile?.id === listing?.seller?.id;
+
+  const handleMessageSeller = async () => {
+    if (!currentUser) {
+      router.push('/login');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/v1/messages/marketplace/${listing.id}`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        const partnerUsername = data.partner?.profile?.username;
+        router.push(`/messages/${encodeURIComponent(partnerUsername)}?conversation=${data.id}&listing=${listing.id}`);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || 'Unable to contact this seller. Please try again.');
+      }
+    } catch {
+      alert('Unable to contact this seller. Please try again.');
+    }
+  };
 
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '60px' }}>Loading...</div>;
@@ -102,10 +132,16 @@ export default function ListingDetailsPage() {
               </a>
             )}
 
-            <Button variant="outline" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }} onClick={() => alert('Secure messaging will be implemented in future versions.')}>
-              <Mail size={18} />
-              Contact Seller
-            </Button>
+            {isSeller ? (
+              <Button variant="secondary" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }} disabled>
+                Your Listing
+              </Button>
+            ) : (
+              <Button variant="primary" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }} onClick={handleMessageSeller}>
+                <Mail size={18} />
+                Message Seller
+              </Button>
+            )}
 
             <div style={{ marginTop: '32px', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
               <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--foreground-muted)', marginBottom: '16px' }}>

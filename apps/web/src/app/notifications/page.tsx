@@ -95,6 +95,11 @@ export default function NotificationsPage() {
                         View Network
                       </Button>
                     )}
+                    {notification.type === 'MESSAGE' && (
+                      <Button onClick={() => router.push('/messages')} variant="outline" size="sm">
+                        View Messages
+                      </Button>
+                    )}
                   </div>
                 </div>
 

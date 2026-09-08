@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationType } from '@prisma/client';
 
 @Injectable()
 export class MessagesService {
@@ -22,6 +23,19 @@ export class MessagesService {
     }
   }
 
+  private serializeListing(listing: any) {
+    if (!listing) return null;
+    return {
+      id: listing.id,
+      title: listing.title,
+      price: listing.price,
+      imageUrl: listing.imageUrl,
+      seller: listing.seller
+        ? { username: listing.seller.username, displayName: listing.seller.displayName }
+        : null,
+    };
+  }
+
   async getOrCreateConversationWithUsername(userId: string, username: string) {
     const targetProfile = await this.prisma.developerProfile.findUnique({
       where: { username },
@@ -34,17 +48,45 @@ export class MessagesService {
 
     const [userAId, userBId] = this.orderPair(userId, otherId);
 
-    const conversation = await this.prisma.conversation.upsert({
-      where: { userAId_userBId: { userAId, userBId } },
-      update: {},
-      create: { userAId, userBId },
-      include: {
-        userA: { include: { developerProfile: true } },
-        userB: { include: { developerProfile: true } },
-      },
+    let conversation = await this.prisma.conversation.findFirst({
+      where: { userAId, userBId, listingId: null },
     });
+    if (!conversation) {
+      conversation = await this.prisma.conversation.create({
+        data: { userAId, userBId, listingId: null },
+      });
+    }
 
     return conversation;
+  }
+
+  // Create (or reuse) the marketplace conversation between the current user and
+  // the seller of the given listing. The buyer/seller pair is keyed together with
+  // the listing id, so the same buyer can hold separate conversations per listing.
+  async getOrCreateMarketplaceConversation(userId: string, listingId: string) {
+    const listing = await this.prisma.marketplaceListing.findUnique({
+      where: { id: listingId },
+      include: { seller: { include: { user: true } } },
+    });
+    if (!listing) throw new NotFoundException('Listing not found');
+
+    const sellerUserId = listing.seller.userId;
+    if (sellerUserId === userId) {
+      throw new BadRequestException('You cannot message yourself about your own listing');
+    }
+
+    const [userAId, userBId] = this.orderPair(userId, sellerUserId);
+
+    let conversation = await this.prisma.conversation.findFirst({
+      where: { userAId, userBId, listingId },
+    });
+    if (!conversation) {
+      conversation = await this.prisma.conversation.create({
+        data: { userAId, userBId, listingId },
+      });
+    }
+
+    return this.getConversationThread(userId, conversation.id);
   }
 
   async getConversations(userId: string) {
@@ -53,6 +95,7 @@ export class MessagesService {
       include: {
         userA: { include: { developerProfile: true } },
         userB: { include: { developerProfile: true } },
+        listing: { select: { id: true, title: true } },
         messages: { orderBy: { createdAt: 'desc' }, take: 1 },
       },
       orderBy: { updatedAt: 'desc' },
@@ -66,6 +109,7 @@ export class MessagesService {
         return {
           id: c.id,
           partner: this.partnerOf(c, userId),
+          listing: c.listing ? { id: c.listing.id, title: c.listing.title } : null,
           lastMessage: c.messages[0] ?? null,
           unreadCount,
           updatedAt: c.updatedAt,
@@ -80,6 +124,9 @@ export class MessagesService {
       include: {
         userA: { include: { developerProfile: true } },
         userB: { include: { developerProfile: true } },
+        listing: {
+          include: { seller: { select: { username: true, displayName: true } } },
+        },
       },
     });
     if (!conversation) throw new NotFoundException('Conversation not found');
@@ -105,6 +152,7 @@ export class MessagesService {
     return {
       id: conversation.id,
       partner: this.partnerOf(conversation, userId),
+      listing: this.serializeListing(conversation.listing),
       messages,
     };
   }
@@ -123,6 +171,26 @@ export class MessagesService {
 
     // Bump the conversation so it sorts to the top of the inbox (@updatedAt).
     await this.prisma.conversation.update({ where: { id: conversationId }, data: {} });
+
+    // Notify the other participant for marketplace conversations.
+    if (conversation.listingId) {
+      const recipientId = conversation.userAId === userId ? conversation.userBId : conversation.userAId;
+      const senderProfile = await this.prisma.developerProfile.findUnique({
+        where: { userId },
+        select: { displayName: true },
+      });
+      const listingTitle = conversation.listing?.title;
+      await this.prisma.notification.create({
+        data: {
+          userId: recipientId,
+          type: NotificationType.MESSAGE,
+          title: 'New message',
+          message: `${senderProfile?.displayName || 'Someone'} sent you a message${
+            listingTitle ? ` about "${listingTitle}"` : ''
+          }.`,
+        },
+      });
+    }
 
     return message;
   }

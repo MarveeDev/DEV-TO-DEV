@@ -33,6 +33,14 @@ export class MessagesController {
     return this.messagesService.getConversationThread(userId, conversation.id);
   }
 
+  // Open (or create) the marketplace conversation between the buyer and the
+  // seller of a listing, returning the thread.
+  @Post('marketplace/:listingId')
+  async openMarketplaceConversation(@Req() req: Request, @Param('listingId') listingId: string) {
+    const userId = await this.getUserIdOrThrow(req);
+    return this.messagesService.getOrCreateMarketplaceConversation(userId, listingId);
+  }
+
   // Poll an existing conversation thread by id.
   @Get(':conversationId')
   async getThread(@Req() req: Request, @Param('conversationId') conversationId: string) {

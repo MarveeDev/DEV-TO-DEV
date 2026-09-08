@@ -166,6 +166,7 @@ enum NotificationType {
   CONNECTION_REQUEST
   CONNECTION_ACCEPTED
   CONNECTION_REJECTED
+  MESSAGE
   SYSTEM
 }
 
@@ -533,6 +534,8 @@ model MarketplaceListing {
   sellerId    String
   seller      DeveloperProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   
+  conversations Conversation[]
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
@@ -544,17 +547,22 @@ model MarketplaceListing {
 
 // Private 1:1 conversation between two users. userAId/userBId are stored in a
 // canonical (sorted) order so the pair is unique regardless of who starts it.
+// listingId is null for connection-based chats; for marketplace chats it links
+// the conversation to the specific listing (so a buyer/seller pair can have
+// multiple conversations, one per listing).
 model Conversation {
   id        String   @id @default(uuid())
   userAId   String
   userBId   String
+  listingId String?
+  listing   MarketplaceListing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
   userA     User     @relation("ConversationsAsUserA", fields: [userAId], references: [id], onDelete: Cascade)
   userB     User     @relation("ConversationsAsUserB", fields: [userBId], references: [id], onDelete: Cascade)
   messages  Message[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userAId, userBId])
+  @@unique([userAId, userBId, listingId])
   @@index([userAId])
   @@index([userBId])
 }

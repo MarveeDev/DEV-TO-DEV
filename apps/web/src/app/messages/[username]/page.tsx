@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '../../../components/Button';
 import BackButton from '../../../components/Navigation/BackButton';
@@ -11,10 +11,13 @@ export default function ChatPage() {
   const router = useRouter();
   const params = useParams();
   const username = params.username as string;
+  const searchParams = useSearchParams();
+  const conversationParam = searchParams.get('conversation');
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [partner, setPartner] = useState<any>(null);
+  const [listing, setListing] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -35,13 +38,16 @@ export default function ChatPage() {
         if (cancelled) return;
         setCurrentUserId(me.id);
 
-        const res = await fetch(`/api/v1/messages/with/${encodeURIComponent(username)}`);
+        const res = conversationParam
+          ? await fetch(`/api/v1/messages/${conversationParam}`)
+          : await fetch(`/api/v1/messages/with/${encodeURIComponent(username)}`);
         if (!res.ok) throw new Error('Unable to open this conversation');
         const data = await res.json();
         if (cancelled) return;
         setConversationId(data.id);
         conversationIdRef.current = data.id;
         setPartner(data.partner);
+        setListing(data.listing || null);
         setMessages(data.messages || []);
       } catch (e: any) {
         if (!cancelled) setError(e.message || 'Something went wrong');
@@ -50,7 +56,7 @@ export default function ChatPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [username, router]);
+  }, [username, conversationParam, router]);
 
   // Poll for new messages while the tab is visible.
   useEffect(() => {
@@ -62,6 +68,7 @@ export default function ChatPage() {
         if (res.ok) {
           const data = await res.json();
           setMessages(data.messages || []);
+          setListing(data.listing || null);
         }
       } catch {
         /* transient network errors are ignored; next tick retries */
@@ -140,6 +147,26 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
+
+      {listing && (
+        <div style={{ marginBottom: '16px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ fontSize: '22px', flexShrink: 0 }}>🛒</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 700, color: 'var(--foreground)', fontSize: '15px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {listing.title}
+            </div>
+            <div style={{ color: 'var(--foreground-muted)', fontSize: '13px', marginTop: '2px' }}>
+              ${listing.price != null ? Number(listing.price).toFixed(2) : '0.00'}
+              {listing.seller ? ` · Seller: @${listing.seller.username}` : ''}
+            </div>
+          </div>
+          {listing.id && (
+            <Link href={`/marketplace/${listing.id}`} style={{ textDecoration: 'none', flexShrink: 0 }}>
+              <Button variant="outline" size="sm">View Listing</Button>
+            </Link>
+          )}
+        </div>
+      )}
 
       <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Messages */}

@@ -66,7 +66,7 @@ export default function MessagesInboxPage() {
             const p = c.partner?.profile;
             if (!p) return null;
             return (
-              <Link key={c.id} href={`/messages/${p.username}`} style={{ textDecoration: 'none' }}>
+              <Link key={c.id} href={`/messages/${p.username}${c.listing ? `?conversation=${c.id}&listing=${c.listing.id}` : ''}`} style={{ textDecoration: 'none' }}>
                 <Card padding="md" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0, overflow: 'hidden' }}>
                     {p.avatarUrl && <img src={p.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
@@ -82,7 +82,7 @@ export default function MessagesInboxPage() {
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
                       <span style={{ color: 'var(--foreground-muted)', fontSize: '14px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {c.lastMessage ? c.lastMessage.body : 'No messages yet'}
+                        {c.listing ? `🛒 ${c.listing.title} — ` : ''}{c.lastMessage ? c.lastMessage.body : 'No messages yet'}
                       </span>
                       {c.unreadCount > 0 && (
                         <span style={{ flexShrink: 0, background: 'var(--primary)', color: '#fff', fontSize: '12px', fontWeight: 700, minWidth: '20px', height: '20px', borderRadius: '10px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 6px' }}>
