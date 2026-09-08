@@ -26,18 +26,22 @@ export class DevelopersService {
     const limit = Number(query.limit) || 20;
     const skip = (page - 1) * limit;
 
+    const searchConditions: Prisma.DeveloperProfileWhereInput[] = [];
+
+    if (query.username) {
+      searchConditions.push({ username: { contains: query.username, mode: 'insensitive' } });
+    }
+    if (query.name) {
+      searchConditions.push({ displayName: { contains: query.name, mode: 'insensitive' } });
+    }
+
     const where: Prisma.DeveloperProfileWhereInput = {
       user: {
         id: { not: currentUserId }, // Exclude self
       },
+      ...(searchConditions.length > 0 ? { OR: searchConditions } : {}),
     };
 
-    if (query.username) {
-      where.username = { contains: query.username, mode: 'insensitive' };
-    }
-    if (query.name) {
-      where.displayName = { contains: query.name, mode: 'insensitive' };
-    }
     if (query.experienceLevel) {
       where.experienceLevel = query.experienceLevel;
     }

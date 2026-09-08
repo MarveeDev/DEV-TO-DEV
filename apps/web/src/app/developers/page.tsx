@@ -40,7 +40,10 @@ export default function DevelopersDiscoveryPage() {
         setMatches(data.data || []);
       } else {
         const q = new URLSearchParams();
-        if (searchQuery) q.append('name', searchQuery);
+        if (searchQuery) {
+          q.append('username', searchQuery);
+          q.append('name', searchQuery);
+        }
         const res = await fetch(`/api/v1/developers?${q.toString()}`);
         if (!res.ok) throw new Error('Failed to search developers');
         const data = await res.json();
@@ -248,10 +251,21 @@ export default function DevelopersDiscoveryPage() {
                       </div>
                     </div>
                   </div>
-                  <div>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <Link href={`/developers/${dev.username}`} style={{ textDecoration: 'none' }}>
                       <Button variant="outline" size="sm">View</Button>
                     </Link>
+                    {(dev.publicConnectionStatus === 'NONE' || dev.publicConnectionStatus === 'REJECTED' || dev.publicConnectionStatus === 'CANCELLED') ? (
+                      <Button onClick={() => handleConnect(dev.username)} variant="primary" size="sm">Connect</Button>
+                    ) : dev.publicConnectionStatus === 'PENDING' ? (
+                      <Button variant="ghost" size="sm" disabled>Request Sent</Button>
+                    ) : dev.publicConnectionStatus === 'INCOMING_REQUEST' ? (
+                      <Link href="/network" style={{ textDecoration: 'none' }}>
+                        <Button variant="outline" size="sm">Respond</Button>
+                      </Link>
+                    ) : dev.publicConnectionStatus === 'ACCEPTED' ? (
+                      <Button variant="secondary" size="sm" disabled>Connected</Button>
+                    ) : null}
                   </div>
                 </Card>
               ))
