@@ -4,6 +4,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NODE_OPTIONS="--dns-result-order=ipv4first"
 RUN npm install -g pnpm@11.13.1
+RUN apt-get update -y && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 
 COPY . .
 
