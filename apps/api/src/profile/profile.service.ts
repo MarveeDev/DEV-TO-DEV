@@ -146,7 +146,7 @@ export class ProfileService {
       throw new BadRequestException('Profile not found');
     }
 
-    return this.prisma.developerProfile.update({
+    const updated = await this.prisma.developerProfile.update({
       where: { userId },
       data: {
         displayName: data.displayName,
@@ -155,6 +155,55 @@ export class ProfileService {
         websiteUrl: data.websiteUrl,
         githubUrl: data.githubUrl,
         experienceLevel: data.experienceLevel,
+        avatarUrl: data.avatarUrl,
+      },
+    });
+
+    // Replace the developer's skills (provided as skill IDs).
+    if (data.skills && Array.isArray(data.skills)) {
+      await this.prisma.developerSkill.deleteMany({
+        where: { developerProfileId: profile.id },
+      });
+
+      const validSkills = await this.prisma.skill.findMany({
+        where: { id: { in: data.skills } },
+      });
+
+      if (validSkills.length > 0) {
+        await this.prisma.developerSkill.createMany({
+          data: validSkills.map(s => ({
+            developerProfileId: profile.id,
+            skillId: s.id,
+          })),
+        });
+      }
+    }
+
+    // Replace the developer's learning goals (provided as goal IDs).
+    if (data.goals && Array.isArray(data.goals)) {
+      await this.prisma.developerLearningGoal.deleteMany({
+        where: { developerProfileId: profile.id },
+      });
+
+      const validGoals = await this.prisma.learningGoal.findMany({
+        where: { id: { in: data.goals } },
+      });
+
+      if (validGoals.length > 0) {
+        await this.prisma.developerLearningGoal.createMany({
+          data: validGoals.map(g => ({
+            developerProfileId: profile.id,
+            learningGoalId: g.id,
+          })),
+        });
+      }
+    }
+
+    return this.prisma.developerProfile.findUnique({
+      where: { userId },
+      include: {
+        skills: { include: { skill: true } },
+        learningGoals: { include: { learningGoal: true } },
       },
     });
   }

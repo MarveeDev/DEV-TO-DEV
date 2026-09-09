@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import PostCard from '../../components/PostCard';
 import DeveloperScoreBoard from '../../components/DeveloperScoreBoard';
 import Card from '../../components/Card';
@@ -33,16 +34,23 @@ export default function ProfilePage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', gap: '12px', flexWrap: 'wrap' }}>
           <h1 style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)' }}>My Profile</h1>
-          <Button onClick={handleLogout} variant="outline">Logout</Button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Link href="/settings" style={{ textDecoration: 'none' }}>
+              <Button variant="primary">Edit Profile</Button>
+            </Link>
+            <Button onClick={handleLogout} variant="outline">Logout</Button>
+          </div>
         </div>
         
         <div className="grid-2-col-sidebar">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             <Card padding="md">
               <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '32px' }}>
-                <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
+                <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0, overflow: 'hidden' }}>
+                  {profile?.avatarUrl && <img src={profile.avatarUrl} alt={profile.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                </div>
                 <div>
                   <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--foreground)', margin: '0 0 4px 0' }}>{profile?.displayName || 'Unknown Developer'}</h2>
                   <p style={{ color: 'var(--foreground-muted)', fontSize: '15px', margin: '0 0 8px 0' }}>@{profile?.username}</p>
