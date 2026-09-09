@@ -72,6 +72,7 @@ model DeveloperProfile {
   skills              DeveloperSkill[]
   learningGoals       DeveloperLearningGoal[]
   score               DeveloperScore?
+  scoreEvents         DeveloperScoreEvent[]
   ownedProjects       Project[]               @relation("ProjectOwner")
   contributions       ProjectContributor[]
   projectJoinRequests ProjectJoinRequest[]
@@ -245,6 +246,37 @@ model DeveloperScore {
   dailyConnectionCount Int              @default(0)
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
+}
+
+enum ScoreEventType {
+  POST_CREATED
+  POST_COMMENTED
+  POST_RECEIVED_COMMENT
+  POST_LIKED
+  QUESTION_CREATED
+  QUESTION_RECEIVED_ANSWER
+  QUESTION_UPVOTED
+  ANSWER_CREATED
+  ANSWER_UPVOTED
+  ANSWER_ACCEPTED
+  PROJECT_CREATED
+  PROJECT_RECEIVED_CONTRIBUTOR
+  CONNECTION_ACCEPTED
+  ROADMAP_NODE_COMPLETED
+  ROADMAP_COMPLETED
+}
+
+model DeveloperScoreEvent {
+  id                 String           @id @default(uuid())
+  developerProfileId String
+  developerProfile   DeveloperProfile @relation(fields: [developerProfileId], references: [id], onDelete: Cascade)
+  type               ScoreEventType
+  points             Int
+  referenceId        String
+  createdAt          DateTime         @default(now())
+
+  @@unique([developerProfileId, type, referenceId])
+  @@index([developerProfileId])
 }
 
 enum ProjectStatus {

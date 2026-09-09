@@ -88,7 +88,7 @@ export class PostsService {
       }
     });
 
-    this.scoreService.recordPostActivity(userId).catch(e => console.error(e));
+    this.scoreService.award(userId, 'POST_CREATED', 10, post.id).catch(e => console.error(e));
 
     return completePost;
   }
@@ -252,6 +252,12 @@ export class PostsService {
       },
     });
 
+    // Impact: commenter +3; post author +3 (no self-award).
+    this.scoreService.award(userId, 'POST_COMMENTED', 3, comment.id).catch(e => console.error(e));
+    if (post.authorId !== userId) {
+      this.scoreService.award(post.authorId, 'POST_RECEIVED_COMMENT', 3, comment.id).catch(e => console.error(e));
+    }
+
     return {
       id: comment.id,
       content: comment.content,
@@ -275,6 +281,11 @@ export class PostsService {
       await this.prisma.postLike.create({
         data: { postId, userId },
       });
+
+      // Impact: post author +2 per genuine like (no self-like award).
+      if (post.authorId !== userId) {
+        this.scoreService.award(post.authorId, 'POST_LIKED', 2, `${postId}:${userId}`).catch(e => console.error(e));
+      }
     }
 
     const likeCount = await this.prisma.postLike.count({ where: { postId } });

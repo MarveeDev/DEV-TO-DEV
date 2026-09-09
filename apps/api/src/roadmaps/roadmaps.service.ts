@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ScoreService } from '../score/score.service';
 
 @Injectable()
 export class RoadmapsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private scoreService: ScoreService,
+  ) {}
 
   async getRoadmaps(query: { category?: string; difficulty?: string; search?: string }) {
     const where: any = {};
@@ -142,6 +146,18 @@ export class RoadmapsService {
         nodeId: node.id
       }
     });
+
+    // Impact: completing a node earns points (awarded exactly once per node).
+    this.scoreService.award(userId, 'ROADMAP_NODE_COMPLETED', 10, node.id).catch(e => console.error(e));
+
+    // Award the roadmap completion bonus once when every node is completed.
+    const [totalNodes, completedNodes] = await Promise.all([
+      this.prisma.roadmapNode.count({ where: { roadmapId: node.roadmapId } }),
+      this.prisma.roadmapProgress.count({ where: { developerProfileId: profile.id, roadmapId: node.roadmapId } }),
+    ]);
+    if (totalNodes > 0 && completedNodes >= totalNodes) {
+      this.scoreService.award(userId, 'ROADMAP_COMPLETED', 50, node.roadmapId).catch(e => console.error(e));
+    }
 
     return progress;
   }

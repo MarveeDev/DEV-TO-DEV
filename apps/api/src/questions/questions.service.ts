@@ -1,13 +1,15 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CloudinaryService } from '../media/cloudinary.service';
+import { ScoreService } from '../score/score.service';
 import { MediaType } from '@prisma/client';
 
 @Injectable()
 export class QuestionsService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly cloudinaryService: CloudinaryService
+    private readonly cloudinaryService: CloudinaryService,
+    private readonly scoreService: ScoreService,
   ) {}
 
   async getQuestions(params: { page: number; limit: number; search?: string; status?: string; skill?: string; filter?: string; sort?: string }) {
@@ -151,6 +153,8 @@ export class QuestionsService {
       }
     });
 
+    this.scoreService.award(userId, 'QUESTION_CREATED', 8, question.id).catch(e => console.error(e));
+
     if (data.mediaIds && Array.isArray(data.mediaIds) && data.mediaIds.length > 0) {
       const attachments = await this.prisma.mediaAttachment.findMany({
         where: { id: { in: data.mediaIds } }
@@ -263,6 +267,11 @@ export class QuestionsService {
     const profile = await this.prisma.developerProfile.findUnique({ where: { userId } });
     if (!profile) throw new NotFoundException('Profile not found');
 
+    const question = await this.prisma.question.findUnique({
+      where: { id },
+      select: { author: { select: { userId: true } } },
+    });
+
     const existingVote = await this.prisma.questionVote.findUnique({
       where: { questionId_developerProfileId: { questionId: id, developerProfileId: profile.id } }
     });
@@ -293,6 +302,10 @@ export class QuestionsService {
       where: { questionId_developerProfileId: { questionId: id, developerProfileId: profile.id } }
     });
 
+    if (userVote?.value === 1 && question && question.author.userId !== userId) {
+      this.scoreService.award(question.author.userId, 'QUESTION_UPVOTED', 3, `${id}:${profile.id}`).catch(e => console.error(e));
+    }
+
     return { voteScore: newScore._sum.value || 0, userVote: userVote?.value || 0 };
   }
 
@@ -300,7 +313,12 @@ export class QuestionsService {
     const profile = await this.prisma.developerProfile.findUnique({ where: { userId } });
     if (!profile) throw new NotFoundException('Profile not found');
 
-    return this.prisma.answer.create({
+    const question = await this.prisma.question.findUnique({
+      where: { id: questionId },
+      select: { author: { select: { userId: true } } },
+    });
+
+    const answer = await this.prisma.answer.create({
       data: {
         content,
         questionId,
@@ -308,6 +326,13 @@ export class QuestionsService {
       },
       include: { author: true }
     });
+
+    this.scoreService.award(userId, 'ANSWER_CREATED', 10, answer.id).catch(e => console.error(e));
+    if (question && question.author.userId !== userId) {
+      this.scoreService.award(question.author.userId, 'QUESTION_RECEIVED_ANSWER', 2, answer.id).catch(e => console.error(e));
+    }
+
+    return answer;
   }
 
   async updateAnswer(userId: string, id: string, content: string) {
@@ -341,6 +366,11 @@ export class QuestionsService {
     const profile = await this.prisma.developerProfile.findUnique({ where: { userId } });
     if (!profile) throw new NotFoundException('Profile not found');
 
+    const answer = await this.prisma.answer.findUnique({
+      where: { id },
+      select: { author: { select: { userId: true } } },
+    });
+
     const existingVote = await this.prisma.answerVote.findUnique({
       where: { answerId_developerProfileId: { answerId: id, developerProfileId: profile.id } }
     });
@@ -369,6 +399,10 @@ export class QuestionsService {
       where: { answerId_developerProfileId: { answerId: id, developerProfileId: profile.id } }
     });
 
+    if (userVote?.value === 1 && answer && answer.author.userId !== userId) {
+      this.scoreService.award(answer.author.userId, 'ANSWER_UPVOTED', 3, `${id}:${profile.id}`).catch(e => console.error(e));
+    }
+
     return { voteScore: newScore._sum.value || 0, userVote: userVote?.value || 0 };
   }
 
@@ -380,16 +414,25 @@ export class QuestionsService {
     if (!question) throw new NotFoundException('Question not found');
     if (question.authorId !== profile.id) throw new ForbiddenException('Only the question owner can accept an answer');
 
-    const answer = await this.prisma.answer.findUnique({ where: { id: answerId } });
+    const answer = await this.prisma.answer.findUnique({
+      where: { id: answerId },
+      include: { author: { select: { userId: true } } },
+    });
     if (!answer || answer.questionId !== questionId) {
       throw new BadRequestException('Invalid answer for this question');
     }
 
-    return this.prisma.question.update({
+    const updated = await this.prisma.question.update({
       where: { id: questionId },
       data: { acceptedAnswerId: answerId },
       include: { acceptedAnswer: true }
     });
+
+    if (answer.author.userId !== userId) {
+      this.scoreService.award(answer.author.userId, 'ANSWER_ACCEPTED', 25, answerId).catch(e => console.error(e));
+    }
+
+    return updated;
   }
 
   async resolveQuestion(userId: string, id: string) {

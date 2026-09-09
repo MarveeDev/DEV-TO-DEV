@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ScoreService } from '../score/score.service';
 
 @Injectable()
 export class ProjectsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly scoreService: ScoreService,
+  ) {}
 
   private generateSlug(title: string): string {
     return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Math.random().toString(36).substring(2, 6);
@@ -112,6 +116,8 @@ export class ProjectsService {
         skills: { include: { skill: true } }
       }
     });
+
+    this.scoreService.award(userId, 'PROJECT_CREATED', 20, project.id).catch(e => console.error(e));
 
     return project;
   }
@@ -293,6 +299,9 @@ export class ProjectsService {
         },
         update: {}
       });
+
+      // Impact: the project owner gains points when someone joins their project.
+      this.scoreService.award(userId, 'PROJECT_RECEIVED_CONTRIBUTOR', 10, `${projectId}:${request.developerProfileId}`).catch(e => console.error(e));
     }
 
     return updatedRequest;
