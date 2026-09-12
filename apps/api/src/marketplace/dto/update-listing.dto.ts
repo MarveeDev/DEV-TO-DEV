@@ -1,4 +1,4 @@
-import { IsString, IsEnum, IsNumber, IsOptional, IsArray, IsUrl, Min } from 'class-validator';
+import { IsString, IsEnum, IsNumber, IsOptional, IsArray, IsUrl, IsIn, Min } from 'class-validator';
 import { MarketplaceListingType } from '@prisma/client';
 
 export class UpdateListingDto {
@@ -22,6 +22,11 @@ export class UpdateListingDto {
   @Min(0)
   @IsOptional()
   price?: number;
+
+  @IsString()
+  @IsIn(['USD', 'GHS'])
+  @IsOptional()
+  currency?: string;
 
   @IsString()
   @IsOptional()

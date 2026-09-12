@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import { ArrowLeft, ExternalLink, Mail } from 'lucide-react';
+import { formatPrice } from '../../../lib/currency';
 
 export default function ListingDetailsClient({
   id,
@@ -127,7 +128,7 @@ export default function ListingDetailsClient({
         <div style={{ position: 'sticky', top: '80px', alignSelf: 'start' }}>
           <Card padding="lg" style={{ border: '1px solid var(--border)', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
             <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)', marginBottom: '24px' }}>
-              ${listing.price.toFixed(2)}
+              {formatPrice(listing.price, listing.currency)}
             </div>
 
             {listing.externalUrl && (

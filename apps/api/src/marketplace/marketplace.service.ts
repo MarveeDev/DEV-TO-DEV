@@ -24,6 +24,7 @@ export class MarketplaceService {
     return this.prisma.marketplaceListing.create({
       data: {
         ...data,
+        currency: data.currency ?? 'USD',
         sellerId,
       },
       include: {

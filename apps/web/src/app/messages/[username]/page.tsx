@@ -5,6 +5,7 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Button from '../../../components/Button';
 import BackButton from '../../../components/Navigation/BackButton';
+import { formatPrice } from '../../../lib/currency';
 import { Send } from 'lucide-react';
 
 export default function ChatPage() {
@@ -156,7 +157,7 @@ export default function ChatPage() {
               {listing.title}
             </div>
             <div style={{ color: 'var(--foreground-muted)', fontSize: '13px', marginTop: '2px' }}>
-              ${listing.price != null ? Number(listing.price).toFixed(2) : '0.00'}
+              {formatPrice(listing.price, listing.currency)}
               {listing.seller ? ` · Seller: @${listing.seller.username}` : ''}
             </div>
           </div>

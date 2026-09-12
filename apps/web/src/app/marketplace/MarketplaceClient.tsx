@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Select from '../../components/Select';
+import { formatPrice } from '../../lib/currency';
 import { Search } from 'lucide-react';
 
 const CATEGORIES = [
@@ -138,7 +139,7 @@ export default function MarketplaceClient({ initialListings }: { initialListings
                     {listing.type === 'DIGITAL_PRODUCT' ? 'Digital Product' : 'Service'}
                   </span>
                   <span style={{ fontWeight: 700, color: 'var(--foreground)' }}>
-                    ${listing.price.toFixed(2)}
+                    {formatPrice(listing.price, listing.currency)}
                   </span>
                 </div>
                 <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--foreground)', marginBottom: '8px' }}>

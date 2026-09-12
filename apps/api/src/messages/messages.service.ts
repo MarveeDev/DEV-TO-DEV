@@ -29,6 +29,7 @@ export class MessagesService {
       id: listing.id,
       title: listing.title,
       price: listing.price,
+      currency: listing.currency,
       imageUrl: listing.imageUrl,
       seller: listing.seller
         ? { username: listing.seller.username, displayName: listing.seller.displayName }

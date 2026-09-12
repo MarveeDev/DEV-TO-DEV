@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import { Pencil, Trash2 } from 'lucide-react';
+import { formatPrice } from '../../../lib/currency';
 
 export default function MyListingsPage() {
   const [listings, setListings] = useState<any[]>([]);
@@ -88,7 +89,7 @@ export default function MyListingsPage() {
                   </h3>
                 </Link>
                 <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>
-                  ${listing.price.toFixed(2)}
+                  {formatPrice(listing.price, listing.currency)}
                 </div>
               </div>
 

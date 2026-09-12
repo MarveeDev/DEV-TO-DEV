@@ -6,6 +6,7 @@ import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import Select from '../../../components/Select';
 import { MediaUploader } from '../../../components/MediaUploader';
+import { SUPPORTED_CURRENCIES } from '../../../lib/currency';
 
 import { ArrowLeft } from 'lucide-react';
 
@@ -31,6 +32,7 @@ export default function CreateListingPage() {
     category: CATEGORIES[0],
     type: 'DIGITAL_PRODUCT',
     price: '0.00',
+    currency: 'USD',
     externalUrl: '',
     imageUrl: '',
     tags: ''
@@ -161,9 +163,9 @@ export default function CreateListingPage() {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
             <div>
-              <label style={labelStyle}>Price ($)</label>
+              <label style={labelStyle}>Price</label>
               <input 
                 required
                 type="number" 
@@ -172,6 +174,16 @@ export default function CreateListingPage() {
                 value={formData.price} 
                 onChange={e => setFormData({...formData, price: e.target.value})} 
                 style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Currency</label>
+              <Select 
+                id="currency"
+                options={SUPPORTED_CURRENCIES.map(c => ({ value: c, label: c }))}
+                value={formData.currency}
+                onChange={v => setFormData({...formData, currency: v})}
+                fullWidth
               />
             </div>
             <div>
