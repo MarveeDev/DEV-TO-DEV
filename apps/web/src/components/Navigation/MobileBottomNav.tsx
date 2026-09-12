@@ -2,26 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { House, Compass, Plus, Bell, UserRound } from 'lucide-react';
+import { House, Compass, Plus, Store, UserRound } from 'lucide-react';
 
 export default function MobileBottomNav({ currentPath }: { currentPath: string }) {
-  const [unreadCount, setUnreadCount] = useState(0);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    fetch('/api/v1/notifications')
-      .then(res => res.ok ? res.json() : [])
-      .then(data => {
-        if (Array.isArray(data)) {
-          const unread = data.filter(n => !n.read).length;
-          setUnreadCount(unread);
-        }
-      })
-      .catch(err => console.error(err));
   }, []);
 
   const navItems = [
@@ -30,8 +17,8 @@ export default function MobileBottomNav({ currentPath }: { currentPath: string }
   ];
 
   const trailingItems = [
-    { name: 'Notifications', path: '/notifications', icon: Bell, ariaLabel: 'Notifications', hasBadge: unreadCount > 0 },
-    { name: 'Profile', path: '/profile', icon: UserRound, ariaLabel: 'Profile', hasBadge: false },
+    { name: 'Marketplace', path: '/marketplace', icon: Store, ariaLabel: 'Marketplace' },
+    { name: 'Profile', path: '/profile', icon: UserRound, ariaLabel: 'Profile' },
   ];
 
   const getIconColor = (path: string) => {
@@ -39,8 +26,8 @@ export default function MobileBottomNav({ currentPath }: { currentPath: string }
     return isActive ? 'var(--primary)' : 'var(--foreground-muted)';
   };
 
-  // Liquid active-pill: 5 equal-width slots (Home, Discover, Create, Notifications, Profile).
-  const slotPaths = ['/dashboard', '/developers', '/actions', '/notifications', '/profile'];
+  // Liquid active-pill: 5 equal-width slots (Home, Discover, Create, Marketplace, Profile).
+  const slotPaths = ['/dashboard', '/developers', '/actions', '/marketplace', '/profile'];
   const activeIndex = slotPaths.findIndex(p => currentPath === p || currentPath.startsWith(p + '/'));
   const showPill = activeIndex !== -1 && activeIndex !== 2; // no pill behind the center action button
   const pillIndex = activeIndex === -1 ? 0 : activeIndex;
@@ -140,18 +127,6 @@ export default function MobileBottomNav({ currentPath }: { currentPath: string }
             zIndex: 1
           }}>
             <item.icon size={26} strokeWidth={2} />
-            {item.hasBadge && (
-              <span style={{
-                position: 'absolute',
-                top: '14px',
-                right: 'calc(50% - 14px)',
-                width: '10px',
-                height: '10px',
-                background: 'var(--primary)',
-                border: '2px solid var(--surface)',
-                borderRadius: '50%'
-              }} />
-            )}
           </Link>
         ))}
       </nav>
