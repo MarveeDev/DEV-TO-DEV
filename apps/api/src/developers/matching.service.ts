@@ -166,6 +166,7 @@ export class MatchingService {
           username: dev.username,
           displayName: dev.displayName,
           bio: dev.bio,
+          avatarUrl: dev.avatarUrl,
           experienceLevel: dev.experienceLevel,
         },
         compatibility,

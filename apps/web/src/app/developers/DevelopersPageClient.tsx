@@ -275,7 +275,11 @@ export default function DevelopersPageClient({ initialDevelopers }: { initialDev
                     <Card key={match.developer.id} padding="md">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
                         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                          <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
+                          {match.developer.avatarUrl ? (
+                            <img src={match.developer.avatarUrl} alt={match.developer.displayName} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                          ) : (
+                            <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
+                          )}
                           <div>
                             <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--foreground)', margin: '0 0 4px 0' }}>{match.developer.displayName}</h3>
                             <Link href={`/developers/${match.developer.username}`} style={{ color: 'var(--foreground-muted)', textDecoration: 'none', fontSize: '14px' }}>
@@ -361,7 +365,11 @@ export default function DevelopersPageClient({ initialDevelopers }: { initialDev
                 searchResults.map(dev => (
                   <Card key={dev.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
+                      {dev.avatarUrl ? (
+                        <img src={dev.avatarUrl} alt={dev.displayName} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                      ) : (
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
+                      )}
                       <div>
                         <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--foreground)', margin: '0 0 2px 0' }}>{dev.displayName}</h3>
                         <Link href={`/developers/${dev.username}`} style={{ color: 'var(--foreground-muted)', textDecoration: 'none', fontSize: '13px' }}>

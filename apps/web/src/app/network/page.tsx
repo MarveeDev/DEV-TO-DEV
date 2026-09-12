@@ -157,7 +157,11 @@ export default function NetworkPage() {
               {incomingRequests.map(req => (
                 <Card key={req.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                   <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
+                    {req.requester.profile.avatarUrl ? (
+                      <img src={req.requester.profile.avatarUrl} alt={req.requester.profile.displayName} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
+                    )}
                     <div>
                       <Link href={`/developers/${req.requester.profile.username}`} style={{ fontWeight: 700, textDecoration: 'none', color: 'var(--foreground)', fontSize: '16px', display: 'block', marginBottom: '2px' }}>
                         {req.requester.profile.displayName}
@@ -185,7 +189,11 @@ export default function NetworkPage() {
               {outgoingRequests.map(req => (
                 <Card key={req.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                   <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
+                    {req.addressee.profile.avatarUrl ? (
+                      <img src={req.addressee.profile.avatarUrl} alt={req.addressee.profile.displayName} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
+                    )}
                     <div>
                       <Link href={`/developers/${req.addressee.profile.username}`} style={{ fontWeight: 700, textDecoration: 'none', color: 'var(--foreground)', fontSize: '16px', display: 'block', marginBottom: '2px' }}>
                         {req.addressee.profile.displayName}
@@ -217,7 +225,11 @@ export default function NetworkPage() {
                 return (
                   <Card key={conn.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
+                      {partner.profile.avatarUrl ? (
+                        <img src={partner.profile.avatarUrl} alt={partner.profile.displayName} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                      ) : (
+                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
+                      )}
                       <div>
                         <Link href={`/developers/${partner.profile.username}`} style={{ fontWeight: 700, textDecoration: 'none', color: 'var(--foreground)', fontSize: '16px', display: 'block', marginBottom: '2px' }}>
                           {partner.profile.displayName}
