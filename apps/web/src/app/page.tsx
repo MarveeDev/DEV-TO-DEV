@@ -1,7 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Button from "../components/Button";
 import Card from "../components/Card";
 import HomeRoadmaps from "../components/HomeRoadmaps";
+import { BASE_URL } from "../lib/seo";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: BASE_URL,
+  },
+};
 
 export default function Home() {
   return (
@@ -58,6 +66,35 @@ export default function Home() {
       </section>
 
       <HomeRoadmaps />
+
+      {/* Public sections for discovery and crawl paths */}
+      <section style={{ padding: '40px 24px', background: 'var(--background)', borderTop: '1px solid var(--border)' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', textAlign: 'center' }}>
+          <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--foreground)', margin: '0 0 8px 0' }}>
+            Explore DEV-TO-DEV
+          </h2>
+          <p style={{ color: 'var(--foreground-muted)', fontSize: '15px', margin: '0 0 24px 0' }}>
+            Learn, build, and connect with the developer community.
+          </p>
+          <nav style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link href="/roadmaps" style={{ textDecoration: 'none', padding: '10px 18px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--foreground)', fontSize: '14px', fontWeight: 600 }}>
+              Roadmaps
+            </Link>
+            <Link href="/developers" style={{ textDecoration: 'none', padding: '10px 18px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--foreground)', fontSize: '14px', fontWeight: 600 }}>
+              Developers
+            </Link>
+            <Link href="/projects" style={{ textDecoration: 'none', padding: '10px 18px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--foreground)', fontSize: '14px', fontWeight: 600 }}>
+              Projects
+            </Link>
+            <Link href="/questions" style={{ textDecoration: 'none', padding: '10px 18px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--foreground)', fontSize: '14px', fontWeight: 600 }}>
+              Questions
+            </Link>
+            <Link href="/marketplace" style={{ textDecoration: 'none', padding: '10px 18px', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--foreground)', fontSize: '14px', fontWeight: 600 }}>
+              Marketplace
+            </Link>
+          </nav>
+        </div>
+      </section>
 
     </main>
   );

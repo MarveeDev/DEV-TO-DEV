@@ -43,6 +43,22 @@ export class DevelopersController {
     });
   }
 
+  @Get('public')
+  async getPublicDevelopers(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.developersService.getPublicDevelopers({
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 100,
+    });
+  }
+
+  @Get('public/:username')
+  async getPublicDeveloperProfile(@Param('username') username: string) {
+    return this.developersService.getPublicDeveloperByUsername(username);
+  }
+
   @Get('matches')
   async getMatches(
     @Req() req: Request,

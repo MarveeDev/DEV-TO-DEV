@@ -161,6 +161,74 @@ export class DevelopersService {
     };
   }
 
+  async getPublicDevelopers(options: { page?: number; limit?: number } = {}) {
+    const page = Number(options.page) || 1;
+    const limit = Number(options.limit) || 100;
+    const skip = (page - 1) * limit;
+
+    const [total, developers] = await Promise.all([
+      this.prisma.developerProfile.count(),
+      this.prisma.developerProfile.findMany({
+        skip,
+        take: limit,
+        orderBy: { displayName: 'asc' },
+        select: {
+          username: true,
+          displayName: true,
+          bio: true,
+          avatarUrl: true,
+          experienceLevel: true,
+          updatedAt: true,
+        },
+      }),
+    ]);
+
+    return {
+      items: developers,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getPublicDeveloperByUsername(username: string) {
+    const dev = await this.prisma.developerProfile.findUnique({
+      where: { username },
+      include: {
+        skills: { include: { skill: true } },
+        learningGoals: { include: { learningGoal: true } },
+        score: true,
+      },
+    });
+
+    if (!dev) throw new NotFoundException('Developer not found');
+
+    return {
+      displayName: dev.displayName,
+      username: dev.username,
+      bio: dev.bio,
+      avatarUrl: dev.avatarUrl,
+      location: dev.location,
+      websiteUrl: dev.websiteUrl,
+      githubUrl: dev.githubUrl,
+      experienceLevel: dev.experienceLevel,
+      skills: dev.skills.map((s) => s.skill),
+      learningGoals: dev.learningGoals.map((g) => g.learningGoal),
+      score: dev.score
+        ? {
+            score: dev.score.score,
+            streak: dev.score.streak,
+            postsCount: dev.score.postsCount,
+            connectionsCount: dev.score.connectionsCount,
+            projectsCount: dev.score.projectsCount,
+          }
+        : null,
+    };
+  }
+
   private determineConnectionStatus(user: any) {
     const sentToThem = user.receivedConnections?.[0]; // Current user sent to this dev
     const receivedFromThem = user.sentConnections?.[0]; // Current user received from this dev
