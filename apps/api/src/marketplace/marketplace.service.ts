@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException, BadRequestException 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
+import { CreateReportDto } from './dto/create-report.dto';
 
 @Injectable()
 export class MarketplaceService {
@@ -164,6 +165,42 @@ export class MarketplaceService {
 
     await this.prisma.marketplaceListing.delete({
       where: { id },
+    });
+
+    return { success: true };
+  }
+
+  async reportListing(userId: string, listingId: string, data: CreateReportDto) {
+    const listing = await this.prisma.marketplaceListing.findUnique({
+      where: { id: listingId },
+      select: { id: true, seller: { select: { userId: true } } },
+    });
+
+    if (!listing) {
+      throw new NotFoundException('Listing not found');
+    }
+
+    if (listing.seller.userId === userId) {
+      throw new ForbiddenException('You cannot report your own listing');
+    }
+
+    const existing = await this.prisma.marketplaceListingReport.findUnique({
+      where: {
+        listingId_reporterId: { listingId, reporterId: userId },
+      },
+    });
+
+    if (existing) {
+      throw new BadRequestException('You have already reported this listing');
+    }
+
+    await this.prisma.marketplaceListingReport.create({
+      data: {
+        listingId,
+        reporterId: userId,
+        reason: data.reason,
+        description: data.description ?? null,
+      },
     });
 
     return { success: true };

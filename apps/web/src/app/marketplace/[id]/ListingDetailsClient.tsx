@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
+import ReportListingModal from '../../../components/ReportListingModal';
 import { ArrowLeft, ExternalLink, Mail } from 'lucide-react';
 import { formatPrice } from '../../../lib/currency';
 
@@ -19,6 +20,7 @@ export default function ListingDetailsClient({
   const [listing, setListing] = useState<any>(initialListing);
   const [loading, setLoading] = useState(initialListing === null);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [showReport, setShowReport] = useState(false);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -151,6 +153,16 @@ export default function ListingDetailsClient({
               </Button>
             )}
 
+            {!isSeller && (
+              <button
+                type="button"
+                onClick={() => setShowReport(true)}
+                style={{ background: 'none', border: 'none', color: 'var(--foreground-muted)', fontSize: '13px', cursor: 'pointer', textDecoration: 'underline', marginTop: '16px', padding: 0 }}
+              >
+                Report Listing
+              </button>
+            )}
+
             <div style={{ marginTop: '32px', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
               <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--foreground-muted)', marginBottom: '16px' }}>
                 Listed by
@@ -175,6 +187,10 @@ export default function ListingDetailsClient({
         </div>
 
       </div>
+
+      {showReport && (
+        <ReportListingModal listingId={listing.id} onClose={() => setShowReport(false)} />
+      )}
     </div>
   );
 }

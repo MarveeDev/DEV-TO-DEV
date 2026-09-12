@@ -31,6 +31,7 @@ model User {
   conversationsAsUserA Conversation[]   @relation("ConversationsAsUserA")
   conversationsAsUserB Conversation[]   @relation("ConversationsAsUserB")
   sentMessages         Message[]        @relation("SentMessages")
+  listingReports       MarketplaceListingReport[]
 }
 
 model AuthIdentity {
@@ -552,6 +553,24 @@ enum MarketplaceListingType {
   SERVICE
 }
 
+enum MarketplaceListingReportReason {
+  SCAM_FRAUD
+  MISLEADING_INFORMATION
+  COPYRIGHT_INFRINGEMENT
+  PROHIBITED_ITEM
+  SPAM
+  HARASSMENT_ABUSE
+  MALICIOUS_CODE
+  OTHER
+}
+
+enum MarketplaceListingReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
 model MarketplaceListing {
   id          String   @id @default(uuid())
   title       String
@@ -568,6 +587,7 @@ model MarketplaceListing {
   seller      DeveloperProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
   
   conversations Conversation[]
+  reports       MarketplaceListingReport[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -575,6 +595,25 @@ model MarketplaceListing {
   @@index([sellerId])
   @@index([category])
   @@index([type])
+  @@index([createdAt])
+}
+
+model MarketplaceListingReport {
+  id          String   @id @default(uuid())
+  listingId   String
+  listing     MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  reporterId  String
+  reporter    User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reason      MarketplaceListingReportReason
+  description String?
+  status      MarketplaceListingReportStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([listingId, reporterId])
+  @@index([listingId])
+  @@index([reporterId])
+  @@index([status])
   @@index([createdAt])
 }
 

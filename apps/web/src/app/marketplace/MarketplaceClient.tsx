@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Select from '../../components/Select';
+import ReportListingModal from '../../components/ReportListingModal';
 import { formatPrice } from '../../lib/currency';
 import { Search } from 'lucide-react';
 
@@ -29,6 +30,7 @@ export default function MarketplaceClient({ initialListings }: { initialListings
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [type, setType] = useState('All');
+  const [reportListingId, setReportListingId] = useState<string | null>(null);
   const didMount = useRef(false);
 
   const hasInitial = initialListings !== null;
@@ -155,11 +157,22 @@ export default function MarketplaceClient({ initialListings }: { initialListings
                     <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--border)' }} />
                   )}
                   <span style={{ fontSize: '12px', color: 'var(--foreground-muted)' }}>{listing.seller.displayName}</span>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setReportListingId(listing.id); }}
+                    style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--foreground-muted)', fontSize: '12px', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                  >
+                    Report
+                  </button>
                 </div>
               </Card>
             </Link>
           ))}
         </div>
+      )}
+
+      {reportListingId && (
+        <ReportListingModal listingId={reportListingId} onClose={() => setReportListingId(null)} />
       )}
     </div>
   );

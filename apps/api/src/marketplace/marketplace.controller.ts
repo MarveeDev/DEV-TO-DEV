@@ -4,6 +4,7 @@ import { MarketplaceService } from './marketplace.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
+import { CreateReportDto } from './dto/create-report.dto';
 
 @Controller('marketplace')
 export class MarketplaceController {
@@ -52,5 +53,11 @@ export class MarketplaceController {
   async deleteListing(@Req() req: Request, @Param('id') id: string) {
     const userId = await this.getUserId(req);
     return this.marketplaceService.deleteListing(userId, id);
+  }
+
+  @Post('listings/:id/report')
+  async reportListing(@Req() req: Request, @Param('id') id: string, @Body() data: CreateReportDto) {
+    const userId = await this.getUserId(req);
+    return this.marketplaceService.reportListing(userId, id, data);
   }
 }
