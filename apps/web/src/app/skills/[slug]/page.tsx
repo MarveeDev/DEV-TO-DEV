@@ -6,9 +6,8 @@ import Card from '../../../components/Card';
 import BackButton from '../../../components/Navigation/BackButton';
 import Badge from '../../../components/Badge';
 
-export default function SkillPage({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
-  const unwrappedParams = React.use(params as any) as { slug: string };
-  const slug = unwrappedParams.slug;
+export default function SkillPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = React.use(params);
   const [skill, setSkill] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 

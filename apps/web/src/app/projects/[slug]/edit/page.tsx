@@ -123,10 +123,9 @@ function CustomStatusSelect({ value, onChange }: { value: string, onChange: (val
   );
 }
 
-export default function EditProjectPage({ params }: { params: Promise<{ slug: string }> | { slug: string } }) {
+export default function EditProjectPage({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter();
-  const unwrappedParams = React.use(params as any) as { slug: string };
-  const slug = unwrappedParams.slug;
+  const { slug } = React.use(params);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);

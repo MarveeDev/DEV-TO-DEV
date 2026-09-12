@@ -8,10 +8,9 @@ import BackButton from '../../../components/Navigation/BackButton';
 import Link from 'next/link';
 import { Edit2, Trash2, Send, MessageCircle } from 'lucide-react';
 
-export default function PostDetailsPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+export default function PostDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const unwrappedParams = React.use(params as any) as { id: string };
-  const id = unwrappedParams.id;
+  const { id } = React.use(params);
   const [post, setPost] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);

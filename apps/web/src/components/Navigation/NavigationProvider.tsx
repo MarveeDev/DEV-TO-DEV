@@ -15,11 +15,23 @@ const NavigationContext = createContext<NavigationContextType>({
   goBack: () => {},
 });
 
-function NavigationTracker({ setHistory }: { setHistory: React.Dispatch<React.SetStateAction<string[]>> }) {
+function NavigationTracker({
+  setHistory,
+  setPathname,
+  routerRef,
+}: {
+  setHistory: React.Dispatch<React.SetStateAction<string[]>>;
+  setPathname: React.Dispatch<React.SetStateAction<string>>;
+  routerRef: React.MutableRefObject<ReturnType<typeof useRouter> | null>;
+}) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   useEffect(() => {
+    setPathname(pathname);
+    routerRef.current = router;
+
     const currentUrl = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '');
 
     setHistory((prev) => {
@@ -27,41 +39,35 @@ function NavigationTracker({ setHistory }: { setHistory: React.Dispatch<React.Se
       if (prev.length > 0 && prev[prev.length - 1] === currentUrl) {
         return prev;
       }
-      
+
       // If the URL matches the previous one in stack, it's a POP (either Browser Back or our router.back)
       if (prev.length > 1 && prev[prev.length - 2] === currentUrl) {
         return prev.slice(0, -1);
       }
-      
+
       // Otherwise, it's a PUSH. Add to stack.
       return [...prev, currentUrl];
     });
-  }, [pathname, searchParams, setHistory]);
+  }, [pathname, searchParams, setHistory, setPathname, router, routerRef]);
 
   return null;
 }
 
 export function NavigationProvider({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  
   const [history, setHistory] = useState<string[]>([]);
-  const isNavigatingBack = useRef(false);
+  const [pathname, setPathname] = useState('');
+  const routerRef = useRef<ReturnType<typeof useRouter> | null>(null);
 
   const goBack = (fallback: string) => {
-    console.log('[NAVIGATION] goBack requested, fallback:', fallback);
-    console.log('[NAVIGATION] current history:', history);
+    const router = routerRef.current;
     if (history.length > 1) {
-      console.log('[NAVIGATION] using router.back()');
-      router.back();
+      router?.back();
     } else {
       if (pathname === fallback) {
         const parentPath = pathname.split('/').slice(0, -1).join('/') || '/';
-        console.log('[NAVIGATION] fallback matched pathname, using parent:', parentPath);
-        router.push(parentPath);
+        router?.push(parentPath);
       } else {
-        console.log('[NAVIGATION] using fallback:', fallback);
-        router.push(fallback);
+        router?.push(fallback);
       }
     }
   };
@@ -69,7 +75,7 @@ export function NavigationProvider({ children }: { children: React.ReactNode }) 
   return (
     <NavigationContext.Provider value={{ history, canGoBack: history.length > 1, goBack }}>
       <Suspense fallback={null}>
-        <NavigationTracker setHistory={setHistory} />
+        <NavigationTracker setHistory={setHistory} setPathname={setPathname} routerRef={routerRef} />
       </Suspense>
       {children}
     </NavigationContext.Provider>

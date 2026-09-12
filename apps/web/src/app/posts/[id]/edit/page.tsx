@@ -7,10 +7,9 @@ import Button from '../../../../components/Button';
 import BackButton from '../../../../components/Navigation/BackButton';
 import { Edit2 } from 'lucide-react';
 
-export default function EditPostPage({ params }: { params: Promise<{ id: string }> | { id: string } }) {
+export default function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const unwrappedParams = React.use(params as any) as { id: string };
-  const id = unwrappedParams.id;
+  const { id } = React.use(params);
   
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
