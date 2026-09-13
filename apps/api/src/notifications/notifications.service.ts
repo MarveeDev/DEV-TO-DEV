@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationType } from '@prisma/client';
 import { NotificationEvents } from './notification-events';
+import { PushService } from './push/push.service';
 
 export interface CreateNotificationInput {
   userId: string;
@@ -15,6 +16,7 @@ export class NotificationsService {
   constructor(
     private prisma: PrismaService,
     private events: NotificationEvents,
+    private pushService: PushService,
   ) {}
 
   /**
@@ -38,6 +40,11 @@ export class NotificationsService {
       userId: input.userId,
       notification,
     });
+
+    // Trigger Web Push delivery for offline/backgrounded devices. Fire-and-
+    // forget: the DB notification is the source of truth and a push failure
+    // must never break notification creation.
+    this.pushService.sendForUser(input.userId, notification).catch(() => undefined);
 
     return notification;
   }

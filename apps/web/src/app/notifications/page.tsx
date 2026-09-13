@@ -6,6 +6,7 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import BackButton from '../../components/Navigation/BackButton';
 import { useNotifications } from '../../components/Notifications/NotificationProvider';
+import PushNotificationToggle from '../../components/Notifications/PushNotificationToggle';
 import type { AppNotification } from '../../lib/notifications/types';
 
 export default function NotificationsPage() {
@@ -69,6 +70,10 @@ export default function NotificationsPage() {
             <p style={{ color: 'var(--foreground-muted)', margin: 0 }}>Stay updated with your network.</p>
           </div>
         </div>
+
+        <Card padding="md" style={{ marginBottom: '24px' }}>
+          <PushNotificationToggle />
+        </Card>
 
         {notifications.length === 0 ? (
           <Card padding="md" style={{ textAlign: 'center' }}>

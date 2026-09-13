@@ -4,9 +4,10 @@ import { NotificationsService } from './notifications.service';
 import { NotificationEvents } from './notification-events';
 import { NotificationsGateway } from './notifications.gateway';
 import { SessionsModule } from '../sessions/sessions.module';
+import { PushModule } from './push/push.module';
 
 @Module({
-  imports: [SessionsModule],
+  imports: [SessionsModule, PushModule],
   controllers: [NotificationsController],
   providers: [NotificationsService, NotificationEvents, NotificationsGateway],
   exports: [NotificationsService, NotificationEvents],
