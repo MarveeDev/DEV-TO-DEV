@@ -1,14 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { MatchingService } from './matching.service';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class DevelopersService {
-  constructor(
-    private prisma: PrismaService,
-    private matchingService: MatchingService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async searchDevelopers(
     currentUserId: string,
@@ -64,64 +60,32 @@ export class DevelopersService {
         where,
         skip,
         take: limit,
-        include: {
-          skills: { include: { skill: true } },
-          learningGoals: { include: { learningGoal: true } },
-          score: true,
-          user: {
-            include: {
-              receivedConnections: { where: { requesterId: currentUserId } },
-              sentConnections: { where: { addresseeId: currentUserId } },
-            },
-          },
+        select: {
+          userId: true,
+          displayName: true,
+          username: true,
+          bio: true,
+          avatarUrl: true,
+          experienceLevel: true,
         },
       }),
     ]);
 
-    const currentUserProfile = await this.prisma.developerProfile.findUnique({
-      where: { userId: currentUserId },
-      include: {
-        skills: { include: { skill: true } },
-        learningGoals: { include: { learningGoal: true } },
-      },
-    });
+    const statuses = await this.fetchConnectionStatuses(
+      currentUserId,
+      developers.map((d) => d.userId),
+    );
 
-    const enriched = developers.map((dev) => {
-      let matchData = {
-        sharedSkills: 0,
-        sharedLearningGoals: 0,
-        experienceCompatibility: 'Neutral',
-        compatibilityScore: 0,
-        complementarySkills: [] as string[],
-      };
-
-      if (currentUserProfile) {
-        const compatibility = this.matchingService.calculateCompatibility(currentUserProfile, dev);
-        matchData = {
-          sharedSkills: compatibility.sharedSkills.length,
-          sharedLearningGoals: compatibility.sharedLearningGoals.length,
-          experienceCompatibility: compatibility.experienceCompatibility ? 'High' : 'Low',
-          compatibilityScore: compatibility.score,
-          complementarySkills: compatibility.complementarySkills,
-        };
-      }
-
-      return {
+    return {
+      data: developers.map((dev) => ({
         id: dev.userId,
         displayName: dev.displayName,
         username: dev.username,
         bio: dev.bio,
         avatarUrl: dev.avatarUrl,
         experienceLevel: dev.experienceLevel,
-        skills: dev.skills.map((s) => s.skill),
-        learningGoals: dev.learningGoals.map((g) => g.learningGoal),
-        publicConnectionStatus: this.determineConnectionStatus(dev.user),
-        matchData,
-      };
-    });
-
-    return {
-      data: enriched,
+        publicConnectionStatus: statuses.get(dev.userId) ?? 'NONE',
+      })),
       meta: {
         total,
         page,
@@ -134,20 +98,21 @@ export class DevelopersService {
   async getDeveloperByUsername(currentUserId: string, username: string) {
     const dev = await this.prisma.developerProfile.findUnique({
       where: { username },
-      include: {
+      select: {
+        userId: true,
+        displayName: true,
+        username: true,
+        bio: true,
+        avatarUrl: true,
+        experienceLevel: true,
         skills: { include: { skill: true } },
         learningGoals: { include: { learningGoal: true } },
-        score: true,
-        user: {
-          include: {
-            receivedConnections: { where: { requesterId: currentUserId } },
-            sentConnections: { where: { addresseeId: currentUserId } },
-          },
-        },
       },
     });
 
     if (!dev) throw new NotFoundException('Developer not found');
+
+    const statuses = await this.fetchConnectionStatuses(currentUserId, [dev.userId]);
 
     return {
       id: dev.userId,
@@ -158,8 +123,7 @@ export class DevelopersService {
       experienceLevel: dev.experienceLevel,
       skills: dev.skills.map((s) => s.skill),
       learningGoals: dev.learningGoals.map((g) => g.learningGoal),
-      publicConnectionStatus: this.determineConnectionStatus(dev.user),
-      score: dev.score,
+      publicConnectionStatus: statuses.get(dev.userId) ?? 'NONE',
     };
   }
 
@@ -199,10 +163,17 @@ export class DevelopersService {
   async getPublicDeveloperByUsername(username: string) {
     const dev = await this.prisma.developerProfile.findUnique({
       where: { username },
-      include: {
+      select: {
+        displayName: true,
+        username: true,
+        bio: true,
+        avatarUrl: true,
+        location: true,
+        websiteUrl: true,
+        githubUrl: true,
+        experienceLevel: true,
         skills: { include: { skill: true } },
         learningGoals: { include: { learningGoal: true } },
-        score: true,
       },
     });
 
@@ -219,29 +190,50 @@ export class DevelopersService {
       experienceLevel: dev.experienceLevel,
       skills: dev.skills.map((s) => s.skill),
       learningGoals: dev.learningGoals.map((g) => g.learningGoal),
-      score: dev.score
-        ? {
-            score: dev.score.score,
-            streak: dev.score.streak,
-            postsCount: dev.score.postsCount,
-            connectionsCount: dev.score.connectionsCount,
-            projectsCount: dev.score.projectsCount,
-          }
-        : null,
     };
   }
 
-  private determineConnectionStatus(user: any) {
-    const sentToThem = user.receivedConnections?.[0]; // Current user sent to this dev
-    const receivedFromThem = user.sentConnections?.[0]; // Current user received from this dev
+  /**
+   * Lightweight connection-status lookup for a set of developers.
+   *
+   * Replaces the previous approach of `include`-ing the `user` relation (with
+   * filtered `receivedConnections`/`sentConnections`) per developer. Instead, a
+   * single query selects only `requesterId`/`addresseeId`/`status` and derives
+   * each developer's public connection status in memory.
+   */
+  private async fetchConnectionStatuses(
+    currentUserId: string,
+    developerUserIds: string[],
+  ): Promise<Map<string, string>> {
+    const statuses = new Map<string, string>();
+    if (developerUserIds.length === 0) return statuses;
 
-    if (sentToThem) {
-      return sentToThem.status;
+    const connections = await this.prisma.connection.findMany({
+      where: {
+        OR: [
+          { requesterId: currentUserId, addresseeId: { in: developerUserIds } },
+          { addresseeId: currentUserId, requesterId: { in: developerUserIds } },
+        ],
+      },
+      select: { requesterId: true, addresseeId: true, status: true },
+    });
+
+    // Prefer "current user sent to them" (requester), matching the original
+    // determineConnectionStatus precedence.
+    for (const conn of connections) {
+      if (conn.requesterId === currentUserId) {
+        statuses.set(conn.addresseeId, conn.status);
+      }
     }
-    if (receivedFromThem) {
-      if (receivedFromThem.status === 'PENDING') return 'INCOMING_REQUEST';
-      return receivedFromThem.status;
+    for (const conn of connections) {
+      if (conn.addresseeId === currentUserId) {
+        const other = conn.requesterId;
+        if (!statuses.has(other)) {
+          statuses.set(other, conn.status === 'PENDING' ? 'INCOMING_REQUEST' : conn.status);
+        }
+      }
     }
-    return 'NONE';
+
+    return statuses;
   }
 }
