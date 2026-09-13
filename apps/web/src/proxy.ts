@@ -58,10 +58,6 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url), 307);
   }
 
-  if (isAuthRoute && token) {
-    return NextResponse.redirect(new URL('/profile', request.url));
-  }
-
   const response = NextResponse.next();
   if (isPrivateRoute(path)) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow');
