@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationType } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class MessagesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   // Store the two user ids in a canonical (sorted) order so a pair maps to a
   // single conversation regardless of who initiates it.
@@ -181,15 +185,13 @@ export class MessagesService {
         select: { displayName: true },
       });
       const listingTitle = conversation.listing?.title;
-      await this.prisma.notification.create({
-        data: {
-          userId: recipientId,
-          type: NotificationType.MESSAGE,
-          title: 'New message',
-          message: `${senderProfile?.displayName || 'Someone'} sent you a message${
-            listingTitle ? ` about "${listingTitle}"` : ''
-          }.`,
-        },
+      await this.notificationsService.create({
+        userId: recipientId,
+        type: NotificationType.MESSAGE,
+        title: 'New message',
+        message: `${senderProfile?.displayName || 'Someone'} sent you a message${
+          listingTitle ? ` about "${listingTitle}"` : ''
+        }.`,
       });
     }
 

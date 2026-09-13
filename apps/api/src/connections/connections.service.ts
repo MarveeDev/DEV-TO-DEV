@@ -1,10 +1,15 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ScoreService } from '../score/score.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class ConnectionsService {
-  constructor(private prisma: PrismaService, private scoreService: ScoreService) {}
+  constructor(
+    private prisma: PrismaService,
+    private scoreService: ScoreService,
+    private notificationsService: NotificationsService,
+  ) {}
 
   async sendRequest(requesterId: string, targetUsername: string) {
     const targetProfile = await this.prisma.developerProfile.findUnique({
@@ -59,13 +64,11 @@ export class ConnectionsService {
     const requesterProfile = await this.prisma.developerProfile.findUnique({ where: { userId: requesterId } });
     
     // Create notification
-    await this.prisma.notification.create({
-      data: {
-        userId: addresseeId,
-        type: 'CONNECTION_REQUEST',
-        title: 'New Connection Request',
-        message: `${requesterProfile?.displayName || 'Someone'} wants to connect with you.`,
-      },
+    await this.notificationsService.create({
+      userId: addresseeId,
+      type: 'CONNECTION_REQUEST',
+      title: 'New Connection Request',
+      message: `${requesterProfile?.displayName || 'Someone'} wants to connect with you.`,
     });
 
     return newConnection;
@@ -114,13 +117,11 @@ export class ConnectionsService {
     const addresseeProfile = await this.prisma.developerProfile.findUnique({ where: { userId: userId } });
 
     // Create notification for requester
-    await this.prisma.notification.create({
-      data: {
-        userId: connection.requesterId,
-        type: 'CONNECTION_ACCEPTED',
-        title: 'Connection Accepted',
-        message: `${addresseeProfile?.displayName || 'Someone'} accepted your connection request.`,
-      },
+    await this.notificationsService.create({
+      userId: connection.requesterId,
+      type: 'CONNECTION_ACCEPTED',
+      title: 'Connection Accepted',
+      message: `${addresseeProfile?.displayName || 'Someone'} accepted your connection request.`,
     });
 
     // Impact: both the requester and the accepter earn points for a genuine

@@ -4,6 +4,9 @@ const request = require('supertest');
 import { AppModule } from './../src/app.module';
 const cookieParser = require('cookie-parser');
 import { PrismaService } from '../src/prisma/prisma.service';
+import { RedisService } from '../src/redis/redis.service';
+import { NotificationsService } from '../src/notifications/notifications.service';
+import { NotificationEvents } from '../src/notifications/notification-events';
 
 describe('NotificationsController (e2e)', () => {
   let app: INestApplication;
@@ -27,7 +30,13 @@ describe('NotificationsController (e2e)', () => {
     await app.init();
     
     prisma = app.get(PrismaService);
-    
+
+    // Clear stale Redis session cache for the fixed tokens. validateSession
+    // re-warms these keys on a previous run and they would otherwise map to
+    // users deleted by afterAll, causing a foreign-key violation here.
+    const redis = app.get(RedisService).getClient();
+    await redis.del(`session:${tokenA}`, `session:${tokenB}`);
+
     await prisma.user.deleteMany({ where: { developerProfile: { username: { in: [usernameA, usernameB] } } } });
 
     const userA = await prisma.user.create({
@@ -117,5 +126,35 @@ describe('NotificationsController (e2e)', () => {
     const notif = res.body.find((n: any) => n.type === 'CONNECTION_ACCEPTED');
     expect(notif).toBeDefined();
     expect(notif.message).toContain('Ama accepted your connection request.');
+  });
+
+  it('emits a notification.created event after the notification is persisted', async () => {
+    const events = app.get(NotificationEvents);
+    const notificationsService = app.get(NotificationsService);
+
+    const received: any[] = [];
+    const unsubscribe = events.onNotificationCreated((event) => {
+      received.push(event);
+    });
+
+    const created = await notificationsService.create({
+      userId: userAId,
+      type: 'SYSTEM',
+      title: 'Foundation Test',
+      message: 'Event emission test',
+    });
+
+    // The event must fire exactly once with the persisted notification.
+    expect(received.length).toBe(1);
+    expect(received[0].userId).toBe(userAId);
+    expect(received[0].notification.id).toBe(created.id);
+
+    // Persistence must happen (notification is stored in the database).
+    const stored = await prisma.notification.findUnique({ where: { id: created.id } });
+    expect(stored).not.toBeNull();
+    expect(stored?.message).toBe('Event emission test');
+
+    unsubscribe();
+    await prisma.notification.delete({ where: { id: created.id } });
   });
 });

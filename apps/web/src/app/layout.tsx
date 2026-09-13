@@ -68,6 +68,7 @@ export const viewport: Viewport = {
 import Link from "next/link";
 import NavigationRoot from "../components/Navigation/NavigationRoot";
 import { NavigationProvider } from "../components/Navigation/NavigationProvider";
+import { NotificationProvider } from "../components/Notifications/NotificationProvider";
 import CookieConsent from "../components/CookieConsent";
 
 const organizationJsonLd = {
@@ -108,20 +109,22 @@ export default function RootLayout({
             __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c"),
           }}
         />
-        <NavigationProvider>
-          <NavigationRoot />
-          <main className="page-container">
-            {children}
-          </main>
-          <footer className="site-footer">
-            <nav>
-              <Link href="/privacy">Privacy Policy</Link>
-              <Link href="/terms">Terms &amp; Conditions</Link>
-              <Link href="/cookie-policy">Cookie Policy</Link>
-            </nav>
-            <p>© {new Date().getFullYear()} DEV-TO-DEV. All rights reserved.</p>
-          </footer>
-        </NavigationProvider>
+        <NotificationProvider>
+          <NavigationProvider>
+            <NavigationRoot />
+            <main className="page-container">
+              {children}
+            </main>
+            <footer className="site-footer">
+              <nav>
+                <Link href="/privacy">Privacy Policy</Link>
+                <Link href="/terms">Terms &amp; Conditions</Link>
+                <Link href="/cookie-policy">Cookie Policy</Link>
+              </nav>
+              <p>© {new Date().getFullYear()} DEV-TO-DEV. All rights reserved.</p>
+            </footer>
+          </NavigationProvider>
+        </NotificationProvider>
         <CookieConsent />
       </body>
     </html>

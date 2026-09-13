@@ -1,16 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import Link from 'next/link';
 import BackButton from '../../components/Navigation/BackButton';
+import { useNotifications } from '../../components/Notifications/NotificationProvider';
+import type { AppNotification } from '../../lib/notifications/types';
 
 export default function NotificationsPage() {
   const router = useRouter();
-  
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const { notifications: liveNotifications, markRead } = useNotifications();
+
+  const [history, setHistory] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -25,7 +27,7 @@ export default function NotificationsPage() {
         return res.json();
       })
       .then(data => {
-        setNotifications(data);
+        setHistory(data);
         setLoading(false);
       })
       .catch(err => {
@@ -34,11 +36,19 @@ export default function NotificationsPage() {
       });
   }, [router]);
 
+  const notifications = useMemo(() => {
+    const seen = new Set(history.map(n => n.id));
+    const additions = liveNotifications.filter(n => !seen.has(n.id));
+    if (additions.length === 0) return history;
+    return [...additions, ...history];
+  }, [history, liveNotifications]);
+
   const markAsRead = async (id: string) => {
     try {
       const res = await fetch(`/api/v1/notifications/${id}/read`, { method: 'PATCH' });
       if (res.ok) {
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+        setHistory(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+        markRead(id);
       }
     } catch (e) {
       console.error(e);

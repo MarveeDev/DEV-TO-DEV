@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
         source: '/api/v1/:path*',
         destination: `${apiTarget}/api/v1/:path*`, // Proxy to the API container
       },
+      {
+        source: '/socket.io/:path*',
+        destination: `${apiTarget}/socket.io/:path*`, // Proxy Socket.IO to the API container
+      },
     ];
   },
   allowedDevOrigins: ['127.0.0.1', 'localhost'],

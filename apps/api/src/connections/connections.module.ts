@@ -3,9 +3,10 @@ import { ConnectionsController } from './connections.controller';
 import { ConnectionsService } from './connections.service';
 import { SessionsModule } from '../sessions/sessions.module';
 import { ScoreModule } from '../score/score.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [SessionsModule, ScoreModule],
+  imports: [SessionsModule, ScoreModule, NotificationsModule],
   controllers: [ConnectionsController],
   providers: [ConnectionsService],
 })

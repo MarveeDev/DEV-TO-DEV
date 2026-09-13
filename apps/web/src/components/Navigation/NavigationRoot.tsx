@@ -7,12 +7,14 @@ import { Bell, Settings } from 'lucide-react';
 import DesktopHeader from './DesktopHeader';
 import DesktopSidebar from './DesktopSidebar';
 import MobileBottomNav from './MobileBottomNav';
+import { useNotifications } from '../Notifications/NotificationProvider';
 
 export default function NavigationRoot() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
+  const { disconnect: disconnectNotifications } = useNotifications();
 
   useEffect(() => {
     fetch('/api/v1/auth/me')
@@ -28,6 +30,7 @@ export default function NavigationRoot() {
 
   const handleLogout = async () => {
     await fetch('/api/v1/auth/logout', { method: 'POST' });
+    disconnectNotifications();
     setIsAuthenticated(false);
     router.push('/login');
   };
