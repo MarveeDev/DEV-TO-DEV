@@ -1,20 +1,28 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PublicCacheService } from '../redis/public-cache.service';
 import { CloudinaryService } from '../media/cloudinary.service';
 import { ScoreService } from '../score/score.service';
 import { MediaType } from '@prisma/client';
 
 @Injectable()
 export class QuestionsService {
+  private readonly CACHE_PREFIX = 'devtodev:public:questions:';
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly cloudinaryService: CloudinaryService,
     private readonly scoreService: ScoreService,
+    private readonly publicCache: PublicCacheService,
   ) {}
 
   async getQuestions(params: { page: number; limit: number; search?: string; status?: string; skill?: string; filter?: string; sort?: string }) {
     const { page, limit, search, status, skill, filter, sort } = params;
     const skip = (page - 1) * limit;
+
+    const cacheKey = `${this.CACHE_PREFIX}list:${page}:${limit}:${search ?? ''}:${status ?? ''}:${skill ?? ''}:${filter ?? ''}:${sort ?? ''}`;
+    const cached = await this.publicCache.get<unknown>(cacheKey);
+    if (cached) return cached;
 
     const where: any = {};
     if (search) {
@@ -76,7 +84,7 @@ export class QuestionsService {
       questionsWithVotes.sort((a, b) => b.voteScore - a.voteScore);
     }
 
-    return {
+    const result = {
       items: questionsWithVotes,
       meta: {
         total,
@@ -85,9 +93,17 @@ export class QuestionsService {
         totalPages: Math.ceil(total / limit),
       }
     };
+
+    await this.publicCache.set(cacheKey, result, 60);
+
+    return result;
   }
 
   async getQuestionById(id: string) {
+    const cacheKey = `${this.CACHE_PREFIX}detail:${id}`;
+    const cached = await this.publicCache.get<unknown>(cacheKey);
+    if (cached) return cached;
+
     const question = await this.prisma.question.findUnique({
       where: { id },
       include: {
@@ -125,11 +141,15 @@ export class QuestionsService {
       return { ...a, voteScore: aScore._sum.value || 0 };
     }));
 
-    return {
+    const result = {
       ...question,
       voteScore: questionScore._sum.value || 0,
       answers: answersWithScores
     };
+
+    await this.publicCache.set(cacheKey, result, 120);
+
+    return result;
   }
 
   async createQuestion(userId: string, data: any) {
@@ -154,6 +174,8 @@ export class QuestionsService {
     });
 
     this.scoreService.award(userId, 'QUESTION_CREATED', 8, question.id).catch(e => console.error(e));
+
+    await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
 
     if (data.mediaIds && Array.isArray(data.mediaIds) && data.mediaIds.length > 0) {
       const attachments = await this.prisma.mediaAttachment.findMany({
@@ -234,6 +256,9 @@ export class QuestionsService {
         } : undefined,
       },
       include: { author: true, skills: { include: { skill: true } }, attachments: true }
+    }).then(async (updated) => {
+      await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
+      return updated;
     });
   }
 
@@ -260,6 +285,7 @@ export class QuestionsService {
     }
 
     await this.prisma.question.delete({ where: { id } });
+    await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
     return { success: true };
   }
 
@@ -306,6 +332,8 @@ export class QuestionsService {
       this.scoreService.award(question.author.userId, 'QUESTION_UPVOTED', 3, `${id}:${profile.id}`).catch(e => console.error(e));
     }
 
+    await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
+
     return { voteScore: newScore._sum.value || 0, userVote: userVote?.value || 0 };
   }
 
@@ -331,6 +359,8 @@ export class QuestionsService {
     if (question && question.author.userId !== userId) {
       this.scoreService.award(question.author.userId, 'QUESTION_RECEIVED_ANSWER', 2, answer.id).catch(e => console.error(e));
     }
+
+    await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
 
     return answer;
   }
@@ -359,6 +389,7 @@ export class QuestionsService {
     if (answer.authorId !== profile.id) throw new ForbiddenException('You are not the author');
 
     await this.prisma.answer.delete({ where: { id } });
+    await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
     return { success: true };
   }
 
@@ -403,6 +434,8 @@ export class QuestionsService {
       this.scoreService.award(answer.author.userId, 'ANSWER_UPVOTED', 3, `${id}:${profile.id}`).catch(e => console.error(e));
     }
 
+    await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
+
     return { voteScore: newScore._sum.value || 0, userVote: userVote?.value || 0 };
   }
 
@@ -432,6 +465,8 @@ export class QuestionsService {
       this.scoreService.award(answer.author.userId, 'ANSWER_ACCEPTED', 25, answerId).catch(e => console.error(e));
     }
 
+    await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
+
     return updated;
   }
 
@@ -449,6 +484,9 @@ export class QuestionsService {
         resolvedAt: new Date(),
         resolvedById: profile.id
       }
+    }).then(async (updated) => {
+      await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
+      return updated;
     });
   }
 }

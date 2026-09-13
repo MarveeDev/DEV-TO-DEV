@@ -1,12 +1,16 @@
 import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PublicCacheService } from '../redis/public-cache.service';
 import { ScoreService } from '../score/score.service';
 
 @Injectable()
 export class ProjectsService {
+  private readonly CACHE_PREFIX = 'devtodev:public:projects:';
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly scoreService: ScoreService,
+    private readonly publicCache: PublicCacheService,
   ) {}
 
   private generateSlug(title: string): string {
@@ -16,6 +20,10 @@ export class ProjectsService {
   async getProjects(params: { page: number; limit: number; search?: string; status?: string }) {
     const { page, limit, search, status } = params;
     const skip = (page - 1) * limit;
+
+    const cacheKey = `${this.CACHE_PREFIX}list:${page}:${limit}:${search ?? ''}:${status ?? ''}`;
+    const cached = await this.publicCache.get<unknown>(cacheKey);
+    if (cached) return cached;
 
     const where: any = {};
     if (search) {
@@ -46,7 +54,7 @@ export class ProjectsService {
       this.prisma.project.count({ where })
     ]);
 
-    return {
+    const result = {
       items,
       meta: {
         total,
@@ -55,9 +63,17 @@ export class ProjectsService {
         totalPages: Math.ceil(total / limit),
       }
     };
+
+    await this.publicCache.set(cacheKey, result, 60);
+
+    return result;
   }
 
   async getProjectBySlug(slug: string) {
+    const cacheKey = `${this.CACHE_PREFIX}detail:${slug}`;
+    const cached = await this.publicCache.get<unknown>(cacheKey);
+    if (cached) return cached;
+
     const project = await this.prisma.project.findUnique({
       where: { slug },
       include: {
@@ -80,6 +96,8 @@ export class ProjectsService {
     if (!project) {
       throw new NotFoundException('Project not found');
     }
+
+    await this.publicCache.set(cacheKey, project, 120);
 
     return project;
   }
@@ -119,6 +137,8 @@ export class ProjectsService {
 
     this.scoreService.award(userId, 'PROJECT_CREATED', 20, project.id).catch(e => console.error(e));
 
+    await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
+
     return project;
   }
 
@@ -153,6 +173,8 @@ export class ProjectsService {
       }
     });
 
+    await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
+
     return updatedProject;
   }
 
@@ -173,6 +195,8 @@ export class ProjectsService {
     await this.prisma.project.delete({
       where: { id: projectId }
     });
+
+    await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
 
     return { success: true };
   }

@@ -1,12 +1,16 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import { PublicCacheService } from '../redis/public-cache.service';
 
 @Injectable()
 export class ProfileService {
+  private readonly DEVELOPERS_CACHE_PREFIX = 'devtodev:public:developers:';
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService,
+    private readonly publicCache: PublicCacheService,
   ) {}
 
   async createProfile(userId: string, data: any) {
@@ -94,6 +98,8 @@ export class ProfileService {
         });
       }
     }
+
+    await this.publicCache.invalidateByPrefix(this.DEVELOPERS_CACHE_PREFIX);
 
     return this.prisma.developerProfile.findUnique({
       where: { id: profile.id },
@@ -198,6 +204,8 @@ export class ProfileService {
         });
       }
     }
+
+    await this.publicCache.invalidateByPrefix(this.DEVELOPERS_CACHE_PREFIX);
 
     return this.prisma.developerProfile.findUnique({
       where: { userId },

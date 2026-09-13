@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PublicCacheService } from '../redis/public-cache.service';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class DevelopersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private publicCache: PublicCacheService,
+  ) {}
 
   async searchDevelopers(
     currentUserId: string,
@@ -132,6 +136,13 @@ export class DevelopersService {
     const limit = Number(options.limit) || 100;
     const skip = (page - 1) * limit;
 
+    const cacheKey = `devtodev:public:developers:list:${page}:${limit}`;
+    const cached = await this.publicCache.get<{
+      items: unknown[];
+      meta: { total: number; page: number; limit: number; totalPages: number };
+    }>(cacheKey);
+    if (cached) return cached;
+
     const [total, developers] = await Promise.all([
       this.prisma.developerProfile.count(),
       this.prisma.developerProfile.findMany({
@@ -149,7 +160,7 @@ export class DevelopersService {
       }),
     ]);
 
-    return {
+    const result = {
       items: developers,
       meta: {
         total,
@@ -158,9 +169,17 @@ export class DevelopersService {
         totalPages: Math.ceil(total / limit),
       },
     };
+
+    await this.publicCache.set(cacheKey, result, 60);
+
+    return result;
   }
 
   async getPublicDeveloperByUsername(username: string) {
+    const cacheKey = `devtodev:public:developers:profile:${username}`;
+    const cached = await this.publicCache.get<unknown>(cacheKey);
+    if (cached) return cached;
+
     const dev = await this.prisma.developerProfile.findUnique({
       where: { username },
       select: {
@@ -179,7 +198,7 @@ export class DevelopersService {
 
     if (!dev) throw new NotFoundException('Developer not found');
 
-    return {
+    const result = {
       displayName: dev.displayName,
       username: dev.username,
       bio: dev.bio,
@@ -191,6 +210,10 @@ export class DevelopersService {
       skills: dev.skills.map((s) => s.skill),
       learningGoals: dev.learningGoals.map((g) => g.learningGoal),
     };
+
+    await this.publicCache.set(cacheKey, result, 120);
+
+    return result;
   }
 
   /**

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PublicCacheService } from '../redis/public-cache.service';
 import { ScoreService } from '../score/score.service';
 
 @Injectable()
@@ -7,6 +8,7 @@ export class RoadmapsService {
   constructor(
     private prisma: PrismaService,
     private scoreService: ScoreService,
+    private publicCache: PublicCacheService,
   ) {}
 
   async getRoadmaps(query: { category?: string; difficulty?: string; search?: string }) {
@@ -20,6 +22,10 @@ export class RoadmapsService {
       ];
     }
 
+    const cacheKey = `devtodev:public:roadmaps:list:${query.category ?? ''}:${query.difficulty ?? ''}:${query.search ?? ''}`;
+    const cached = await this.publicCache.get<unknown[]>(cacheKey);
+    if (cached) return cached;
+
     const roadmaps = await this.prisma.roadmap.findMany({
       where,
       orderBy: { title: 'asc' },
@@ -30,10 +36,16 @@ export class RoadmapsService {
       }
     });
 
+    await this.publicCache.set(cacheKey, roadmaps, 60);
+
     return roadmaps;
   }
 
   async getRoadmapBySlug(slug: string) {
+    const cacheKey = `devtodev:public:roadmaps:detail:${slug}`;
+    const cached = await this.publicCache.get<unknown>(cacheKey);
+    if (cached) return cached;
+
     const roadmap = await this.prisma.roadmap.findUnique({
       where: { slug },
       include: {
@@ -53,10 +65,16 @@ export class RoadmapsService {
       throw new NotFoundException(`Roadmap with slug ${slug} not found`);
     }
 
+    await this.publicCache.set(cacheKey, roadmap, 120);
+
     return roadmap;
   }
 
   async getNodeDetails(id: string) {
+    const cacheKey = `devtodev:public:roadmaps:node:${id}`;
+    const cached = await this.publicCache.get<unknown>(cacheKey);
+    if (cached) return cached;
+
     const node = await this.prisma.roadmapNode.findUnique({
       where: { id },
       include: {
@@ -71,6 +89,8 @@ export class RoadmapsService {
     if (!node) {
       throw new NotFoundException('Roadmap node not found');
     }
+
+    await this.publicCache.set(cacheKey, node, 120);
 
     return node;
   }

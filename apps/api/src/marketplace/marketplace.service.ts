@@ -1,12 +1,18 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { PublicCacheService } from '../redis/public-cache.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
 import { CreateReportDto } from './dto/create-report.dto';
 
 @Injectable()
 export class MarketplaceService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly CACHE_PREFIX = 'devtodev:public:marketplace:';
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly publicCache: PublicCacheService,
+  ) {}
 
   private async getProfileId(userId: string) {
     const profile = await this.prisma.developerProfile.findUnique({
@@ -38,10 +44,17 @@ export class MarketplaceService {
           }
         }
       }
+    }).then(async (listing) => {
+      await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
+      return listing;
     });
   }
 
   async findAll(query: { category?: string; type?: string; search?: string }) {
+    const cacheKey = `${this.CACHE_PREFIX}list:${query.category ?? ''}:${query.type ?? ''}:${query.search ?? ''}`;
+    const cached = await this.publicCache.get<unknown[]>(cacheKey);
+    if (cached) return cached;
+
     const where: any = {};
     
     if (query.category) {
@@ -59,7 +72,7 @@ export class MarketplaceService {
       ];
     }
 
-    return this.prisma.marketplaceListing.findMany({
+    const result = await this.prisma.marketplaceListing.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -73,6 +86,10 @@ export class MarketplaceService {
         }
       }
     });
+
+    await this.publicCache.set(cacheKey, result, 60);
+
+    return result;
   }
 
   async findMyListings(userId: string) {
@@ -95,6 +112,10 @@ export class MarketplaceService {
   }
 
   async findOne(id: string) {
+    const cacheKey = `${this.CACHE_PREFIX}detail:${id}`;
+    const cached = await this.publicCache.get<unknown>(cacheKey);
+    if (cached) return cached;
+
     const listing = await this.prisma.marketplaceListing.findUnique({
       where: { id },
       include: {
@@ -112,6 +133,9 @@ export class MarketplaceService {
     if (!listing) {
       throw new NotFoundException('Listing not found');
     }
+
+    await this.publicCache.set(cacheKey, listing, 120);
+
     return listing;
   }
 
@@ -144,6 +168,9 @@ export class MarketplaceService {
           }
         }
       }
+    }).then(async (listing) => {
+      await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
+      return listing;
     });
   }
 
@@ -166,6 +193,8 @@ export class MarketplaceService {
     await this.prisma.marketplaceListing.delete({
       where: { id },
     });
+
+    await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
 
     return { success: true };
   }
