@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useCurrentUser } from '../Auth/CurrentUserProvider';
 import {
   LayoutDashboard,
   Users,
@@ -38,22 +39,8 @@ const NAV_ITEMS: NavItem[] = [
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [me, setMe] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user: me, loading, logout } = useCurrentUser();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  useEffect(() => {
-    fetch('/api/v1/auth/me')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        setMe(data);
-        setLoading(false);
-      })
-      .catch(() => {
-        setMe(null);
-        setLoading(false);
-      });
-  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -63,7 +50,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   }, [loading, me, router]);
 
   const handleLogout = async () => {
-    await fetch('/api/v1/auth/logout', { method: 'POST' });
+    await logout();
     router.replace('/login');
   };
 

@@ -6,28 +6,29 @@ import Link from 'next/link';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import { Map, ArrowRight, BookOpen } from 'lucide-react';
+import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { user, loading: authLoading, isAuthenticated } = useCurrentUser();
   const [loading, setLoading] = useState(true);
   const [roadmaps, setRoadmaps] = useState<any[]>([]);
   const [progress, setProgress] = useState<any[]>([]);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated || !user) {
+      router.push('/login');
+      return;
+    }
+    if (!user.developerProfile) {
+      router.push('/onboarding');
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       try {
-        const meRes = await fetch('/api/v1/auth/me');
-        if (!meRes.ok) {
-          router.push('/login');
-          return;
-        }
-        const me = await meRes.json();
-        if (!me.developerProfile) {
-          router.push('/onboarding');
-          return;
-        }
-
         const [rRes, pRes] = await Promise.all([
           fetch('/api/v1/roadmaps'),
           fetch('/api/v1/roadmaps/me'),
@@ -46,7 +47,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [authLoading, isAuthenticated, user, router]);
 
   if (loading) {
     return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--foreground-muted)' }}>Loading your learning path...</div>;

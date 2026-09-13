@@ -6,6 +6,7 @@ import MultiSelect, { Option } from '../../components/MultiSelect';
 import Select from '../../components/Select';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
 
 
 const EXPERIENCE_OPTIONS = [
@@ -17,6 +18,7 @@ const EXPERIENCE_OPTIONS = [
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { user } = useCurrentUser();
   const [formData, setFormData] = useState({
     username: '',
     displayName: '',
@@ -54,20 +56,15 @@ export default function OnboardingPage() {
   }, []);
 
   useEffect(() => {
-    fetch('/api/v1/auth/me')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        const pending = data?.pendingProfile;
-        if (pending) {
-          setFormData(prev => ({
-            ...prev,
-            username: prev.username || pending.username || '',
-            displayName: prev.displayName || pending.displayName || '',
-          }));
-        }
-      })
-      .catch(() => {});
-  }, []);
+    const pending = user?.pendingProfile;
+    if (pending) {
+      setFormData(prev => ({
+        ...prev,
+        username: prev.username || pending.username || '',
+        displayName: prev.displayName || pending.displayName || '',
+      }));
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

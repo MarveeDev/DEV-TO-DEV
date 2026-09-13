@@ -5,14 +5,16 @@ import Link from 'next/link';
 import Card from './Card';
 import Button from './Button';
 import { Map, ArrowRight } from 'lucide-react';
+import { useCurrentUser } from './Auth/CurrentUserProvider';
 
 export default function HomeRoadmaps() {
+  const { isAuthenticated, loading: authLoading } = useCurrentUser();
   const [roadmaps, setRoadmaps] = useState<any[]>([]);
   const [progress, setProgress] = useState<any[]>([]);
-  const [isAuth, setIsAuth] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
     let cancelled = false;
     (async () => {
       try {
@@ -22,9 +24,7 @@ export default function HomeRoadmaps() {
           setRoadmaps(Array.isArray(rData) ? rData : []);
         }
 
-        const meRes = await fetch('/api/v1/auth/me');
-        if (meRes.ok) {
-          setIsAuth(true);
+        if (isAuthenticated) {
           const pRes = await fetch('/api/v1/roadmaps/me');
           const pData = pRes.ok ? await pRes.json() : [];
           if (!cancelled) setProgress(Array.isArray(pData) ? pData : []);
@@ -38,7 +38,7 @@ export default function HomeRoadmaps() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [authLoading, isAuthenticated]);
 
   if (loading) return null;
 
@@ -56,7 +56,7 @@ export default function HomeRoadmaps() {
           <p style={{ color: 'var(--foreground-muted)', fontSize: '16px', margin: '0 auto', maxWidth: '560px', lineHeight: 1.5 }}>
             Explore structured roadmaps and know what to learn next.
           </p>
-          {isAuth && completedNodes > 0 && (
+          {isAuthenticated && completedNodes > 0 && (
             <p style={{ color: 'var(--primary)', fontSize: '14px', fontWeight: 600, margin: '12px 0 0 0' }}>
               You&apos;ve completed {completedNodes} topic{completedNodes === 1 ? '' : 's'} across {startedRoadmaps} roadmap{startedRoadmaps === 1 ? '' : 's'}. Keep going!
             </p>

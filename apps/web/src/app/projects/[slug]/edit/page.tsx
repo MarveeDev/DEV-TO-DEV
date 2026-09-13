@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Card from '../../../../components/Card';
 import Button from '../../../../components/Button';
 import BackButton from '../../../../components/Navigation/BackButton';
+import { useCurrentUser } from '../../../../components/Auth/CurrentUserProvider';
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'Active (In Development)' },
@@ -126,6 +127,8 @@ function CustomStatusSelect({ value, onChange }: { value: string, onChange: (val
 export default function EditProjectPage({ params }: { params: Promise<{ slug: string }> }) {
   const router = useRouter();
   const { slug } = React.use(params);
+  const { user: me, loading: authLoading } = useCurrentUser();
+  const profile = me?.developerProfile ?? null;
   const [projectId, setProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -140,25 +143,19 @@ export default function EditProjectPage({ params }: { params: Promise<{ slug: st
   });
 
   useEffect(() => {
-    const fetchProjectAndUser = async () => {
+    if (authLoading) return;
+    if (!profile) {
+      router.push('/login');
+      return;
+    }
+
+    const fetchProject = async () => {
       try {
-        let user = null;
-        const userRes = await fetch('/api/v1/auth/me');
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          user = userData?.developerProfile;
-        }
-
-        if (!user) {
-          router.push('/login');
-          return;
-        }
-
         const projRes = await fetch(`/api/v1/projects/${slug}`);
         if (!projRes.ok) throw new Error('Project not found');
         const projData = await projRes.json();
         
-        if (projData.owner?.id !== user.id) {
+        if (projData.owner?.id !== profile.id) {
           router.push(`/projects/${slug}`);
           return;
         }
@@ -179,8 +176,8 @@ export default function EditProjectPage({ params }: { params: Promise<{ slug: st
       }
     };
 
-    fetchProjectAndUser();
-  }, [slug, router]);
+    fetchProject();
+  }, [slug, router, authLoading, profile]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

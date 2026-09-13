@@ -7,10 +7,11 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Link from 'next/link';
 import BackButton from '../../components/Navigation/BackButton';
+import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
 
 export default function FeedPage() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const { user, loading: authLoading, isAuthenticated } = useCurrentUser();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newContent, setNewContent] = useState('');
@@ -18,17 +19,16 @@ export default function FeedPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    fetch('/api/v1/auth/me')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (!data) router.push('/login');
-        else setUser(data);
-      });
-  }, [router]);
+    if (authLoading) return;
+    if (!isAuthenticated || !user) {
+      router.push('/login');
+    }
+  }, [authLoading, isAuthenticated, user, router]);
 
   useEffect(() => {
+    if (!user) return;
     fetchPosts(page);
-  }, [page]);
+  }, [page, user]);
 
   const fetchPosts = async (p: number) => {
     try {

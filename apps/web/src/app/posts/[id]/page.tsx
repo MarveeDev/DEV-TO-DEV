@@ -7,12 +7,13 @@ import Button from '../../../components/Button';
 import BackButton from '../../../components/Navigation/BackButton';
 import Link from 'next/link';
 import { Edit2, Trash2, Send, MessageCircle } from 'lucide-react';
+import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 
 export default function PostDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = React.use(params);
+  const { user } = useCurrentUser();
   const [post, setPost] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -24,10 +25,6 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    fetch('/api/v1/auth/me')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => setUser(data));
-
     fetch(`/api/v1/posts/${id}`)
       .then(async res => {
         if (!res.ok) throw new Error('Post not found');

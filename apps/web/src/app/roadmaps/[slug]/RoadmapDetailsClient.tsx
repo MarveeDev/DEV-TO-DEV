@@ -7,6 +7,7 @@ import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import BackButton from '../../../components/Navigation/BackButton';
 import { Play, CheckCircle2, Circle, Lock } from 'lucide-react';
+import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 
 export default function RoadmapDetailsClient({
   slug,
@@ -16,10 +17,10 @@ export default function RoadmapDetailsClient({
   initialRoadmap: any | null;
 }) {
   const router = useRouter();
+  const { user } = useCurrentUser();
   const [roadmap, setRoadmap] = useState<any>(initialRoadmap);
   const [progress, setProgress] = useState<any[]>([]);
   const [loading, setLoading] = useState(initialRoadmap === null);
-  const [user, setUser] = useState<any>(null);
   const [starting, setStarting] = useState(false);
 
   const clientFetch = async (url: string, options?: any) => {
@@ -27,11 +28,6 @@ export default function RoadmapDetailsClient({
   };
 
   useEffect(() => {
-    clientFetch('/api/v1/auth/me')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => setUser(data))
-      .catch(() => {});
-
     if (initialRoadmap === null) {
       fetchData();
     } else {

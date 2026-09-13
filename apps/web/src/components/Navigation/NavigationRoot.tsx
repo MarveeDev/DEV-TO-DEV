@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Bell, Settings } from 'lucide-react';
@@ -8,30 +7,17 @@ import DesktopHeader from './DesktopHeader';
 import DesktopSidebar from './DesktopSidebar';
 import MobileBottomNav from './MobileBottomNav';
 import { useNotifications } from '../Notifications/NotificationProvider';
+import { useCurrentUser } from '../Auth/CurrentUserProvider';
 
 export default function NavigationRoot() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
+  const { isAuthenticated, loading, logout } = useCurrentUser();
   const { disconnect: disconnectNotifications } = useNotifications();
 
-  useEffect(() => {
-    fetch('/api/v1/auth/me')
-      .then(res => {
-        setIsAuthenticated(res.ok);
-        setLoading(false);
-      })
-      .catch(() => {
-        setIsAuthenticated(false);
-        setLoading(false);
-      });
-  }, [pathname]);
-
   const handleLogout = async () => {
-    await fetch('/api/v1/auth/logout', { method: 'POST' });
+    await logout();
     disconnectNotifications();
-    setIsAuthenticated(false);
     router.push('/login');
   };
 

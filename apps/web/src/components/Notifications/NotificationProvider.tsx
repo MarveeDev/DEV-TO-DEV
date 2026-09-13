@@ -16,6 +16,7 @@ import {
   NOTIFICATION_CREATED_EVENT,
 } from '../../lib/notifications/socket';
 import type { AppNotification } from '../../lib/notifications/types';
+import { useCurrentUser } from '../Auth/CurrentUserProvider';
 
 export type NotificationConnectionState =
   | 'idle'
@@ -50,6 +51,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const [connectionState, setConnectionState] =
     useState<NotificationConnectionState>('idle');
   const listeningRef = useRef(false);
+  const { isAuthenticated } = useCurrentUser();
 
   const stopListening = useCallback(() => {
     const socket = getNotificationSocket();
@@ -107,24 +109,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-
-    fetch('/api/v1/auth/me')
-      .then((res) => {
-        if (!cancelled && res.ok) {
-          connect();
-        }
-      })
-      .catch(() => {
-        // Not authenticated or request failed; leave the socket disconnected.
-      });
+    if (isAuthenticated) {
+      connect();
+    }
 
     return () => {
-      cancelled = true;
       stopListening();
       disconnectNotificationSocket();
     };
-  }, [connect, stopListening]);
+  }, [isAuthenticated, connect, stopListening]);
 
   const value = useMemo(
     () => ({ notifications, connectionState, connect, disconnect, markRead }),

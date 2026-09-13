@@ -7,6 +7,7 @@ import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import Badge from '../../../components/Badge';
 import BackButton from '../../../components/Navigation/BackButton';
+import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 
 export default function ProjectDetailsClient({
   slug,
@@ -16,23 +17,16 @@ export default function ProjectDetailsClient({
   initialProject: any | null;
 }) {
   const router = useRouter();
+  const { user: me, loading: authLoading } = useCurrentUser();
+  const currentUser = me?.developerProfile ?? null;
   const [project, setProject] = useState<any>(initialProject);
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(initialProject === null);
   const [error, setError] = useState('');
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [joinStatus, setJoinStatus] = useState<'IDLE' | 'LOADING' | 'PENDING' | 'ACCEPTED' | 'ERROR'>('IDLE');
 
   const fetchProjectAndUser = async () => {
     try {
-      let user = null;
-      const userRes = await fetch('/api/v1/auth/me');
-      if (userRes.ok) {
-        const userData = await userRes.json();
-        user = userData?.developerProfile;
-        setCurrentUser(user);
-      }
-
       let projData = project;
       if (!projData) {
         const projRes = await fetch(`/api/v1/projects/${slug}`);
@@ -42,15 +36,15 @@ export default function ProjectDetailsClient({
       }
 
       // If user is owner, fetch pending requests
-      if (user && projData.owner && user.id === projData.owner.id) {
+      if (currentUser && projData.owner && currentUser.id === projData.owner.id) {
         const reqsRes = await fetch(`/api/v1/projects/${projData.id}/requests`);
         if (reqsRes.ok) {
           const reqsData = await reqsRes.json();
           setRequests(reqsData);
         }
-      } else if (user) {
+      } else if (currentUser) {
         // If user is NOT owner, determine if they are a contributor already
-        const isContributor = projData.contributors?.some((c: any) => c.developerProfileId === user.id);
+        const isContributor = projData.contributors?.some((c: any) => c.developerProfileId === currentUser.id);
         if (isContributor) {
           setJoinStatus('ACCEPTED');
         }
@@ -64,8 +58,10 @@ export default function ProjectDetailsClient({
   };
 
   useEffect(() => {
+    if (authLoading) return;
     fetchProjectAndUser();
-  }, [slug]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, authLoading]);
 
   if (loading) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--foreground-muted)' }}>Loading project...</div>;
   if (error || !project) return <div style={{ padding: '60px', textAlign: 'center', color: 'red' }}>{error || 'Project not found'}</div>;

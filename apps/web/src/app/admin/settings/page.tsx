@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Badge } from '../../../components/admin/AdminUi';
+import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -13,14 +13,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
 }
 
 export default function AdminSettingsPage() {
-  const [me, setMe] = useState<any>(null);
-
-  useEffect(() => {
-    fetch('/api/v1/auth/me')
-      .then((res) => (res.ok ? res.json() : null))
-      .then(setMe)
-      .catch(() => {});
-  }, []);
+  const { user: me } = useCurrentUser();
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', maxWidth: '720px' }}>
