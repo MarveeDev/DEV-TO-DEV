@@ -44,13 +44,18 @@ export function proxy(request: NextRequest) {
   const token = request.cookies.get('session_id');
   const path = request.nextUrl.pathname;
 
-  const isProtectedRoute = path.startsWith('/profile') || path.startsWith('/onboarding');
   const isAuthRoute = path === '/login';
 
-  // Note: the true authorization boundary is the NestJS API.
-  // This middleware is solely for UX redirection.
+  // The full set of routes that require authentication is already described by
+  // isPrivateRoute() (also used for noindex); /login is public and handled above.
+  const isProtectedRoute = isPrivateRoute(path) && !isAuthRoute;
+
+  // Early UX guard: unauthenticated visitors are redirected away from private
+  // routes. This is NOT the security boundary — the NestJS API still validates
+  // the session — it only prevents the page shell from being served to
+  // logged-out visitors.
   if (isProtectedRoute && !token) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL('/login', request.url), 307);
   }
 
   if (isAuthRoute && token) {
