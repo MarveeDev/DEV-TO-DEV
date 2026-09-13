@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Select from '../../components/Select';
 import MultiSelect, { Option } from '../../components/MultiSelect';
 import { MediaUploader } from '../../components/MediaUploader';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
 
 const EXPERIENCE_OPTIONS = [
   { value: 'BEGINNER', label: 'Beginner (0–2 years)' },
@@ -17,6 +19,7 @@ const EXPERIENCE_OPTIONS = [
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { user, loading: authLoading, isAuthenticated } = useCurrentUser();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -35,36 +38,32 @@ export default function SettingsPage() {
   const [skillOptions, setSkillOptions] = useState<Option[]>([]);
   const [goalOptions, setGoalOptions] = useState<Option[]>([]);
 
+  // Applies a developerProfile object to the form state.
+  const applyProfile = (data: any) => {
+    if (!data) return;
+    setFormData({
+      displayName: data.displayName || '',
+      bio: data.bio || '',
+      location: data.location || '',
+      websiteUrl: data.websiteUrl || '',
+      githubUrl: data.githubUrl || '',
+      experienceLevel: data.experienceLevel || 'INTERMEDIATE',
+      avatarUrl: data.avatarUrl || '',
+    });
+    setSelectedSkills((data.skills || []).map((s: any) => s.skillId));
+    setSelectedGoals((data.learningGoals || []).map((g: any) => g.learningGoalId));
+  };
+
+  // Re-fetch after saving (profile changed server-side; the shared user is stale).
   const fetchProfile = async () => {
     try {
       const res = await fetch('/api/v1/auth/me');
-      if (res.status === 401) {
-        router.push('/login');
-        return;
-      }
       if (res.ok) {
         const me = await res.json();
-        const data = me.developerProfile;
-        if (data) {
-          setFormData({
-            displayName: data.displayName || '',
-            bio: data.bio || '',
-            location: data.location || '',
-            websiteUrl: data.websiteUrl || '',
-            githubUrl: data.githubUrl || '',
-            experienceLevel: data.experienceLevel || 'INTERMEDIATE',
-            avatarUrl: data.avatarUrl || '',
-          });
-          setSelectedSkills((data.skills || []).map((s: any) => s.skillId));
-          setSelectedGoals((data.learningGoals || []).map((g: any) => g.learningGoalId));
-        }
-      } else {
-        setMessage({ type: 'error', text: 'Failed to load profile data.' });
+        applyProfile(me.developerProfile);
       }
     } catch {
-      setMessage({ type: 'error', text: 'An error occurred loading profile.' });
-    } finally {
-      setLoading(false);
+      // Ignore transient errors on refresh.
     }
   };
 
@@ -91,9 +90,15 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    fetchProfile();
+    if (authLoading) return;
+    if (!isAuthenticated || !user) {
+      router.push('/login');
+      return;
+    }
+    applyProfile(user.developerProfile);
+    setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [authLoading, isAuthenticated, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,7 +168,7 @@ export default function SettingsPage() {
               <label style={labelStyle}>Avatar / Profile Picture</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
                 <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0, overflow: 'hidden' }}>
-                  {formData.avatarUrl && <img src={formData.avatarUrl} alt="Avatar preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                  {formData.avatarUrl && <Image src={formData.avatarUrl} alt="Avatar preview" width={64} height={64} style={{ objectFit: 'cover' }} />}
                 </div>
                 <MediaUploader
                   onUploadSuccess={(_id, url) => setFormData({ ...formData, avatarUrl: url })}

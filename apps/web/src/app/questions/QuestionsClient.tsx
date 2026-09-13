@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Badge from '../../components/Badge';
@@ -176,7 +177,7 @@ export default function QuestionsClient({ initialQuestions }: { initialQuestions
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--foreground-muted)' }}>
                     {question.author?.avatarUrl ? (
-                      <img src={question.author.avatarUrl} alt={question.author.displayName} style={{ width: '20px', height: '20px', borderRadius: '50%' }} />
+                      <Image src={question.author.avatarUrl} alt={question.author.displayName} width={20} height={20} style={{ borderRadius: '50%' }} />
                     ) : (
                       <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--border)' }} />
                     )}

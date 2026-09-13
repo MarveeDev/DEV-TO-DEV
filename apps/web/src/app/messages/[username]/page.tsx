@@ -3,9 +3,11 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Button from '../../../components/Button';
 import BackButton from '../../../components/Navigation/BackButton';
 import { formatPrice } from '../../../lib/currency';
+import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 import { Send } from 'lucide-react';
 
 export default function ChatPage() {
@@ -15,7 +17,8 @@ export default function ChatPage() {
   const searchParams = useSearchParams();
   const conversationParam = searchParams.get('conversation');
 
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { user, loading: authLoading, isAuthenticated } = useCurrentUser();
+  const currentUserId = user?.id ?? null;
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [partner, setPartner] = useState<any>(null);
   const [listing, setListing] = useState<any>(null);
@@ -30,15 +33,15 @@ export default function ChatPage() {
 
   // Initial load: identify current user + open/create the conversation thread.
   useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated || !user) {
+      router.push('/login');
+      return;
+    }
+
     let cancelled = false;
     (async () => {
       try {
-        const meRes = await fetch('/api/v1/auth/me');
-        if (!meRes.ok) { router.push('/login'); return; }
-        const me = await meRes.json();
-        if (cancelled) return;
-        setCurrentUserId(me.id);
-
         const res = conversationParam
           ? await fetch(`/api/v1/messages/${conversationParam}`)
           : await fetch(`/api/v1/messages/with/${encodeURIComponent(username)}`);
@@ -57,7 +60,7 @@ export default function ChatPage() {
       }
     })();
     return () => { cancelled = true; };
-  }, [username, conversationParam, router]);
+  }, [username, conversationParam, authLoading, isAuthenticated, user, router]);
 
   // Poll for new messages while the tab is visible.
   useEffect(() => {
@@ -131,7 +134,7 @@ export default function ChatPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
           <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0, overflow: 'hidden' }}>
             {partner?.profile?.avatarUrl && (
-              <img src={partner.profile.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <Image src={partner.profile.avatarUrl} alt="" width={40} height={40} style={{ objectFit: 'cover' }} />
             )}
           </div>
           <div style={{ minWidth: 0 }}>

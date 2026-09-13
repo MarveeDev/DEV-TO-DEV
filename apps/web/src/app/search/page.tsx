@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Search as SearchIcon, Users, Folder, HelpCircle, AlertCircle } from 'lucide-react';
 import Card from '../../components/Card';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function SearchPage() {
   const router = useRouter();
@@ -187,7 +188,7 @@ export default function SearchPage() {
                     {activeTab === 'developers' && (
                       <Link href={`/developers/${item.username}`} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--border)', overflow: 'hidden' }}>
-                          {item.avatarUrl && <img src={item.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                          {item.avatarUrl && <Image src={item.avatarUrl} alt="" width={40} height={40} style={{ objectFit: 'cover' }} />}
                         </div>
                         <div>
                           <div style={{ fontWeight: 600, fontSize: '16px', color: 'var(--foreground)' }}>{item.displayName || item.username}</div>

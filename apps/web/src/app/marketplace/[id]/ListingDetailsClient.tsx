@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import ReportListingModal from '../../../components/ReportListingModal';
 import { ArrowLeft, ExternalLink, Mail } from 'lucide-react';
 import { formatPrice } from '../../../lib/currency';
+import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 
 export default function ListingDetailsClient({
   id,
@@ -17,9 +19,9 @@ export default function ListingDetailsClient({
   initialListing: any | null;
 }) {
   const router = useRouter();
+  const { user: currentUser } = useCurrentUser();
   const [listing, setListing] = useState<any>(initialListing);
   const [loading, setLoading] = useState(initialListing === null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [showReport, setShowReport] = useState(false);
 
   useEffect(() => {
@@ -44,13 +46,6 @@ export default function ListingDetailsClient({
       setLoading(false);
     }
   }, [id, router]);
-
-  useEffect(() => {
-    fetch('/api/v1/auth/me')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => setCurrentUser(data))
-      .catch(() => {});
-  }, []);
 
   const isSeller = currentUser?.developerProfile?.id === listing?.seller?.id;
 
@@ -95,8 +90,8 @@ export default function ListingDetailsClient({
         {/* Main Content */}
         <div>
           {listing.imageUrl && (
-            <div style={{ width: '100%', height: '400px', borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginBottom: '24px' }}>
-              <img src={listing.imageUrl} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div style={{ position: 'relative', width: '100%', height: '400px', borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginBottom: '24px' }}>
+              <Image src={listing.imageUrl} alt={listing.title} fill sizes="(max-width: 768px) 100vw, 66vw" style={{ objectFit: 'cover' }} />
             </div>
           )}
 
@@ -169,7 +164,7 @@ export default function ListingDetailsClient({
               </div>
               <Link href={`/developers/${listing.seller.username}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 {listing.seller.avatarUrl ? (
-                  <img src={listing.seller.avatarUrl} alt={listing.seller.displayName} style={{ width: '48px', height: '48px', borderRadius: '50%' }} />
+                  <Image src={listing.seller.avatarUrl} alt={listing.seller.displayName} width={48} height={48} style={{ borderRadius: '50%' }} />
                 ) : (
                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)' }} />
                 )}

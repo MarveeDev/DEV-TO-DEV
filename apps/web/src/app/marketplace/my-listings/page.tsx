@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import { Pencil, Trash2 } from 'lucide-react';
@@ -67,8 +68,8 @@ export default function MyListingsPage() {
           {listings.map(listing => (
             <Card key={listing.id} padding="md" style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
               {listing.imageUrl ? (
-                <div style={{ width: '120px', height: '80px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', flexShrink: 0 }}>
-                  <img src={listing.imageUrl} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ position: 'relative', width: '120px', height: '80px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', flexShrink: 0 }}>
+                  <Image src={listing.imageUrl} alt={listing.title} fill sizes="120px" style={{ objectFit: 'cover' }} />
                 </div>
               ) : (
                 <div style={{ width: '120px', height: '80px', borderRadius: 'var(--radius-sm)', background: 'var(--border)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--foreground-muted)' }}>

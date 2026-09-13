@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Card from '../../components/Card';
 import BackButton from '../../components/Navigation/BackButton';
 import { MessageSquare } from 'lucide-react';
@@ -69,7 +70,7 @@ export default function MessagesInboxPage() {
               <Link key={c.id} href={`/messages/${p.username}${c.listing ? `?conversation=${c.id}&listing=${c.listing.id}` : ''}`} style={{ textDecoration: 'none' }}>
                 <Card padding="md" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0, overflow: 'hidden' }}>
-                    {p.avatarUrl && <img src={p.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                    {p.avatarUrl && <Image src={p.avatarUrl} alt="" width={48} height={48} style={{ objectFit: 'cover' }} />}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>

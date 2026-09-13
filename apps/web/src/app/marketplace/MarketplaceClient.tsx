@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Select from '../../components/Select';
@@ -132,8 +133,8 @@ export default function MarketplaceClient({ initialListings }: { initialListings
             <Link key={listing.id} href={`/marketplace/${listing.id}`} style={{ textDecoration: 'none' }}>
               <Card padding="md" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                 {listing.imageUrl && (
-                  <div style={{ width: '100%', height: '160px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginBottom: '16px' }}>
-                    <img src={listing.imageUrl} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div style={{ position: 'relative', width: '100%', height: '160px', borderRadius: 'var(--radius-sm)', overflow: 'hidden', marginBottom: '16px' }}>
+                    <Image src={listing.imageUrl} alt={listing.title} fill sizes="(max-width: 768px) 100vw, 33vw" style={{ objectFit: 'cover' }} />
                   </div>
                 )}
                 <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -152,7 +153,7 @@ export default function MarketplaceClient({ initialListings }: { initialListings
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
                   {listing.seller.avatarUrl ? (
-                    <img src={listing.seller.avatarUrl} alt={listing.seller.displayName} style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
+                    <Image src={listing.seller.avatarUrl} alt={listing.seller.displayName} width={24} height={24} style={{ borderRadius: '50%' }} />
                   ) : (
                     <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--border)' }} />
                   )}

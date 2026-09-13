@@ -3,28 +3,27 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import PostCard from '../../components/PostCard';
 import DeveloperScoreBoard from '../../components/DeveloperScoreBoard';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Badge from '../../components/Badge';
+import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
 
 export default function ProfilePage() {
-  const [user, setUser] = useState<any>(null);
+  const { user, loading: authLoading, isAuthenticated, logout } = useCurrentUser();
   const router = useRouter();
 
   useEffect(() => {
-    fetch('/api/v1/auth/me')
-      .then(res => {
-        if (!res.ok) throw new Error('Unauthenticated');
-        return res.json();
-      })
-      .then(data => setUser(data))
-      .catch(() => router.push('/login'));
-  }, [router]);
+    if (authLoading) return;
+    if (!isAuthenticated || !user) {
+      router.push('/login');
+    }
+  }, [authLoading, isAuthenticated, user, router]);
 
   const handleLogout = async () => {
-    await fetch('/api/v1/auth/logout', { method: 'POST' });
+    await logout();
     router.push('/login');
   };
 
@@ -49,7 +48,7 @@ export default function ProfilePage() {
             <Card padding="md">
               <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '32px' }}>
                 <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0, overflow: 'hidden' }}>
-                  {profile?.avatarUrl && <img src={profile.avatarUrl} alt={profile.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                  {profile?.avatarUrl && <Image src={profile.avatarUrl} alt={profile.displayName} width={80} height={80} style={{ objectFit: 'cover' }} />}
                 </div>
                 <div>
                   <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--foreground)', margin: '0 0 4px 0' }}>{profile?.displayName || 'Unknown Developer'}</h2>

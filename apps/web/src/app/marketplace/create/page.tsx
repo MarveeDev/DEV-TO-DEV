@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import Select from '../../../components/Select';
@@ -218,7 +219,7 @@ export default function CreateListingPage() {
               />
               {formData.imageUrl && (
                 <div style={{ width: '60px', height: '60px', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
-                  <img src={formData.imageUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <Image src={formData.imageUrl} alt="Preview" width={60} height={60} style={{ objectFit: 'cover' }} />
                 </div>
               )}
             </div>

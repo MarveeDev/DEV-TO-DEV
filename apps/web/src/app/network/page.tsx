@@ -3,38 +3,38 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Badge from '../../components/Badge';
 
 import DiscoverTabs from '../../components/Navigation/DiscoverTabs';
 import BackButton from '../../components/Navigation/BackButton';
+import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
 
 export default function NetworkPage() {
   const router = useRouter();
+  const { user, loading: authLoading, isAuthenticated } = useCurrentUser();
   
   const [connections, setConnections] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const currentUserId = user?.id ?? null;
 
   // Refs controlling the continuous auto-scroll (Network page only).
   const autoScrollPausedRef = useRef(false);   // true while hovering / touching / tab hidden
   const autoScrollCooldownRef = useRef(0);      // timestamp until which auto-scroll stays paused
 
   useEffect(() => {
-    fetch('/api/v1/auth/me')
-      .then(res => {
-        if (!res.ok) throw new Error('Unauthenticated');
-        return res.json();
-      })
-      .then(data => {
-        setCurrentUserId(data.id);
-        return Promise.all([
-          fetch('/api/v1/connections').then(r => r.json()),
-          fetch('/api/v1/connections/requests').then(r => r.json())
-        ]);
-      })
+    if (authLoading) return;
+    if (!isAuthenticated || !user) {
+      router.push('/login');
+      return;
+    }
+    Promise.all([
+      fetch('/api/v1/connections').then(r => r.json()),
+      fetch('/api/v1/connections/requests').then(r => r.json())
+    ])
       .then(([connsData, reqsData]) => {
         setConnections(connsData);
         setRequests(reqsData);
@@ -43,7 +43,7 @@ export default function NetworkPage() {
       .catch(() => {
         router.push('/login');
       });
-  }, [router]);
+  }, [authLoading, isAuthenticated, user, router]);
 
   const handleAction = async (id: string, action: 'accept' | 'reject' | 'delete') => {
     try {
@@ -158,7 +158,7 @@ export default function NetworkPage() {
                 <Card key={req.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                   <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                     {req.requester.profile.avatarUrl ? (
-                      <img src={req.requester.profile.avatarUrl} alt={req.requester.profile.displayName} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                      <Image src={req.requester.profile.avatarUrl} alt={req.requester.profile.displayName} width={48} height={48} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                     ) : (
                       <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
                     )}
@@ -190,7 +190,7 @@ export default function NetworkPage() {
                 <Card key={req.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                   <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                     {req.addressee.profile.avatarUrl ? (
-                      <img src={req.addressee.profile.avatarUrl} alt={req.addressee.profile.displayName} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                      <Image src={req.addressee.profile.avatarUrl} alt={req.addressee.profile.displayName} width={48} height={48} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                     ) : (
                       <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
                     )}
@@ -226,7 +226,7 @@ export default function NetworkPage() {
                   <Card key={conn.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                       {partner.profile.avatarUrl ? (
-                        <img src={partner.profile.avatarUrl} alt={partner.profile.displayName} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                        <Image src={partner.profile.avatarUrl} alt={partner.profile.displayName} width={48} height={48} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                       ) : (
                         <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
                       )}

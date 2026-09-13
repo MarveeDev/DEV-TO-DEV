@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { Badge, Table, Td, Pagination, EmptyState, SearchInput, SelectInput } from '../../../components/admin/AdminUi';
+import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 
 function formatDate(v: string) {
   if (!v) return '—';
@@ -9,20 +11,14 @@ function formatDate(v: string) {
 }
 
 export default function AdminUsersPage() {
+  const { user } = useCurrentUser();
   const [users, setUsers] = useState<any[]>([]);
   const [meta, setMeta] = useState<any>({ page: 1, totalPages: 1 });
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false);
+  const isAdmin = user?.role === 'ADMIN';
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/v1/auth/me')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((me) => setIsAdmin(me?.role === 'ADMIN'))
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -82,7 +78,7 @@ export default function AdminUsersPage() {
                 <Td>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     {u.developerProfile?.avatarUrl ? (
-                      <img src={u.developerProfile.avatarUrl} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                      <Image src={u.developerProfile.avatarUrl} alt="" width={32} height={32} style={{ borderRadius: '50%', objectFit: 'cover' }} />
                     ) : (
                       <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--border)' }} />
                     )}

@@ -2,11 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import Badge from '../../../components/Badge';
 import BackButton from '../../../components/Navigation/BackButton';
 import { Check, Edit, Trash, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 
 export default function QuestionDetailsClient({
   id,
@@ -16,20 +18,15 @@ export default function QuestionDetailsClient({
   initialQuestion: any | null;
 }) {
   const router = useRouter();
+  const { user: currentUser } = useCurrentUser();
 
   const [question, setQuestion] = useState<any>(initialQuestion);
   const [loading, setLoading] = useState(initialQuestion === null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
 
   const [newAnswer, setNewAnswer] = useState('');
   const [submittingAnswer, setSubmittingAnswer] = useState(false);
 
   useEffect(() => {
-    fetch('/api/v1/auth/me')
-      .then(res => res.ok ? res.json() : null)
-      .then(data => setCurrentUser(data))
-      .catch(() => setCurrentUser(null));
-
     if (initialQuestion === null) {
       fetchQuestion();
     } else {
@@ -171,7 +168,7 @@ export default function QuestionDetailsClient({
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {question.author?.avatarUrl ? (
-            <img src={question.author.avatarUrl} alt={question.author.displayName} style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
+            <Image src={question.author.avatarUrl} alt={question.author.displayName} width={32} height={32} style={{ borderRadius: '50%' }} />
           ) : (
             <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--border)' }} />
           )}
@@ -275,7 +272,7 @@ export default function QuestionDetailsClient({
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {answer.author?.avatarUrl ? (
-                      <img src={answer.author.avatarUrl} alt={answer.author.displayName} style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
+                      <Image src={answer.author.avatarUrl} alt={answer.author.displayName} width={24} height={24} style={{ borderRadius: '50%' }} />
                     ) : (
                       <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--border)' }} />
                     )}

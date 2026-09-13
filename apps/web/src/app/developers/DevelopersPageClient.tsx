@@ -3,17 +3,19 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Badge from '../../components/Badge';
 
 import DiscoverTabs from '../../components/Navigation/DiscoverTabs';
 import BackButton from '../../components/Navigation/BackButton';
+import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
 
 export default function DevelopersPageClient({ initialDevelopers }: { initialDevelopers: any[] | null }) {
   const router = useRouter();
+  const { isAuthenticated, loading: authLoading } = useCurrentUser();
   const [browseDevelopers, setBrowseDevelopers] = useState<any[]>(initialDevelopers ?? []);
-  const [isAuth, setIsAuth] = useState<boolean | null>(null);
   const [mode, setMode] = useState<'RECOMMENDED' | 'SEARCH' | 'BROWSE'>('BROWSE');
   const [matches, setMatches] = useState<any[]>([]);
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -34,29 +36,18 @@ export default function DevelopersPageClient({ initialDevelopers }: { initialDev
   };
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const meRes = await fetch('/api/v1/auth/me');
-        if (meRes.ok) {
-          setIsAuth(true);
-          setMode('RECOMMENDED');
-          await fetchRecommended();
-        } else {
-          setIsAuth(false);
-          setMode('BROWSE');
-          if (initialDevelopers === null) {
-            await fetchBrowse();
-          }
-          setLoading(false);
-        }
-      } catch {
-        setIsAuth(false);
-        setMode('BROWSE');
-        setLoading(false);
+    if (authLoading) return;
+    if (isAuthenticated) {
+      setMode('RECOMMENDED');
+      fetchRecommended();
+    } else {
+      setMode('BROWSE');
+      if (initialDevelopers === null) {
+        fetchBrowse();
       }
-    };
-    init();
-  }, []);
+      setLoading(false);
+    }
+  }, [authLoading, isAuthenticated]);
 
   const fetchRecommended = async () => {
     setLoading(true);
@@ -64,7 +55,6 @@ export default function DevelopersPageClient({ initialDevelopers }: { initialDev
     try {
       const res = await fetch('/api/v1/developers/matches?limit=10');
       if (res.status === 401) {
-        setIsAuth(false);
         setMode('BROWSE');
         setLoading(false);
         return;
@@ -159,7 +149,7 @@ export default function DevelopersPageClient({ initialDevelopers }: { initialDev
           >
             Browse All
           </button>
-          {isAuth && (
+          {isAuthenticated && (
             <>
               <button
                 onClick={() => switchMode('RECOMMENDED')}
@@ -229,7 +219,7 @@ export default function DevelopersPageClient({ initialDevelopers }: { initialDev
                   <Card key={dev.username} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                       {dev.avatarUrl ? (
-                        <img src={dev.avatarUrl} alt={dev.displayName} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                        <Image src={dev.avatarUrl} alt={dev.displayName} width={48} height={48} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                       ) : (
                         <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
                       )}
@@ -276,7 +266,7 @@ export default function DevelopersPageClient({ initialDevelopers }: { initialDev
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
                         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                           {match.developer.avatarUrl ? (
-                            <img src={match.developer.avatarUrl} alt={match.developer.displayName} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                            <Image src={match.developer.avatarUrl} alt={match.developer.displayName} width={56} height={56} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                           ) : (
                             <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
                           )}
@@ -366,7 +356,7 @@ export default function DevelopersPageClient({ initialDevelopers }: { initialDev
                   <Card key={dev.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                     <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
                       {dev.avatarUrl ? (
-                        <img src={dev.avatarUrl} alt={dev.displayName} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                        <Image src={dev.avatarUrl} alt={dev.displayName} width={48} height={48} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                       ) : (
                         <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
                       )}

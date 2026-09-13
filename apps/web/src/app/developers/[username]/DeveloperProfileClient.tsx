@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import DeveloperScoreBoard from '../../../components/DeveloperScoreBoard';
 import PostCard from '../../../components/PostCard';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import Badge from '../../../components/Badge';
 import BackButton from '../../../components/Navigation/BackButton';
+import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 
 export default function DeveloperProfileClient({
   username,
@@ -17,28 +19,25 @@ export default function DeveloperProfileClient({
   initialProfile: any | null;
 }) {
   const router = useRouter();
+  const { isAuthenticated } = useCurrentUser();
 
   const [developer, setDeveloper] = useState<any>(initialProfile);
   const [loading, setLoading] = useState(initialProfile === null);
   const [notFound, setNotFound] = useState(false);
-  const [isAuth, setIsAuth] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<string>('NONE');
 
   useEffect(() => {
     let cancelled = false;
 
     const loadAuth = async () => {
+      if (!isAuthenticated) return;
       try {
-        const meRes = await fetch('/api/v1/auth/me');
-        if (meRes.ok) {
-          if (!cancelled) setIsAuth(true);
-          const devRes = await fetch(`/api/v1/developers/${encodeURIComponent(username)}`);
-          if (devRes.ok) {
-            const devData = await devRes.json();
-            if (!cancelled) {
-              setDeveloper((prev: any) => ({ ...(prev ?? {}), ...devData }));
-              setConnectionStatus(devData.publicConnectionStatus || 'NONE');
-            }
+        const devRes = await fetch(`/api/v1/developers/${encodeURIComponent(username)}`);
+        if (devRes.ok) {
+          const devData = await devRes.json();
+          if (!cancelled) {
+            setDeveloper((prev: any) => ({ ...(prev ?? {}), ...devData }));
+            setConnectionStatus(devData.publicConnectionStatus || 'NONE');
           }
         }
       } catch {
@@ -72,7 +71,7 @@ export default function DeveloperProfileClient({
     return () => {
       cancelled = true;
     };
-  }, [username]);
+  }, [username, isAuthenticated]);
 
   const handleConnect = async () => {
     try {
@@ -105,7 +104,7 @@ export default function DeveloperProfileClient({
                 <div className="page-header" style={{ alignItems: 'center' }}>
                   <BackButton fallback="/developers" />
                   {developer.avatarUrl ? (
-                    <img src={developer.avatarUrl} alt={developer.displayName} style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                    <Image src={developer.avatarUrl} alt={developer.displayName} width={80} height={80} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                   ) : (
                     <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
                   )}
@@ -119,16 +118,16 @@ export default function DeveloperProfileClient({
                 </div>
 
                 <div>
-                  {isAuth && connectionStatus === 'NONE' && (
+                  {isAuthenticated && connectionStatus === 'NONE' && (
                     <Button onClick={handleConnect} variant="primary">Connect</Button>
                   )}
-                  {isAuth && connectionStatus === 'PENDING' && (
+                  {isAuthenticated && connectionStatus === 'PENDING' && (
                     <Button variant="outline" disabled>Request Sent</Button>
                   )}
-                  {isAuth && connectionStatus === 'INCOMING_REQUEST' && (
+                  {isAuthenticated && connectionStatus === 'INCOMING_REQUEST' && (
                     <Button variant="outline" disabled>Incoming Request</Button>
                   )}
-                  {isAuth && connectionStatus === 'ACCEPTED' && (
+                  {isAuthenticated && connectionStatus === 'ACCEPTED' && (
                     <Button variant="secondary" disabled>✓ Connected</Button>
                   )}
                 </div>
