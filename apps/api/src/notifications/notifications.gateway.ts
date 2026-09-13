@@ -41,6 +41,9 @@ function parseSessionId(cookieHeader: string | undefined): string | undefined {
     origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
   },
+  // Next.js rewrites proxy `/socket.io/` to the API without the trailing slash,
+  // so engine.io must accept `/socket.io` (no trailing slash) as well.
+  addTrailingSlash: false,
 })
 export class NotificationsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, OnModuleDestroy

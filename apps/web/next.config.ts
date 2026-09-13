@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  skipTrailingSlashRedirect: true,
   async rewrites() {
     const apiTarget = process.env.INTERNAL_API_URL || 'http://api:3001';
     return [
