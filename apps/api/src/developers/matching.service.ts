@@ -115,9 +115,12 @@ export class MatchingService {
 
     const currentUserProfile = await this.prisma.developerProfile.findUnique({
       where: { userId: currentUserId },
-      include: {
-        skills: { include: { skill: true } },
-        learningGoals: { include: { learningGoal: true } },
+      select: {
+        id: true,
+        userId: true,
+        experienceLevel: true,
+        skills: { select: { skillId: true, skill: { select: { id: true, name: true } } } },
+        learningGoals: { select: { learningGoalId: true, learningGoal: { select: { id: true, name: true } } } },
       },
     });
 
@@ -125,7 +128,38 @@ export class MatchingService {
       return { data: [], meta: { total: 0, page, limit, totalPages: 0 } };
     }
 
-    // Exclude users we are already connected with or have pending requests
+    const mySkillIds = currentUserProfile.skills.map((s) => s.skillId);
+    const myGoalIds = currentUserProfile.learningGoals.map((g) => g.learningGoalId);
+
+    // Experience levels within one step can produce a non-zero experience score.
+    const LEVELS = ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT'];
+    const myLevelIdx = LEVELS.indexOf(currentUserProfile.experienceLevel || '');
+    const nearbyLevels =
+      myLevelIdx === -1 ? [] : LEVELS.filter((_, i) => Math.abs(i - myLevelIdx) <= 1);
+
+    // A candidate can only score > 0 when they share a skill, share a learning
+    // goal, have a complementary skill (their skill is my goal, or their goal is
+    // my skill), or have a compatible experience level. Pre-filtering on these
+    // conditions at the database level selects exactly the score > 0 population
+    // without changing the scoring formula or ranking.
+    const orConditions: Prisma.DeveloperProfileWhereInput[] = [];
+    if (mySkillIds.length > 0) {
+      orConditions.push({ skills: { some: { skillId: { in: mySkillIds } } } });
+      orConditions.push({ learningGoals: { some: { learningGoalId: { in: mySkillIds } } } });
+    }
+    if (myGoalIds.length > 0) {
+      orConditions.push({ learningGoals: { some: { learningGoalId: { in: myGoalIds } } } });
+      orConditions.push({ skills: { some: { skillId: { in: myGoalIds } } } });
+    }
+    if (nearbyLevels.length > 0) {
+      orConditions.push({ experienceLevel: { in: nearbyLevels } });
+    }
+
+    if (orConditions.length === 0) {
+      return { data: [], meta: { total: 0, page, limit, totalPages: 0 } };
+    }
+
+    // Exclude users we are already connected with or have pending requests.
     const existingConnections = await this.prisma.connection.findMany({
       where: {
         OR: [
@@ -144,17 +178,21 @@ export class MatchingService {
       excludedIds.add(c.addresseeId);
     });
 
-    const where: Prisma.DeveloperProfileWhereInput = {
-      user: {
-        id: { notIn: Array.from(excludedIds) },
-      },
-    };
-
     const candidates = await this.prisma.developerProfile.findMany({
-      where,
-      include: {
-        skills: { include: { skill: true } },
-        learningGoals: { include: { learningGoal: true } },
+      where: {
+        userId: { notIn: Array.from(excludedIds) },
+        OR: orConditions,
+      },
+      select: {
+        id: true,
+        userId: true,
+        username: true,
+        displayName: true,
+        bio: true,
+        avatarUrl: true,
+        experienceLevel: true,
+        skills: { select: { skill: { select: { id: true, name: true } } } },
+        learningGoals: { select: { learningGoal: { select: { id: true, name: true } } } },
       },
     });
 
@@ -177,7 +215,7 @@ export class MatchingService {
     // Sort by compatibility score
     enriched.sort((a, b) => b.compatibility.score - a.compatibility.score);
 
-    // Filter out 0 matches, or maybe just return all but sorted
+    // Filter out 0 matches (defensive; the pre-filter already excludes them)
     const relevantMatches = enriched.filter(e => e.compatibility.score > 0);
 
     const total = relevantMatches.length;
