@@ -168,6 +168,7 @@ model Connection {
   addressee User @relation("ReceivedConnections", fields: [addresseeId], references: [id], onDelete: Cascade)
 
   @@unique([requesterId, addresseeId])
+  @@index([addresseeId])
 }
 
 enum NotificationType {
@@ -188,6 +189,8 @@ model Notification {
   read      Boolean          @default(false)
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
+
+  @@index([userId, createdAt])
 }
 
 // A single Web Push subscription for a user's browser/device. A user may have
@@ -218,6 +221,8 @@ model Post {
   attachments MediaAttachment[]
   comments    PostComment[]
   likes       PostLike[]
+
+  @@index([createdAt])
 }
 
 model PostSkill {
