@@ -79,9 +79,7 @@ export default function PushNotificationToggle() {
           Device notifications
         </div>
         <div style={{ color: 'var(--foreground-muted)', fontSize: '13px', marginTop: '2px' }}>
-          {state === 'subscribed'
-            ? 'You will get notifications on this device even when DEV-TO-DEV is closed.'
-            : 'Get notifications on this device even when DEV-TO-DEV is closed.'}
+          Stay updated with important activity, wherever you are.
         </div>
       </div>
       <Button
