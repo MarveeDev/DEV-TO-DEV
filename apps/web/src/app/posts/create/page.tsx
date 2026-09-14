@@ -58,7 +58,7 @@ export default function CreatePostPage() {
       <div className="page-header" style={{ marginBottom: '24px' }}>
         <BackButton fallback="/feed" />
         <div className="page-header-content">
-          <h1 style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <h1 style={{ margin: 0, color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <MessageSquarePlus size={28} color="var(--primary)" />
             Create a Post
           </h1>

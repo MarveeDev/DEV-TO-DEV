@@ -3,12 +3,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import Button from '../../../components/Button';
+import Avatar from '../../../components/Avatar';
 import BackButton from '../../../components/Navigation/BackButton';
 import { formatPrice } from '../../../lib/currency';
 import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 import { Send } from 'lucide-react';
+import Skeleton from '../../../components/Skeleton';
 
 export default function ChatPage() {
   const router = useRouter();
@@ -132,11 +133,7 @@ export default function ChatPage() {
       <div className="page-header" style={{ marginBottom: '16px', alignItems: 'center' }}>
         <BackButton fallback="/messages" />
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0, overflow: 'hidden' }}>
-            {partner?.profile?.avatarUrl && (
-              <Image src={partner.profile.avatarUrl} alt="" width={40} height={40} style={{ objectFit: 'cover' }} />
-            )}
-          </div>
+          <Avatar src={partner?.profile?.avatarUrl} name={partner?.profile?.displayName} size={40} />
           <div style={{ minWidth: 0 }}>
             {partner?.profile ? (
               <Link href={`/developers/${partner.profile.username}`} style={{ fontWeight: 700, color: 'var(--foreground)', textDecoration: 'none', fontSize: '18px', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -176,7 +173,12 @@ export default function ChatPage() {
         {/* Messages */}
         <div ref={scrollRef} className="chat-scroll" style={{ overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {loading ? (
-            <div style={{ margin: 'auto', color: 'var(--foreground-muted)' }}>Loading conversation...</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 20 }} aria-hidden="true">
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}><Skeleton width={160} height={40} borderRadius="16px" /></div>
+                <div style={{ display: 'flex', justifyContent: 'flex-start' }}><Skeleton width={200} height={40} borderRadius="16px" /></div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}><Skeleton width={120} height={40} borderRadius="16px" /></div>
+                <div style={{ display: 'flex', justifyContent: 'flex-start' }}><Skeleton width={180} height={40} borderRadius="16px" /></div>
+              </div>
           ) : error ? (
             <div style={{ margin: 'auto', color: '#ef4444', textAlign: 'center' }}>{error}</div>
           ) : messages.length === 0 ? (

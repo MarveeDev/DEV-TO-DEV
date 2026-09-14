@@ -2,10 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
-import Badge from '../../../components/Badge';
+import Avatar from '../../../components/Avatar';
+import SkillTag from '../../../components/SkillTag';
 import BackButton from '../../../components/Navigation/BackButton';
 import { Check, Edit, Trash, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
@@ -167,11 +167,7 @@ export default function QuestionDetailsClient({
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          {question.author?.avatarUrl ? (
-            <Image src={question.author.avatarUrl} alt={question.author.displayName} width={32} height={32} style={{ borderRadius: '50%' }} />
-          ) : (
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--border)' }} />
-          )}
+          <Avatar src={question.author?.avatarUrl} name={question.author?.displayName} size={32} />
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <strong style={{ fontSize: '14px', color: 'var(--foreground)' }}>{question.author?.displayName}</strong>
             <span style={{ fontSize: '12px', color: 'var(--foreground-muted)' }}>@{question.author?.username} • {question.author?.experienceLevel || 'Developer'}</span>
@@ -220,18 +216,11 @@ export default function QuestionDetailsClient({
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
             {question.skills?.map((qs: any) => (
-              <Badge
+              <SkillTag
                 key={qs.skill.id}
-                variant="default"
-                style={{ cursor: 'pointer' }}
-                onClick={(e: React.MouseEvent) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  router.push(`/skills/${qs.skill.slug || qs.skill.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`);
-                }}
-              >
-                {qs.skill.name}
-              </Badge>
+                name={qs.skill.name}
+                slug={qs.skill.slug}
+              />
             ))}
           </div>
         </div>
@@ -271,11 +260,7 @@ export default function QuestionDetailsClient({
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    {answer.author?.avatarUrl ? (
-                      <Image src={answer.author.avatarUrl} alt={answer.author.displayName} width={24} height={24} style={{ borderRadius: '50%' }} />
-                    ) : (
-                      <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--border)' }} />
-                    )}
+                    <Avatar src={answer.author?.avatarUrl} name={answer.author?.displayName} size={24} />
                     <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--foreground)' }}>{answer.author?.displayName}</span>
                     <span style={{ fontSize: '12px', color: 'var(--foreground-muted)' }}>• {new Date(answer.createdAt).toLocaleDateString()}</span>
                   </div>

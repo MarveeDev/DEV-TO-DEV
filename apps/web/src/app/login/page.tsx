@@ -16,9 +16,12 @@ export default async function LoginPage({
             <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ height: '48px', width: 'auto', objectFit: 'contain' }} />
           </div>
           
-          <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--foreground)', marginBottom: '8px' }}>Welcome back</h1>
-          <p style={{ color: 'var(--foreground-muted)', marginBottom: '32px', fontSize: '14px' }}>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--foreground)', marginBottom: '8px', letterSpacing: '-0.02em' }}>Welcome back</h1>
+          <p style={{ color: 'var(--foreground-muted)', marginBottom: '8px', fontSize: '14px' }}>
             Log in to DEV-TO-DEV to continue growing.
+          </p>
+          <p style={{ color: 'var(--foreground-subtle)', marginBottom: '32px', fontSize: '13px' }}>
+            Learn. Connect. Build. Grow.
           </p>
 
           {error && (

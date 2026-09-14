@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 export interface Option {
   id: string;
   name: string;
-  category?: string; // Optional for grouped items
+  category?: string;
 }
 
 interface MultiSelectProps {
@@ -28,7 +28,7 @@ export default function MultiSelect({ options, selectedIds, onChange, placeholde
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredOptions = options.filter(opt => 
+  const filteredOptions = options.filter(opt =>
     opt.name.toLowerCase().includes(query.toLowerCase())
   );
 
@@ -42,7 +42,6 @@ export default function MultiSelect({ options, selectedIds, onChange, placeholde
 
   const selectedOptions = options.filter(opt => selectedIds.includes(opt.id));
 
-  // Group by category if available
   const groupedOptions = filteredOptions.reduce((acc, opt) => {
     const key = opt.category || 'Other';
     if (!acc[key]) acc[key] = [];
@@ -51,55 +50,58 @@ export default function MultiSelect({ options, selectedIds, onChange, placeholde
   }, {} as Record<string, Option[]>);
 
   return (
-    <div ref={containerRef} style={{ position: 'relative', width: '100%', fontFamily: 'sans-serif' }}>
-      <div 
+    <div ref={containerRef} style={{ position: 'relative', width: '100%' }}>
+      <div
         style={{
-          border: '1px solid #ccc',
-          borderRadius: '4px',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
           padding: '8px',
-          minHeight: '40px',
+          minHeight: '44px',
           display: 'flex',
           flexWrap: 'wrap',
           gap: '8px',
           cursor: 'text',
-          background: '#fff'
+          background: 'var(--surface)',
         }}
         onClick={() => setIsOpen(true)}
       >
         {selectedOptions.map(opt => (
-          <span 
-            key={opt.id} 
+          <span
+            key={opt.id}
             style={{
-              background: '#e0e7ff',
-              color: '#3730a3',
+              background: 'var(--primary-light)',
+              color: 'var(--primary)',
               padding: '4px 8px',
-              borderRadius: '16px',
+              borderRadius: 'var(--radius-full)',
               display: 'inline-flex',
               alignItems: 'center',
               fontSize: '14px',
-              fontWeight: 500
+              fontWeight: 500,
             }}
           >
             {opt.name}
-            <button 
+            <button
               type="button"
               onClick={(e) => { e.stopPropagation(); handleSelect(opt.id); }}
+              aria-label={`Remove ${opt.name}`}
               style={{
                 background: 'none',
                 border: 'none',
-                color: '#3730a3',
+                color: 'var(--primary)',
                 marginLeft: '6px',
                 cursor: 'pointer',
                 fontWeight: 'bold',
-                fontSize: '12px'
+                fontSize: '14px',
+                lineHeight: 1,
+                padding: 0,
               }}
             >
               ×
             </button>
           </span>
         ))}
-        <input 
-          type="text" 
+        <input
+          type="text"
           value={query}
           onChange={(e) => { setQuery(e.target.value); setIsOpen(true); }}
           onFocus={() => setIsOpen(true)}
@@ -110,7 +112,8 @@ export default function MultiSelect({ options, selectedIds, onChange, placeholde
             flexGrow: 1,
             minWidth: '120px',
             background: 'transparent',
-            color: '#000'
+            color: 'var(--foreground)',
+            fontSize: 14,
           }}
         />
       </div>
@@ -122,30 +125,31 @@ export default function MultiSelect({ options, selectedIds, onChange, placeholde
           left: 0,
           right: 0,
           marginTop: '4px',
-          background: '#fff',
-          border: '1px solid #ccc',
-          borderRadius: '4px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius-md)',
+          boxShadow: 'var(--shadow-lg)',
           maxHeight: '300px',
           overflowY: 'auto',
           zIndex: 1000,
-          color: '#000'
+          color: 'var(--foreground)',
         }}>
           {filteredOptions.length === 0 ? (
-            <div style={{ padding: '12px', color: '#666', textAlign: 'center' }}>No results found</div>
+            <div style={{ padding: '12px', color: 'var(--foreground-muted)', textAlign: 'center' }}>No results found</div>
           ) : (
             Object.entries(groupedOptions).map(([category, opts]) => (
               <div key={category}>
                 {category !== 'Other' && (
-                  <div style={{ 
-                    padding: '8px 12px', 
-                    background: '#f9fafb', 
-                    fontWeight: 'bold',
+                  <div style={{
+                    padding: '8px 12px',
+                    background: 'var(--surface-muted)',
+                    fontWeight: 700,
                     fontSize: '12px',
-                    color: '#6b7280',
+                    color: 'var(--foreground-muted)',
                     textTransform: 'uppercase',
-                    borderTop: '1px solid #e5e7eb',
-                    borderBottom: '1px solid #e5e7eb'
+                    letterSpacing: '0.04em',
+                    borderTop: '1px solid var(--border)',
+                    borderBottom: '1px solid var(--border)',
                   }}>
                     {category}
                   </div>
@@ -153,7 +157,7 @@ export default function MultiSelect({ options, selectedIds, onChange, placeholde
                 {opts.map(opt => {
                   const isSelected = selectedIds.includes(opt.id);
                   return (
-                    <div 
+                    <div
                       key={opt.id}
                       onClick={() => handleSelect(opt.id)}
                       style={{
@@ -161,19 +165,19 @@ export default function MultiSelect({ options, selectedIds, onChange, placeholde
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        background: isSelected ? '#f3f4f6' : '#fff',
-                        borderBottom: '1px solid #f3f4f6'
+                        background: isSelected ? 'var(--primary-light)' : 'var(--surface)',
+                        borderBottom: '1px solid var(--border)',
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = '#f3f4f6')}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = isSelected ? '#f3f4f6' : '#fff')}
+                      onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = 'var(--surface-muted)'; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = isSelected ? 'var(--primary-light)' : 'var(--surface)'; }}
                     >
-                      <input 
-                        type="checkbox" 
-                        checked={isSelected} 
-                        readOnly 
-                        style={{ marginRight: '12px', cursor: 'pointer' }}
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        readOnly
+                        style={{ marginRight: '12px', cursor: 'pointer', accentColor: 'var(--primary)' }}
                       />
-                      {opt.name}
+                      <span style={{ fontSize: 14 }}>{opt.name}</span>
                     </div>
                   );
                 })}

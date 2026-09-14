@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Bell, Settings } from 'lucide-react';
@@ -13,7 +14,46 @@ export default function NavigationRoot() {
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated, loading, logout } = useCurrentUser();
-  const { disconnect: disconnectNotifications } = useNotifications();
+  const { notifications, disconnect: disconnectNotifications } = useNotifications();
+  const [history, setHistory] = useState<{ id: string; read: boolean }[]>([]);
+
+  // Initial unread count from REST history.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let cancelled = false;
+    fetch('/api/v1/notifications')
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (cancelled || !Array.isArray(data)) return;
+        setHistory(data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated]);
+
+  // Merge REST history with live Socket.IO notifications to compute unread count.
+  const unreadCount = useMemo(() => {
+    const ids = new Set<string>();
+    history.forEach((n) => {
+      if (!n.read) ids.add(n.id);
+    });
+    notifications.forEach((n) => {
+      if (n.read) ids.delete(n.id);
+      else ids.add(n.id);
+    });
+    return ids.size;
+  }, [history, notifications]);
+
+  // Toggle the desktop sidebar layout offset. The sidebar only renders for
+  // authenticated users, so the <body> padding-left must match that condition.
+  useEffect(() => {
+    document.body.classList.toggle('has-sidebar', isAuthenticated);
+    return () => {
+      document.body.classList.remove('has-sidebar');
+    };
+  }, [isAuthenticated]);
 
   const handleLogout = async () => {
     await logout();
@@ -24,38 +64,35 @@ export default function NavigationRoot() {
   return (
     <>
       <style>{`
-        .desktop-nav-layer {
-          display: none;
-        }
-        .mobile-nav-layer {
-          display: block;
-        }
-        .unauth-mobile-header {
+        .desktop-nav-layer { display: none; }
+        .mobile-nav-layer { display: block; }
+        .mobile-header {
           position: sticky;
           top: 0;
           z-index: 50;
           background: var(--surface);
           border-bottom: 1px solid var(--border);
-          padding: 16px 24px;
+          height: 60px;
+          padding: 0 16px;
           display: flex;
           justify-content: space-between;
           align-items: center;
         }
         @media (min-width: 1024px) {
-          .desktop-nav-layer {
-            display: block;
-          }
-          .mobile-nav-layer, .unauth-mobile-header {
-            display: none !important;
-          }
+          .desktop-nav-layer { display: block; }
+          .mobile-nav-layer, .mobile-header { display: none !important; }
         }
       `}</style>
-      
+
       {/* Desktop Navigation */}
       <div className="desktop-nav-layer">
-        <DesktopHeader isAuthenticated={isAuthenticated} loading={loading} onLogout={handleLogout} />
+        <DesktopHeader
+          isAuthenticated={isAuthenticated}
+          loading={loading}
+          unreadCount={unreadCount}
+        />
         {isAuthenticated && !loading && (
-          <DesktopSidebar onLogout={handleLogout} currentPath={pathname} />
+          <DesktopSidebar onLogout={handleLogout} currentPath={pathname} unreadCount={unreadCount} />
         )}
       </div>
 
@@ -66,31 +103,76 @@ export default function NavigationRoot() {
         </div>
       )}
 
-      {/* Mobile Unauthenticated Header */}
-      {!loading && !isAuthenticated && (
-        <header className="unauth-mobile-header">
-          <a href="/login" style={{ background: 'var(--primary)', color: '#ffffff', padding: '8px 16px', borderRadius: 'var(--radius-sm)', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>
-            Login
-          </a>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ height: '28px', width: 'auto', objectFit: 'contain' }} />
+      {/* Mobile header */}
+      {!loading && (
+        <header className="mobile-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ height: 30, width: 'auto', objectFit: 'contain' }} />
           </div>
-        </header>
-      )}
 
-      {/* Mobile Authenticated Header */}
-      {!loading && isAuthenticated && (
-        <header className="unauth-mobile-header" style={{ padding: '12px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <Link href="/notifications" style={{ color: 'var(--foreground)', display: 'flex', alignItems: 'center' }}>
-              <Bell size={24} strokeWidth={2} />
-            </Link>
-            <Link href="/settings" style={{ color: 'var(--foreground)', display: 'flex', alignItems: 'center' }}>
-              <Settings size={24} strokeWidth={2} />
-            </Link>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ height: '28px', width: 'auto', objectFit: 'contain' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/notifications"
+                  aria-label="Notifications"
+                  style={{
+                    position: 'relative',
+                    width: 40,
+                    height: 40,
+                    borderRadius: 'var(--radius-md)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--foreground-muted)',
+                  }}
+                >
+                  <Bell size={22} />
+                  {unreadCount > 0 && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: 6,
+                        right: 6,
+                        minWidth: 16,
+                        height: 16,
+                        padding: '0 4px',
+                        borderRadius: 'var(--radius-full)',
+                        background: 'var(--primary)',
+                        color: '#fff',
+                        fontSize: 10,
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '2px solid var(--surface)',
+                      }}
+                    >
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
+                <Link
+                  href="/settings"
+                  aria-label="Settings"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: 'var(--radius-md)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--foreground-muted)',
+                  }}
+                >
+                  <Settings size={22} />
+                </Link>
+              </>
+            ) : (
+              <Link href="/login" className="btn btn--primary btn--sm">
+                Login
+              </Link>
+            )}
           </div>
         </header>
       )}

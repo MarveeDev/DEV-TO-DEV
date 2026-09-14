@@ -1,13 +1,13 @@
 import React from 'react';
 
 type BadgeProps = React.HTMLAttributes<HTMLSpanElement> & {
-  variant?: 'default' | 'primary' | 'outline';
+  variant?: 'default' | 'primary' | 'outline' | 'success' | 'danger';
 };
 
 export default function Badge({ children, variant = 'default', style, ...props }: BadgeProps) {
-  const variants = {
+  const variants: Record<NonNullable<BadgeProps['variant']>, React.CSSProperties> = {
     default: {
-      background: 'var(--border)',
+      background: 'var(--surface-hover)',
       color: 'var(--foreground)',
       border: '1px solid transparent',
     },
@@ -19,8 +19,18 @@ export default function Badge({ children, variant = 'default', style, ...props }
     outline: {
       background: 'transparent',
       color: 'var(--foreground-muted)',
-      border: '1px dashed var(--border)',
-    }
+      border: '1px solid var(--border-strong)',
+    },
+    success: {
+      background: 'var(--success-light)',
+      color: 'var(--success)',
+      border: '1px solid transparent',
+    },
+    danger: {
+      background: 'var(--danger-light)',
+      color: 'var(--danger)',
+      border: '1px solid transparent',
+    },
   };
 
   return (
@@ -28,10 +38,11 @@ export default function Badge({ children, variant = 'default', style, ...props }
       style={{
         display: 'inline-flex',
         alignItems: 'center',
-        padding: '4px 12px',
-        borderRadius: '9999px',
+        padding: '3px 10px',
+        borderRadius: 'var(--radius-full)',
         fontSize: '12px',
-        fontWeight: 500,
+        fontWeight: 600,
+        lineHeight: 1.4,
         ...variants[variant],
         ...style,
       }}

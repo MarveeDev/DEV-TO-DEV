@@ -77,7 +77,7 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
       <div className="page-header" style={{ marginBottom: '24px' }}>
         <BackButton fallback={`/posts/${id}`} />
         <div className="page-header-content">
-          <h1 style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <h1 style={{ margin: 0, color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Edit2 size={28} color="var(--primary)" />
             Edit Post
           </h1>

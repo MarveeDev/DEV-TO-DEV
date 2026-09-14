@@ -9,7 +9,7 @@ export default function DeveloperScoreBoard({ username, isMe }: { username?: str
 
   useEffect(() => {
     const endpoint = isMe ? '/api/v1/score/me' : `/api/v1/score/developers/${username}`;
-    
+
     fetch(endpoint)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
@@ -22,38 +22,38 @@ export default function DeveloperScoreBoard({ username, isMe }: { username?: str
   if (loading) return null;
   if (!scoreData) return null;
 
+  const stats = [
+    { label: 'Dev Score', value: scoreData.score, highlight: true },
+    { label: 'Streak', value: `${scoreData.streak} ${scoreData.streak === 1 ? 'day' : 'days'}` },
+    { label: 'Posts', value: scoreData.postsCount },
+    { label: 'Connections', value: scoreData.connectionsCount },
+    { label: 'Projects', value: scoreData.projectsCount },
+  ];
+
   return (
     <Card padding="md">
-      <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px', color: 'var(--foreground)' }}>Developer Stats</h3>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
-        gap: '16px',
-      }}>
-        <div>
-          <div style={{ fontSize: '12px', color: 'var(--foreground-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Dev Score</div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--primary)' }}>{scoreData.score}</div>
-        </div>
-        
-        <div>
-          <div style={{ fontSize: '12px', color: 'var(--foreground-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Streak</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--foreground)' }}>{scoreData.streak} {scoreData.streak === 1 ? 'day' : 'days'}</div>
-        </div>
-
-        <div>
-          <div style={{ fontSize: '12px', color: 'var(--foreground-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Posts</div>
-          <div style={{ fontSize: '20px', fontWeight: 600, color: 'var(--foreground)' }}>{scoreData.postsCount}</div>
-        </div>
-
-        <div>
-          <div style={{ fontSize: '12px', color: 'var(--foreground-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Connections</div>
-          <div style={{ fontSize: '20px', fontWeight: 600, color: 'var(--foreground)' }}>{scoreData.connectionsCount}</div>
-        </div>
-
-        <div>
-          <div style={{ fontSize: '12px', color: 'var(--foreground-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Projects</div>
-          <div style={{ fontSize: '20px', fontWeight: 600, color: 'var(--foreground)' }}>{scoreData.projectsCount}</div>
-        </div>
+      <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px 0', color: 'var(--foreground)' }}>Developer Stats</h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {stats.map((s) => (
+          <div
+            key={s.label}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '12px 16px',
+              borderRadius: 'var(--radius-md)',
+              background: s.highlight ? 'var(--primary-light)' : 'var(--surface-muted)',
+            }}
+          >
+            <span style={{ fontSize: 13, color: s.highlight ? 'var(--primary)' : 'var(--foreground-muted)', fontWeight: 600 }}>
+              {s.label}
+            </span>
+            <span style={{ fontSize: 18, fontWeight: 800, color: s.highlight ? 'var(--primary)' : 'var(--foreground)' }}>
+              {s.value}
+            </span>
+          </div>
+        ))}
       </div>
     </Card>
   );

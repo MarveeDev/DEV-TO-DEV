@@ -1,42 +1,28 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { 
-  House, 
-  Compass, 
-  Folder, 
-  CircleHelp, 
-  MessageSquare, 
-  Bell, 
-  User, 
-  Settings, 
+import {
+  House,
+  Compass,
+  Folder,
+  CircleHelp,
+  MessageSquare,
+  Bell,
+  User,
+  Settings,
   Store,
   LogOut,
-  Terminal,
-  Map
+  Map,
 } from 'lucide-react';
 
 interface DesktopSidebarProps {
   currentPath: string;
   onLogout: () => void;
+  unreadCount?: number;
 }
 
-export default function DesktopSidebar({ currentPath, onLogout }: DesktopSidebarProps) {
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    fetch('/api/v1/notifications')
-      .then(res => res.ok ? res.json() : [])
-      .then(data => {
-        if (Array.isArray(data)) {
-          const unread = data.filter(n => !n.read).length;
-          setUnreadCount(unread);
-        }
-      })
-      .catch(err => console.error(err));
-  }, []);
-  
+export default function DesktopSidebar({ currentPath, onLogout, unreadCount = 0 }: DesktopSidebarProps) {
   const navItems = [
     { name: 'Home', path: '/dashboard', icon: House },
     { name: 'Discover', path: '/developers', icon: Compass },
@@ -45,38 +31,15 @@ export default function DesktopSidebar({ currentPath, onLogout }: DesktopSidebar
     { name: 'Projects', path: '/projects', icon: Folder },
     { name: 'Questions', path: '/questions', icon: CircleHelp },
     { name: 'Messages', path: '/messages', icon: MessageSquare },
-    { name: 'Notifications', path: '/notifications', icon: Bell, hasBadge: unreadCount > 0 },
+    { name: 'Notifications', path: '/notifications', icon: Bell, badge: unreadCount },
     { name: 'Profile', path: '/profile', icon: User },
   ];
 
-  const getStyle = (path: string) => {
-    const isActive = currentPath === path || currentPath.startsWith(path + '/');
-    return {
-      color: isActive ? 'var(--primary)' : 'var(--foreground-muted)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      width: '48px',
-      height: '48px',
-      borderRadius: 'var(--radius-md)',
-      background: isActive ? 'var(--primary-light)' : 'transparent',
-      transition: 'all 0.2s',
-      marginBottom: '8px',
-      position: 'relative' as const,
-      cursor: 'pointer'
-    };
-  };
+  const isActive = (path: string) => currentPath === path || currentPath.startsWith(path + '/');
 
   return (
-    <>
-      <style>{`
-        .sidebar-icon-container:hover .sidebar-tooltip {
-          opacity: 1;
-          visibility: visible;
-          transform: translateX(0);
-        }
-      `}</style>
-      <nav style={{
+    <nav
+      style={{
         position: 'fixed',
         top: 0,
         left: 0,
@@ -87,73 +50,126 @@ export default function DesktopSidebar({ currentPath, onLogout }: DesktopSidebar
         zIndex: 60,
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        boxSizing: 'border-box'
-      }}>
-        <div style={{ width: '100%', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
-          <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ width: '32px', height: 'auto', objectFit: 'contain' }} />
-        </div>
+        boxSizing: 'border-box',
+        overflowY: 'auto',
+      }}
+    >
+      {/* Brand */}
+      <div
+        style={{
+          height: 'var(--header-height)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '0 20px',
+          borderBottom: '1px solid var(--border)',
+          flexShrink: 0,
+        }}
+      >
+        <img src="/logo.png" alt="DEV-TO-DEV Logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
+        <span style={{ fontWeight: 800, fontSize: '16px', letterSpacing: '-0.02em', color: 'var(--foreground)' }}>
+          DEV-TO-DEV
+        </span>
+      </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, width: '100%', alignItems: 'center', paddingTop: '24px' }}>
-          {navItems.map(item => (
-            <Link key={item.name} href={item.path} style={{ textDecoration: 'none' }} className="sidebar-icon-container">
-              <div style={getStyle(item.path)}>
-                <item.icon size={24} strokeWidth={2} />
-                {item.hasBadge && (
-                  <span style={{
-                    position: 'absolute',
-                    top: '8px',
-                    right: '10px',
-                    width: '10px',
-                    height: '10px',
+      {/* Navigation */}
+      <div style={{ flex: 1, padding: '16px 12px' }}>
+        {navItems.map((item) => {
+          const active = isActive(item.path);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.name}
+              href={item.path}
+              aria-current={active ? 'page' : undefined}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '10px 14px',
+                borderRadius: 'var(--radius-md)',
+                marginBottom: '2px',
+                color: active ? 'var(--primary)' : 'var(--foreground-muted)',
+                background: active ? 'var(--primary-light)' : 'transparent',
+                fontWeight: active ? 600 : 500,
+                fontSize: '14px',
+                transition: 'background 0.15s ease, color 0.15s ease',
+                position: 'relative',
+              }}
+              onMouseEnter={(e) => {
+                if (!active) e.currentTarget.style.background = 'var(--surface-hover)';
+              }}
+              onMouseLeave={(e) => {
+                if (!active) e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              <Icon size={20} strokeWidth={active ? 2.2 : 2} />
+              <span style={{ flex: 1 }}>{item.name}</span>
+              {item.badge ? (
+                <span
+                  style={{
+                    minWidth: 20,
+                    height: 20,
+                    padding: '0 6px',
+                    borderRadius: 'var(--radius-full)',
                     background: 'var(--primary)',
-                    border: '2px solid var(--surface)',
-                    borderRadius: '50%'
-                  }} />
-                )}
-                <div className="sidebar-tooltip" style={{
-                  position: 'absolute',
-                  left: '60px',
-                  background: 'var(--foreground)',
-                  color: 'var(--surface)',
-                  padding: '6px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  pointerEvents: 'none',
-                  opacity: 0,
-                  visibility: 'hidden',
-                  transform: 'translateX(-10px)',
-                  transition: 'all 0.2s',
-                  whiteSpace: 'nowrap',
-                  zIndex: 100
-                }}>
-                  {item.name}
-                </div>
-              </div>
+                    color: '#fff',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {item.badge > 99 ? '99+' : item.badge}
+                </span>
+              ) : null}
             </Link>
-          ))}
-        </div>
+          );
+        })}
+      </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', borderTop: '1px solid var(--border)', paddingTop: '24px' }}>
-          <Link href="/settings" className="sidebar-icon-container" style={{...getStyle('/settings'), textDecoration: 'none'}}>
-            <Settings size={24} strokeWidth={2} />
-            <div className="sidebar-tooltip" style={{
-                  position: 'absolute', left: '60px', background: 'var(--foreground)', color: 'var(--surface)',
-                  padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '12px', fontWeight: 600,
-                  opacity: 0, visibility: 'hidden', transform: 'translateX(-10px)', transition: 'all 0.2s', whiteSpace: 'nowrap'
-                }}>Settings</div>
-          </Link>
-          <button onClick={onLogout} className="sidebar-icon-container" style={{ ...getStyle(''), border: 'none' }}>
-            <LogOut size={24} strokeWidth={2} />
-            <div className="sidebar-tooltip" style={{
-                  position: 'absolute', left: '60px', background: 'var(--foreground)', color: 'var(--surface)',
-                  padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '12px', fontWeight: 600,
-                  opacity: 0, visibility: 'hidden', transform: 'translateX(-10px)', transition: 'all 0.2s', whiteSpace: 'nowrap'
-                }}>Logout</div>
-          </button>
-        </div>
-      </nav>
-    </>
+      {/* Footer */}
+      <div style={{ padding: '12px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+        <Link
+          href="/settings"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            padding: '10px 14px',
+            borderRadius: 'var(--radius-md)',
+            color: isActive('/settings') ? 'var(--primary)' : 'var(--foreground-muted)',
+            background: isActive('/settings') ? 'var(--primary-light)' : 'transparent',
+            fontWeight: isActive('/settings') ? 600 : 500,
+            fontSize: '14px',
+          }}
+        >
+          <Settings size={20} />
+          <span>Settings</span>
+        </Link>
+        <button
+          onClick={onLogout}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            width: '100%',
+            padding: '10px 14px',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--foreground-muted)',
+            background: 'transparent',
+            border: 'none',
+            fontWeight: 500,
+            fontSize: '14px',
+            cursor: 'pointer',
+            textAlign: 'left',
+          }}
+        >
+          <LogOut size={20} />
+          <span>Logout</span>
+        </button>
+      </div>
+    </nav>
   );
 }

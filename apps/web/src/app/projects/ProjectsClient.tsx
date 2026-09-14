@@ -2,13 +2,16 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Card from '../../components/Card';
 import Button from '../../components/Button';
+import SearchBar from '../../components/SearchBar';
+import EmptyState from '../../components/EmptyState';
 import Link from 'next/link';
 import BackButton from '../../components/Navigation/BackButton';
 import DiscoverTabs from '../../components/Navigation/DiscoverTabs';
 
 import ProjectCard from '../../components/ProjectCard';
+import { ProjectCardSkeleton } from '../../components/skeletons';
+import { Folder } from 'lucide-react';
 
 export default function ProjectsClient({ initialProjects }: { initialProjects: any[] | null }) {
   const router = useRouter();
@@ -54,7 +57,7 @@ export default function ProjectsClient({ initialProjects }: { initialProjects: a
         <div className="page-header">
           <BackButton fallback="/dashboard" />
           <div className="page-header-content">
-            <h1 className="text-wrap-safe" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)', margin: '0 0 8px 0' }}>
+            <h1 className="text-wrap-safe" style={{ color: 'var(--foreground)', margin: '0 0 8px 0' }}>
               Projects
             </h1>
             <p style={{ color: 'var(--foreground-muted)', fontSize: '16px', margin: 0 }}>Build something. Share it. Grow together.</p>
@@ -66,25 +69,15 @@ export default function ProjectsClient({ initialProjects }: { initialProjects: a
       <DiscoverTabs />
 
       {/* Filters */}
-      <section style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
-        <input
-          type="text"
-          placeholder="Search projects..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            padding: '10px 16px',
-            borderRadius: '8px',
-            border: '1px solid var(--border)',
-            fontSize: '14px',
-            flexGrow: 1,
-            maxWidth: '300px',
-            outline: 'none',
-            background: 'var(--card-bg)',
-            color: 'var(--foreground)'
-          }}
-        />
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+      <section style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' }}>
+        <div style={{ flexGrow: 1, maxWidth: 320 }}>
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search projects..."
+          />
+        </div>
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
           <Button size="sm" variant={statusFilter === '' ? 'primary' : 'outline'} onClick={() => setStatusFilter('')}>All</Button>
           <Button size="sm" variant={statusFilter === 'ACTIVE' ? 'primary' : 'outline'} onClick={() => setStatusFilter('ACTIVE')}>Active</Button>
           <Button size="sm" variant={statusFilter === 'COMPLETED' ? 'primary' : 'outline'} onClick={() => setStatusFilter('COMPLETED')}>Completed</Button>
@@ -93,13 +86,22 @@ export default function ProjectsClient({ initialProjects }: { initialProjects: a
 
       {/* Projects Grid */}
       {loading ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--foreground-muted)' }}>Loading projects...</div>
+        <div role="status" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+          <span className="sr-only">Loading projects…</span>
+          <ProjectCardSkeleton />
+          <ProjectCardSkeleton />
+          <ProjectCardSkeleton />
+          <ProjectCardSkeleton />
+          <ProjectCardSkeleton />
+          <ProjectCardSkeleton />
+        </div>
       ) : projects.length === 0 ? (
-        <Card padding="lg" style={{ textAlign: 'center' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--foreground)', marginBottom: '8px' }}>No projects found</h3>
-          <p style={{ color: 'var(--foreground-muted)', marginBottom: '24px' }}>There are no projects matching your criteria.</p>
-          <Button variant="primary" onClick={() => router.push('/projects/create')}>Create the first project</Button>
-        </Card>
+        <EmptyState
+          icon={Folder}
+          title="No projects found"
+          description="There are no projects matching your criteria."
+          action={<Button variant="primary" onClick={() => router.push('/projects/create')}>Create the first project</Button>}
+        />
       ) : (
         <div style={{
           display: 'grid',

@@ -7,6 +7,8 @@ import Button from '../../components/Button';
 import BackButton from '../../components/Navigation/BackButton';
 import DiscoverTabs from '../../components/Navigation/DiscoverTabs';
 import { Map, Clock, ArrowRight, Activity, Filter, Search, ChevronDown } from 'lucide-react';
+import { RoadmapCardSkeleton } from '../../components/skeletons';
+import EmptyState from '../../components/EmptyState';
 
 export default function RoadmapsClient({ initialRoadmaps }: { initialRoadmaps: any[] | null }) {
   const [roadmaps, setRoadmaps] = useState<any[]>(initialRoadmaps ?? []);
@@ -54,7 +56,7 @@ export default function RoadmapsClient({ initialRoadmaps }: { initialRoadmaps: a
       <div className="page-header" style={{ marginBottom: '32px' }}>
         <BackButton fallback="/dashboard" />
         <div className="page-header-content">
-          <h1 style={{ fontSize: '32px', fontWeight: 800, margin: '0 0 8px 0', color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <h1 style={{ margin: '0 0 8px 0', color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Map size={32} color="var(--primary)" />
             Engineering & Technology Roadmaps
           </h1>
@@ -141,7 +143,17 @@ export default function RoadmapsClient({ initialRoadmaps }: { initialRoadmaps: a
         </div>
       </div>
 
-      {loading && <div style={{ textAlign: 'center', padding: '40px', color: 'var(--foreground-muted)' }}>Loading roadmaps...</div>}
+      {loading && (
+        <div role="status" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 24 }}>
+          <span className="sr-only">Loading roadmaps…</span>
+          <RoadmapCardSkeleton />
+          <RoadmapCardSkeleton />
+          <RoadmapCardSkeleton />
+          <RoadmapCardSkeleton />
+          <RoadmapCardSkeleton />
+          <RoadmapCardSkeleton />
+        </div>
+      )}
 
       {error && (
         <div style={{ background: 'var(--surface)', padding: '32px 24px', borderRadius: '12px', marginBottom: '24px', border: '1px solid var(--border)', textAlign: 'center' }}>
@@ -161,11 +173,7 @@ export default function RoadmapsClient({ initialRoadmaps }: { initialRoadmaps: a
       )}
 
       {!loading && !error && roadmaps.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '60px 20px', background: 'var(--surface)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-          <Map size={48} color="var(--border)" style={{ margin: '0 auto 16px' }} />
-          <h3 style={{ margin: '0 0 8px 0', color: 'var(--foreground)', fontSize: '18px' }}>No roadmaps found</h3>
-          <p style={{ margin: 0, color: 'var(--foreground-muted)' }}>Try adjusting your search or category filters.</p>
-        </div>
+        <EmptyState icon={Map} title="No roadmaps found" description="Try adjusting your search or category filters." />
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>

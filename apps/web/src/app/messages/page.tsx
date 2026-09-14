@@ -3,10 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import Card from '../../components/Card';
+import Avatar from '../../components/Avatar';
 import BackButton from '../../components/Navigation/BackButton';
 import { MessageSquare } from 'lucide-react';
+import { MessageListSkeleton } from '../../components/skeletons';
+import EmptyState from '../../components/EmptyState';
+import Button from '../../components/Button';
 
 export default function MessagesInboxPage() {
   const router = useRouter();
@@ -46,21 +49,20 @@ export default function MessagesInboxPage() {
       <div className="page-header" style={{ marginBottom: '24px' }}>
         <BackButton fallback="/dashboard" />
         <div className="page-header-content">
-          <h1 className="text-wrap-safe" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)' }}>Messages</h1>
+          <h1 className="text-wrap-safe" style={{ color: 'var(--foreground)' }}>Messages</h1>
           <p style={{ color: 'var(--foreground-muted)' }}>Your private conversations.</p>
         </div>
       </div>
 
       {loading ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--foreground-muted)' }}>Loading messages...</div>
+        <MessageListSkeleton />
       ) : conversations.length === 0 ? (
-        <Card padding="lg" style={{ textAlign: 'center' }}>
-          <MessageSquare size={40} color="var(--border)" style={{ margin: '0 auto 12px' }} />
-          <h3 style={{ margin: '0 0 8px 0', color: 'var(--foreground)', fontSize: '18px' }}>No conversations yet</h3>
-          <p style={{ margin: 0, color: 'var(--foreground-muted)' }}>
-            Start a chat from a connection on your <Link href="/network" style={{ color: 'var(--primary)' }}>Network</Link> page.
-          </p>
-        </Card>
+        <EmptyState
+          icon={MessageSquare}
+          title="No messages yet"
+          description="Start a conversation with another developer."
+          action={<Link href="/network" style={{ textDecoration: 'none' }}><Button variant="primary" size="sm">Find connections</Button></Link>}
+        />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {conversations.map((c) => {
@@ -69,9 +71,7 @@ export default function MessagesInboxPage() {
             return (
               <Link key={c.id} href={`/messages/${p.username}${c.listing ? `?conversation=${c.id}&listing=${c.listing.id}` : ''}`} style={{ textDecoration: 'none' }}>
                 <Card padding="md" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0, overflow: 'hidden' }}>
-                    {p.avatarUrl && <Image src={p.avatarUrl} alt="" width={48} height={48} style={{ objectFit: 'cover' }} />}
-                  </div>
+                  <Avatar src={p.avatarUrl} name={p.displayName} size={48} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                       <span style={{ fontWeight: 700, color: 'var(--foreground)', fontSize: '16px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

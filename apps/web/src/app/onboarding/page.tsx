@@ -92,7 +92,7 @@ export default function OnboardingPage() {
     <div style={{ background: 'var(--background)', minHeight: 'calc(100vh - 65px)', padding: '40px 24px' }}>
       <div style={{ maxWidth: '600px', margin: '0 auto' }}>
         <div style={{ marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)', marginBottom: '8px' }}>Build your identity</h1>
+          <h1 className="page-title" style={{ marginBottom: '8px' }}>Build your identity</h1>
           <p style={{ color: 'var(--foreground-muted)', fontSize: '16px' }}>Complete your profile to discover developers and projects.</p>
         </div>
 

@@ -171,7 +171,7 @@ export default function CreateProjectPage() {
       <section className="page-header">
         <BackButton fallback="/projects" />
         <div className="page-header-content">
-          <h1 className="text-wrap-safe" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)' }}>
+          <h1 className="text-wrap-safe" style={{ color: 'var(--foreground)' }}>
             Create Project
           </h1>
           <p style={{ color: 'var(--foreground-muted)', fontSize: '16px', margin: 0 }}>Share what you're building with the community.</p>

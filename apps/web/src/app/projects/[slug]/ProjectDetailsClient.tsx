@@ -6,6 +6,8 @@ import Link from 'next/link';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import Badge from '../../../components/Badge';
+import Avatar from '../../../components/Avatar';
+import SkillTag from '../../../components/SkillTag';
 import BackButton from '../../../components/Navigation/BackButton';
 import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 
@@ -173,9 +175,7 @@ export default function ProjectDetailsClient({
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {project.skills?.length > 0 ? (
               project.skills.map((ps: any) => (
-                <Link key={ps.id} href={`/skills/${ps.skill.slug || ps.skill.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} style={{ textDecoration: 'none' }}>
-                  <Badge variant="default" style={{ cursor: 'pointer' }}>{ps.skill.name}</Badge>
-                </Link>
+                <SkillTag key={ps.id} name={ps.skill.name} slug={ps.skill.slug} />
               ))
             ) : (
               <span style={{ fontSize: '14px', color: 'var(--foreground-muted)' }}>No technologies listed</span>
@@ -214,7 +214,7 @@ export default function ProjectDetailsClient({
               {requests.map(req => (
                 <div key={req.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '12px', borderBottom: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
+                    <Avatar src={req.developerProfile?.avatarUrl} name={req.developerProfile?.displayName} size={40} />
                     <div>
                       <h4 style={{ fontSize: '14px', fontWeight: 600, margin: '0 0 2px 0' }}>{req.developerProfile?.displayName}</h4>
                       <p style={{ fontSize: '12px', color: 'var(--foreground-muted)', margin: 0 }}>Wants to join</p>
@@ -239,7 +239,7 @@ export default function ProjectDetailsClient({
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
+                <Avatar src={project.owner?.avatarUrl} name={project.owner?.displayName} size={40} />
                 <div>
                   <Link href={`/developers/${project.owner?.username}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                     <h4 style={{ fontSize: '14px', fontWeight: 600, margin: '0 0 2px 0' }}>{project.owner?.displayName}</h4>
@@ -258,7 +258,7 @@ export default function ProjectDetailsClient({
             {project.contributors?.map((c: any) => (
               <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
+                  <Avatar src={c.developerProfile?.avatarUrl} name={c.developerProfile?.displayName} size={40} />
                   <div>
                     <Link href={`/developers/${c.developerProfile?.username}`} style={{ textDecoration: 'none', color: 'inherit' }}>
                       <h4 style={{ fontSize: '14px', fontWeight: 600, margin: '0 0 2px 0' }}>{c.developerProfile?.displayName}</h4>

@@ -36,7 +36,7 @@ function TrendingContent() {
         >
           <ArrowLeft size={24} />
         </button>
-        <h1 style={{ fontSize: '20px', fontWeight: 700, margin: 0, color: 'var(--foreground)' }}>Trending in Tech</h1>
+        <h1 className="page-title">Trending in Tech</h1>
       </div>
 
       <div style={{ padding: '24px' }}>

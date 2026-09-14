@@ -6,9 +6,12 @@ import Image from 'next/image';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Select from '../../components/Select';
+import Avatar from '../../components/Avatar';
 import ReportListingModal from '../../components/ReportListingModal';
 import { formatPrice } from '../../lib/currency';
-import { Search } from 'lucide-react';
+import { Search, Store } from 'lucide-react';
+import { MarketplaceCardSkeleton } from '../../components/skeletons';
+import EmptyState from '../../components/EmptyState';
 
 const CATEGORIES = [
   'All',
@@ -70,7 +73,7 @@ export default function MarketplaceClient({ initialListings }: { initialListings
     <div style={{ padding: '40px 24px', maxWidth: '1200px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)', marginBottom: '8px' }}>Marketplace</h1>
+          <h1 className="page-title" style={{ marginBottom: '8px' }}>Marketplace</h1>
           <p style={{ color: 'var(--foreground-muted)', fontSize: '16px' }}>Discover developer tools, templates, and services.</p>
         </div>
         <div style={{ display: 'flex', gap: '12px' }}>
@@ -120,13 +123,17 @@ export default function MarketplaceClient({ initialListings }: { initialListings
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--foreground-muted)' }}>Loading...</div>
+        <div role="status" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 24 }}>
+          <span className="sr-only">Loading marketplace…</span>
+          <MarketplaceCardSkeleton />
+          <MarketplaceCardSkeleton />
+          <MarketplaceCardSkeleton />
+          <MarketplaceCardSkeleton />
+          <MarketplaceCardSkeleton />
+          <MarketplaceCardSkeleton />
+        </div>
       ) : listings.length === 0 ? (
-        <Card padding="lg">
-          <div style={{ textAlign: 'center', color: 'var(--foreground-muted)' }}>
-            <p>No listings found matching your criteria.</p>
-          </div>
-        </Card>
+        <EmptyState icon={Store} title="No listings found" description="Try adjusting your search or filters." />
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '24px' }}>
           {listings.map(listing => (
@@ -152,11 +159,7 @@ export default function MarketplaceClient({ initialListings }: { initialListings
                   {listing.description}
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
-                  {listing.seller.avatarUrl ? (
-                    <Image src={listing.seller.avatarUrl} alt={listing.seller.displayName} width={24} height={24} style={{ borderRadius: '50%' }} />
-                  ) : (
-                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'var(--border)' }} />
-                  )}
+                  <Avatar src={listing.seller.avatarUrl} name={listing.seller.displayName} size={24} />
                   <span style={{ fontSize: '12px', color: 'var(--foreground-muted)' }}>{listing.seller.displayName}</span>
                   <button
                     type="button"

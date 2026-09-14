@@ -3,14 +3,18 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Badge from '../../components/Badge';
+import Avatar from '../../components/Avatar';
+import SkillTag from '../../components/SkillTag';
+import EmptyState from '../../components/EmptyState';
 
 import DiscoverTabs from '../../components/Navigation/DiscoverTabs';
 import BackButton from '../../components/Navigation/BackButton';
 import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
+import { Users } from 'lucide-react';
+import { DeveloperCardSkeleton } from '../../components/skeletons';
 
 export default function DevelopersPageClient({ initialDevelopers }: { initialDevelopers: any[] | null }) {
   const router = useRouter();
@@ -47,6 +51,7 @@ export default function DevelopersPageClient({ initialDevelopers }: { initialDev
       }
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, isAuthenticated]);
 
   const fetchRecommended = async () => {
@@ -116,15 +121,26 @@ export default function DevelopersPageClient({ initialDevelopers }: { initialDev
     }
   };
 
+  const modeTabStyle = (active: boolean): React.CSSProperties => ({
+    padding: '8px 16px',
+    background: active ? 'var(--foreground)' : 'transparent',
+    color: active ? 'var(--surface)' : 'var(--foreground-muted)',
+    border: active ? '1px solid var(--foreground)' : '1px solid var(--border)',
+    borderRadius: 'var(--radius-full)',
+    fontWeight: 600,
+    fontSize: 14,
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+  });
+
   return (
     <div>
-      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-
-        <div className="page-header" style={{ marginBottom: '24px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+        <div className="page-header" style={{ marginBottom: 24 }}>
           <BackButton fallback="/dashboard" />
           <div className="page-header-content">
-            <h1 className="text-wrap-safe" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)' }}>Developer Discovery</h1>
-            <p style={{ color: 'var(--foreground-muted)', fontSize: '16px', margin: 0 }}>
+            <h1 className="text-wrap-safe" style={{ color: 'var(--foreground)' }}>Developer Discovery</h1>
+            <p style={{ color: 'var(--foreground-muted)', fontSize: 15, margin: 0 }}>
               Don&apos;t connect because you know each other. Connect because you can grow together.
             </p>
           </div>
@@ -132,110 +148,57 @@ export default function DevelopersPageClient({ initialDevelopers }: { initialDev
 
         <DiscoverTabs />
 
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
-          <button
-            onClick={() => switchMode('BROWSE')}
-            style={{
-              padding: '8px 16px',
-              background: mode === 'BROWSE' ? 'var(--foreground)' : 'transparent',
-              color: mode === 'BROWSE' ? 'var(--surface)' : 'var(--foreground-muted)',
-              border: 'none',
-              borderRadius: 'var(--radius-sm)',
-              fontWeight: 600,
-              fontSize: '14px',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            Browse All
-          </button>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 32, flexWrap: 'wrap' }}>
+          <button onClick={() => switchMode('BROWSE')} style={modeTabStyle(mode === 'BROWSE')}>Browse All</button>
           {isAuthenticated && (
             <>
-              <button
-                onClick={() => switchMode('RECOMMENDED')}
-                style={{
-                  padding: '8px 16px',
-                  background: mode === 'RECOMMENDED' ? 'var(--foreground)' : 'transparent',
-                  color: mode === 'RECOMMENDED' ? 'var(--surface)' : 'var(--foreground-muted)',
-                  border: 'none',
-                  borderRadius: 'var(--radius-sm)',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Recommended
-              </button>
-              <button
-                onClick={() => switchMode('SEARCH')}
-                style={{
-                  padding: '8px 16px',
-                  background: mode === 'SEARCH' ? 'var(--foreground)' : 'transparent',
-                  color: mode === 'SEARCH' ? 'var(--surface)' : 'var(--foreground-muted)',
-                  border: 'none',
-                  borderRadius: 'var(--radius-sm)',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Search All
-              </button>
+              <button onClick={() => switchMode('RECOMMENDED')} style={modeTabStyle(mode === 'RECOMMENDED')}>Recommended</button>
+              <button onClick={() => switchMode('SEARCH')} style={modeTabStyle(mode === 'SEARCH')}>Search All</button>
             </>
           )}
         </div>
 
-        {error && <div style={{ padding: '12px', background: '#fee2e2', color: '#991b1b', borderRadius: 'var(--radius-sm)', marginBottom: '24px', fontSize: '14px' }}>{error}</div>}
+        {error && <div style={{ padding: 12, background: 'var(--danger-light)', color: 'var(--danger)', borderRadius: 'var(--radius-md)', marginBottom: 24, fontSize: 14 }}>{error}</div>}
 
         {mode === 'SEARCH' && (
-          <form onSubmit={handleSearchSubmit} style={{ marginBottom: '32px', display: 'flex', gap: '12px' }}>
+          <form onSubmit={handleSearchSubmit} style={{ marginBottom: 32, display: 'flex', gap: 12 }}>
             <input
               type="text"
               placeholder="Search by name or username..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              style={{ flex: 1, padding: '12px 16px', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--foreground)', borderRadius: 'var(--radius-md)', fontSize: '15px', outline: 'none' }}
+              style={{ flex: 1, padding: '12px 16px', background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--foreground)', borderRadius: 'var(--radius-full)', fontSize: 15, outline: 'none' }}
             />
-            <Button type="submit" size="md" variant="primary">
-              Search
-            </Button>
+            <Button type="submit" size="md" variant="primary">Search</Button>
           </form>
         )}
 
         {mode === 'BROWSE' && (
           <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--foreground)', marginBottom: '8px' }}>Explore the developer community</h2>
-            <p style={{ color: 'var(--foreground-muted)', fontSize: '14px', marginBottom: '24px' }}>Browse public developer profiles on DEV-TO-DEV.</p>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--foreground)', marginBottom: 8 }}>Explore the developer community</h2>
+            <p style={{ color: 'var(--foreground-muted)', fontSize: 14, marginBottom: 24 }}>Browse public developer profiles on DEV-TO-DEV.</p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {browseDevelopers.length === 0 ? (
-                <Card style={{ textAlign: 'center', padding: '40px' }}>
-                  <p style={{ color: 'var(--foreground-muted)' }}>No developers to show right now.</p>
-                </Card>
+                <EmptyState icon={Users} title="No developers yet" description="Check back soon for new developers in the community." />
               ) : (
                 browseDevelopers.map(dev => (
-                  <Card key={dev.username} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                      {dev.avatarUrl ? (
-                        <Image src={dev.avatarUrl} alt={dev.displayName} width={48} height={48} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                      ) : (
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
-                      )}
-                      <div>
-                        <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--foreground)', margin: '0 0 2px 0' }}>{dev.displayName}</h3>
-                        <Link href={`/developers/${dev.username}`} style={{ color: 'var(--foreground-muted)', textDecoration: 'none', fontSize: '13px' }}>
+                  <Card key={dev.username} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+                    <div style={{ display: 'flex', gap: 16, alignItems: 'center', minWidth: 0 }}>
+                      <Avatar src={dev.avatarUrl} name={dev.displayName} size={52} />
+                      <div style={{ minWidth: 0 }}>
+                        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--foreground)', margin: '0 0 2px 0' }}>{dev.displayName}</h3>
+                        <Link href={`/developers/${dev.username}`} style={{ color: 'var(--foreground-subtle)', textDecoration: 'none', fontSize: 13 }}>
                           @{dev.username}
                         </Link>
                         {dev.experienceLevel && (
-                          <div style={{ marginTop: '6px' }}>
+                          <div style={{ marginTop: 6 }}>
                             <Badge variant="outline">{dev.experienceLevel}</Badge>
                           </div>
                         )}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <Link href={`/developers/${dev.username}`} style={{ textDecoration: 'none' }}>
                         <Button variant="outline" size="sm">View</Button>
                       </Link>
@@ -249,49 +212,48 @@ export default function DevelopersPageClient({ initialDevelopers }: { initialDev
 
         {mode === 'RECOMMENDED' && (
           loading ? (
-            <div style={{ textAlign: 'center', color: 'var(--foreground-muted)', padding: '40px' }}>Loading developers...</div>
+            <div role="status" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <span className="sr-only">Loading developers…</span>
+              <DeveloperCardSkeleton />
+              <DeveloperCardSkeleton />
+              <DeveloperCardSkeleton />
+            </div>
           ) : (
             <div>
-              <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--foreground)', marginBottom: '8px' }}>Developers you may grow with</h2>
-              <p style={{ color: 'var(--foreground-muted)', fontSize: '14px', marginBottom: '24px' }}>Based on your skills and learning goals</p>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--foreground)', marginBottom: 8 }}>Developers you may grow with</h2>
+              <p style={{ color: 'var(--foreground-muted)', fontSize: 14, marginBottom: 24 }}>Based on your skills and learning goals</p>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                 {matches.length === 0 ? (
-                  <Card style={{ textAlign: 'center', padding: '40px' }}>
-                    <p style={{ color: 'var(--foreground-muted)' }}>No recommendations found right now. Try adding more skills and goals to your profile.</p>
-                  </Card>
+                  <EmptyState icon={Users} title="No recommendations yet" description="Add more skills and goals to your profile to get better matches." />
                 ) : (
                   matches.map(match => (
                     <Card key={match.developer.id} padding="md">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
-                        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                          {match.developer.avatarUrl ? (
-                            <Image src={match.developer.avatarUrl} alt={match.developer.displayName} width={56} height={56} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                          ) : (
-                            <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
-                          )}
-                          <div>
-                            <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--foreground)', margin: '0 0 4px 0' }}>{match.developer.displayName}</h3>
-                            <Link href={`/developers/${match.developer.username}`} style={{ color: 'var(--foreground-muted)', textDecoration: 'none', fontSize: '14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 16 }}>
+                        <div style={{ display: 'flex', gap: 16, alignItems: 'center', minWidth: 0 }}>
+                          <Avatar src={match.developer.avatarUrl} name={match.developer.displayName} size={56} />
+                          <div style={{ minWidth: 0 }}>
+                            <h3 style={{ fontSize: 18, fontWeight: 700, color: 'var(--foreground)', margin: '0 0 4px 0' }}>{match.developer.displayName}</h3>
+                            <Link href={`/developers/${match.developer.username}`} style={{ color: 'var(--foreground-subtle)', textDecoration: 'none', fontSize: 14 }}>
                               @{match.developer.username}
                             </Link>
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--primary)' }}>{match.compatibility.score}%</div>
-                          <div style={{ color: 'var(--foreground-muted)', fontSize: '12px', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.5px' }}>Compatibility</div>
+                          <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--primary)' }}>{match.compatibility.score}%</div>
+                          <div style={{ color: 'var(--foreground-subtle)', fontSize: 11, textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.06em' }}>Compatibility</div>
                         </div>
                       </div>
 
-                      {match.developer.bio && <p style={{ color: 'var(--foreground)', fontSize: '15px', marginBottom: '24px', lineHeight: 1.5 }}>{match.developer.bio}</p>}
+                      {match.developer.bio && <p style={{ color: 'var(--foreground)', fontSize: 15, marginBottom: 20, lineHeight: 1.5 }}>{match.developer.bio}</p>}
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 24 }}>
                         {match.compatibility.sharedSkills.length > 0 && (
                           <div>
-                            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--foreground-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Shared Skills</div>
-                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--foreground-subtle)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Shared Skills</div>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                               {match.compatibility.sharedSkills.map((s: string) => (
-                                <Badge key={s} variant="default">{s}</Badge>
+                                <SkillTag key={s} name={s} />
                               ))}
                             </div>
                           </div>
@@ -299,8 +261,8 @@ export default function DevelopersPageClient({ initialDevelopers }: { initialDev
 
                         {match.compatibility.sharedLearningGoals.length > 0 && (
                           <div>
-                            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--foreground-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Shared Goals</div>
-                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--foreground-subtle)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Shared Goals</div>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                               {match.compatibility.sharedLearningGoals.map((g: string) => (
                                 <Badge key={g} variant="outline">{g}</Badge>
                               ))}
@@ -310,17 +272,17 @@ export default function DevelopersPageClient({ initialDevelopers }: { initialDev
 
                         {match.compatibility.complementarySkills.length > 0 && (
                           <div>
-                            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--foreground-muted)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Complementary</div>
-                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--foreground-subtle)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Complementary</div>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                               {match.compatibility.complementarySkills.map((s: string) => (
-                                <Badge key={s} variant="primary">{s}</Badge>
+                                <SkillTag key={s} name={s} variant="primary" />
                               ))}
                             </div>
                           </div>
                         )}
                       </div>
 
-                      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                         <Link href={`/developers/${match.developer.username}`} style={{ textDecoration: 'none' }}>
                           <Button variant="outline">View Profile</Button>
                         </Link>
@@ -344,33 +306,34 @@ export default function DevelopersPageClient({ initialDevelopers }: { initialDev
 
         {mode === 'SEARCH' && (
           loading ? (
-            <div style={{ textAlign: 'center', color: 'var(--foreground-muted)', padding: '40px' }}>Loading developers...</div>
+            <div role="status" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <span className="sr-only">Loading developers…</span>
+              <DeveloperCardSkeleton />
+              <DeveloperCardSkeleton />
+              <DeveloperCardSkeleton />
+            </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {searchResults.length === 0 ? (
-                <Card style={{ textAlign: 'center', padding: '40px' }}>
-                  <p style={{ color: 'var(--foreground-muted)' }}>No developers found.</p>
-                </Card>
+                <EmptyState icon={Users} title="No developers found" description="Try a different name or username." />
               ) : (
                 searchResults.map(dev => (
-                  <Card key={dev.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                      {dev.avatarUrl ? (
-                        <Image src={dev.avatarUrl} alt={dev.displayName} width={48} height={48} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                      ) : (
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
-                      )}
-                      <div>
-                        <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--foreground)', margin: '0 0 2px 0' }}>{dev.displayName}</h3>
-                        <Link href={`/developers/${dev.username}`} style={{ color: 'var(--foreground-muted)', textDecoration: 'none', fontSize: '13px' }}>
+                  <Card key={dev.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+                    <div style={{ display: 'flex', gap: 16, alignItems: 'center', minWidth: 0 }}>
+                      <Avatar src={dev.avatarUrl} name={dev.displayName} size={48} />
+                      <div style={{ minWidth: 0 }}>
+                        <h3 style={{ fontSize: 16, fontWeight: 700, color: 'var(--foreground)', margin: '0 0 2px 0' }}>{dev.displayName}</h3>
+                        <Link href={`/developers/${dev.username}`} style={{ color: 'var(--foreground-subtle)', textDecoration: 'none', fontSize: 13 }}>
                           @{dev.username}
                         </Link>
-                        <div style={{ marginTop: '6px' }}>
-                          <Badge variant="outline">{dev.experienceLevel}</Badge>
-                        </div>
+                        {dev.experienceLevel && (
+                          <div style={{ marginTop: 6 }}>
+                            <Badge variant="outline">{dev.experienceLevel}</Badge>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       <Link href={`/developers/${dev.username}`} style={{ textDecoration: 'none' }}>
                         <Button variant="outline" size="sm">View</Button>
                       </Link>

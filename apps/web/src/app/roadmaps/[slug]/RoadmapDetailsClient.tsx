@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import BackButton from '../../../components/Navigation/BackButton';
-import { Play, CheckCircle2, Circle, Lock } from 'lucide-react';
+import { Play, CheckCircle2, Circle, Lock, ChevronRight } from 'lucide-react';
 import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 
 export default function RoadmapDetailsClient({
@@ -183,6 +183,7 @@ export default function RoadmapDetailsClient({
                               {node.description}
                             </p>
                           </div>
+                          <ChevronRight size={18} color="var(--foreground-subtle)" style={{ flexShrink: 0 }} />
                         </div>
                       </Link>
                     );

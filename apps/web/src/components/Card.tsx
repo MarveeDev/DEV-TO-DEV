@@ -4,7 +4,7 @@ type CardProps = React.HTMLAttributes<HTMLDivElement> & {
   padding?: 'none' | 'sm' | 'md' | 'lg';
 };
 
-export default function Card({ children, padding = 'md', style, ...props }: CardProps) {
+export default function Card({ children, padding = 'md', style, className, ...props }: CardProps) {
   const paddings = {
     none: '0',
     sm: '12px',
@@ -14,14 +14,8 @@ export default function Card({ children, padding = 'md', style, ...props }: Card
 
   return (
     <div
-      style={{
-        background: 'var(--surface)',
-        borderRadius: 'var(--radius-md)',
-        border: '1px solid var(--border)',
-        boxShadow: 'var(--shadow-sm)',
-        padding: paddings[padding],
-        ...style,
-      }}
+      className={['card', className].filter(Boolean).join(' ')}
+      style={{ padding: paddings[padding], ...style }}
       {...props}
     >
       {children}

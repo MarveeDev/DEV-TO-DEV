@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import Avatar from '../../../components/Avatar';
+import SkillTag from '../../../components/SkillTag';
 import DeveloperScoreBoard from '../../../components/DeveloperScoreBoard';
 import PostCard from '../../../components/PostCard';
 import Card from '../../../components/Card';
@@ -10,6 +11,9 @@ import Button from '../../../components/Button';
 import Badge from '../../../components/Badge';
 import BackButton from '../../../components/Navigation/BackButton';
 import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
+import { ProfileSkeleton, PostCardSkeleton } from '../../../components/skeletons';
+import EmptyState from '../../../components/EmptyState';
+import { FileText } from 'lucide-react';
 
 export default function DeveloperProfileClient({
   username,
@@ -89,7 +93,7 @@ export default function DeveloperProfileClient({
     }
   };
 
-  if (loading) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--foreground-muted)' }}>Loading...</div>;
+  if (loading) return <ProfileSkeleton />;
   if (notFound && !developer) return <div style={{ padding: '60px', textAlign: 'center', color: '#ef4444' }}>Developer not found.</div>;
   if (!developer) return null;
 
@@ -103,11 +107,7 @@ export default function DeveloperProfileClient({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '24px' }}>
                 <div className="page-header" style={{ alignItems: 'center' }}>
                   <BackButton fallback="/developers" />
-                  {developer.avatarUrl ? (
-                    <Image src={developer.avatarUrl} alt={developer.displayName} width={80} height={80} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                  ) : (
-                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
-                  )}
+                  <Avatar src={developer.avatarUrl} name={developer.displayName} size={80} />
                   <div className="page-header-content">
                     <h1 className="text-wrap-safe" style={{ fontSize: '28px', fontWeight: 800, color: 'var(--foreground)' }}>{developer.displayName || 'Unknown Developer'}</h1>
                     <p style={{ color: 'var(--foreground-muted)', fontSize: '15px', margin: '0 0 8px 0' }}>@{developer.username}</p>
@@ -145,17 +145,11 @@ export default function DeveloperProfileClient({
                   <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: 'var(--foreground)' }}>Skills</h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     {developer.skills.map((s: any) => (
-                      <Badge
+                      <SkillTag
                         key={s.id || s.slug || s.name}
-                        variant="default"
-                        style={{ cursor: 'pointer' }}
-                        onClick={(e: React.MouseEvent) => {
-                          e.preventDefault();
-                          router.push(`/skills/${s.slug || s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`);
-                        }}
-                      >
-                        {s.name}
-                      </Badge>
+                        name={s.name}
+                        slug={s.slug}
+                      />
                     ))}
                   </div>
                 </div>
@@ -203,8 +197,14 @@ function DeveloperPosts({ username }: { username: string }) {
       .catch(() => setLoading(false));
   }, [username]);
 
-  if (loading) return <div style={{ color: 'var(--foreground-muted)' }}>Loading posts...</div>;
-  if (posts.length === 0) return <Card padding="md" style={{ textAlign: 'center', color: 'var(--foreground-muted)' }}>No public posts yet.</Card>;
+  if (loading) return (
+    <div role="status">
+      <span className="sr-only">Loading posts…</span>
+      <PostCardSkeleton />
+      <PostCardSkeleton />
+    </div>
+  );
+  if (posts.length === 0) return <EmptyState icon={FileText} title="No posts yet" description="This developer hasn't shared any public posts." />;
 
   return (
     <div>

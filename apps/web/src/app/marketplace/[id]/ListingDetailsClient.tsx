@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
+import Avatar from '../../../components/Avatar';
 import ReportListingModal from '../../../components/ReportListingModal';
 import { ArrowLeft, ExternalLink, Mail } from 'lucide-react';
 import { formatPrice } from '../../../lib/currency';
@@ -163,11 +164,7 @@ export default function ListingDetailsClient({
                 Listed by
               </div>
               <Link href={`/developers/${listing.seller.username}`} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                {listing.seller.avatarUrl ? (
-                  <Image src={listing.seller.avatarUrl} alt={listing.seller.displayName} width={48} height={48} style={{ borderRadius: '50%' }} />
-                ) : (
-                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)' }} />
-                )}
+                <Avatar src={listing.seller.avatarUrl} name={listing.seller.displayName} size={48} />
                 <div>
                   <div style={{ fontWeight: 600, color: 'var(--foreground)', fontSize: '16px' }}>
                     {listing.seller.displayName}

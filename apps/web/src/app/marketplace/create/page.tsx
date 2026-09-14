@@ -104,7 +104,7 @@ export default function CreateListingPage() {
         <ArrowLeft size={16} />
         Back
       </button>
-      <h1 style={{ fontSize: '32px', fontWeight: 800, marginBottom: '24px' }}>Create Listing</h1>
+      <h1 className="page-title" style={{ marginBottom: '24px' }}>Create Listing</h1>
       
       <Card padding="lg">
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>

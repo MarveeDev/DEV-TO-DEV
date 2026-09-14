@@ -3,13 +3,17 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import PostCard from '../../components/PostCard';
 import DeveloperScoreBoard from '../../components/DeveloperScoreBoard';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Badge from '../../components/Badge';
+import Avatar from '../../components/Avatar';
+import SkillTag from '../../components/SkillTag';
 import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
+import { ProfileSkeleton, PostCardSkeleton } from '../../components/skeletons';
+import EmptyState from '../../components/EmptyState';
+import { FileText } from 'lucide-react';
 
 export default function ProfilePage() {
   const { user, loading: authLoading, isAuthenticated, logout } = useCurrentUser();
@@ -27,14 +31,14 @@ export default function ProfilePage() {
     router.push('/login');
   };
 
-  if (!user) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--foreground-muted)' }}>Loading...</div>;
+  if (!user) return <ProfileSkeleton />;
 
   const profile = user.developerProfile;
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', gap: '12px', flexWrap: 'wrap' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)' }}>My Profile</h1>
+          <h1 className="page-title">My Profile</h1>
           <div style={{ display: 'flex', gap: '8px' }}>
             <Link href="/settings" style={{ textDecoration: 'none' }}>
               <Button variant="primary">Edit Profile</Button>
@@ -46,11 +50,9 @@ export default function ProfilePage() {
         <div className="grid-2-col-sidebar">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
             <Card padding="md">
-              <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '32px' }}>
-                <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0, overflow: 'hidden' }}>
-                  {profile?.avatarUrl && <Image src={profile.avatarUrl} alt={profile.displayName} width={80} height={80} style={{ objectFit: 'cover' }} />}
-                </div>
-                <div>
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', marginBottom: '32px' }}>
+                  <Avatar src={profile?.avatarUrl} name={profile?.displayName} size={80} />
+                  <div>
                   <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--foreground)', margin: '0 0 4px 0' }}>{profile?.displayName || 'Unknown Developer'}</h2>
                   <p style={{ color: 'var(--foreground-muted)', fontSize: '15px', margin: '0 0 8px 0' }}>@{profile?.username}</p>
                   <Badge variant="outline" style={{ textTransform: 'capitalize' }}>{profile?.experienceLevel?.toLowerCase()}</Badge>
@@ -69,17 +71,11 @@ export default function ProfilePage() {
                   <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '12px', color: 'var(--foreground)' }}>Skills</h3>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     {profile.skills.map((s: any) => (
-                      <Badge 
-                        key={s.skill.id} 
-                        variant="default" 
-                        style={{ cursor: 'pointer' }}
-                        onClick={(e: React.MouseEvent) => {
-                          e.preventDefault();
-                          router.push(`/skills/${s.skill.slug || s.skill.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`);
-                        }}
-                      >
-                        {s.skill.name}
-                      </Badge>
+                      <SkillTag
+                        key={s.skill.id}
+                        name={s.skill.name}
+                        slug={s.skill.slug}
+                      />
                     ))}
                   </div>
                 </div>
@@ -151,8 +147,21 @@ function MyPosts({ username, currentUserId }: { username?: string, currentUserId
     }
   };
 
-  if (loading) return <div style={{ color: 'var(--foreground-muted)' }}>Loading posts...</div>;
-  if (posts.length === 0) return <Card padding="md" style={{ textAlign: 'center', color: 'var(--foreground-muted)' }}>No posts yet. Head over to the feed to post!</Card>;
+  if (loading) return (
+    <div role="status">
+      <span className="sr-only">Loading posts…</span>
+      <PostCardSkeleton />
+      <PostCardSkeleton />
+    </div>
+  );
+  if (posts.length === 0) return (
+    <EmptyState
+      icon={FileText}
+      title="No posts yet"
+      description="Share your first post with the community."
+      action={<Link href="/posts/create" style={{ textDecoration: 'none' }}><Button variant="primary" size="sm">Create a post</Button></Link>}
+    />
+  );
 
   return (
     <div>

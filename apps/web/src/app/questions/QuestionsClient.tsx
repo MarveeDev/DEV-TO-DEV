@@ -2,14 +2,19 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Badge from '../../components/Badge';
+import Avatar from '../../components/Avatar';
+import SkillTag from '../../components/SkillTag';
+import SearchBar from '../../components/SearchBar';
+import EmptyState from '../../components/EmptyState';
 import Link from 'next/link';
 import BackButton from '../../components/Navigation/BackButton';
 import DiscoverTabs from '../../components/Navigation/DiscoverTabs';
 import Select from '../../components/Select';
+import { CircleHelp } from 'lucide-react';
+import { QuestionCardSkeleton } from '../../components/skeletons';
 
 const SORT_OPTIONS = [
   { value: 'newest', label: 'Newest' },
@@ -63,7 +68,7 @@ export default function QuestionsClient({ initialQuestions }: { initialQuestions
         <div className="page-header">
           <BackButton fallback="/dashboard" />
           <div className="page-header-content">
-            <h1 className="text-wrap-safe" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)', margin: '0 0 8px 0' }}>
+            <h1 className="text-wrap-safe" style={{ color: 'var(--foreground)', margin: '0 0 8px 0' }}>
               Questions
             </h1>
             <p style={{ color: 'var(--foreground-muted)', fontSize: '16px', margin: 0 }}>Solve problems. Share knowledge. Grow together.</p>
@@ -75,25 +80,15 @@ export default function QuestionsClient({ initialQuestions }: { initialQuestions
       <DiscoverTabs />
 
       {/* Filters */}
-      <section style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
-        <input
-          type="text"
-          placeholder="Search questions..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{
-            padding: '10px 16px',
-            borderRadius: '8px',
-            border: '1px solid var(--border)',
-            fontSize: '14px',
-            flexGrow: 1,
-            maxWidth: '300px',
-            outline: 'none',
-            background: 'var(--card-bg)',
-            color: 'var(--foreground)'
-          }}
-        />
-        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+      <section style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center' }}>
+        <div style={{ flexGrow: 1, maxWidth: 320 }}>
+          <SearchBar
+            value={search}
+            onChange={setSearch}
+            placeholder="Search questions..."
+          />
+        </div>
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
           <Button size="sm" variant={filter === '' && sort !== 'popular' ? 'primary' : 'outline'} onClick={() => { setFilter(''); setSort('newest'); }}>All</Button>
           <Button size="sm" variant={filter === 'unanswered' ? 'primary' : 'outline'} onClick={() => setFilter('unanswered')}>Unanswered</Button>
           <Button size="sm" variant={filter === 'answered' ? 'primary' : 'outline'} onClick={() => setFilter('answered')}>Answered</Button>
@@ -112,13 +107,20 @@ export default function QuestionsClient({ initialQuestions }: { initialQuestions
 
       {/* Questions List */}
       {loading ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: 'var(--foreground-muted)' }}>Loading questions...</div>
+        <div role="status" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <span className="sr-only">Loading questions…</span>
+          <QuestionCardSkeleton />
+          <QuestionCardSkeleton />
+          <QuestionCardSkeleton />
+          <QuestionCardSkeleton />
+        </div>
       ) : questions.length === 0 ? (
-        <Card padding="lg" style={{ textAlign: 'center' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--foreground)', marginBottom: '8px' }}>No questions found</h3>
-          <p style={{ color: 'var(--foreground-muted)', marginBottom: '24px' }}>There are no questions matching your criteria.</p>
-          <Button variant="primary" onClick={() => router.push('/questions/ask')}>Ask the first question</Button>
-        </Card>
+        <EmptyState
+          icon={CircleHelp}
+          title="No questions found"
+          description="There are no questions matching your criteria."
+          action={<Button variant="primary" onClick={() => router.push('/questions/ask')}>Ask the first question</Button>}
+        />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {questions.map(question => (
@@ -127,9 +129,7 @@ export default function QuestionsClient({ initialQuestions }: { initialQuestions
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '12px',
-                cursor: 'pointer',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                border: '1px solid var(--border)'
+                cursor: 'pointer'
               }} className="hover-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
                   <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--primary)', margin: 0, lineHeight: 1.4 }}>
@@ -154,18 +154,11 @@ export default function QuestionsClient({ initialQuestions }: { initialQuestions
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                   {question.skills?.map((qs: any) => (
-                    <Badge
+                    <SkillTag
                       key={qs.skill.id}
-                      variant="default"
-                      style={{ cursor: 'pointer' }}
-                      onClick={(e: React.MouseEvent) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        router.push(`/skills/${qs.skill.slug || qs.skill.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`);
-                      }}
-                    >
-                      {qs.skill.name}
-                    </Badge>
+                      name={qs.skill.name}
+                      slug={qs.skill.slug}
+                    />
                   ))}
                 </div>
 
@@ -176,11 +169,7 @@ export default function QuestionsClient({ initialQuestions }: { initialQuestions
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--foreground-muted)' }}>
-                    {question.author?.avatarUrl ? (
-                      <Image src={question.author.avatarUrl} alt={question.author.displayName} width={20} height={20} style={{ borderRadius: '50%' }} />
-                    ) : (
-                      <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--border)' }} />
-                    )}
+                    <Avatar src={question.author?.avatarUrl} name={question.author?.displayName} size={20} />
                     <span>@{question.author?.username}</span>
                     <span>• {new Date(question.createdAt).toLocaleDateString()}</span>
                   </div>
@@ -190,12 +179,6 @@ export default function QuestionsClient({ initialQuestions }: { initialQuestions
           ))}
         </div>
       )}
-
-      <style>{`
-        .hover-card:hover {
-          box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-      `}</style>
     </div>
   );
 }

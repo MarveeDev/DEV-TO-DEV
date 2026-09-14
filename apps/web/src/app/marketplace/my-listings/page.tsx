@@ -46,7 +46,7 @@ export default function MyListingsPage() {
   return (
     <div style={{ padding: '40px 24px', maxWidth: '1000px', margin: '0 auto' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)' }}>My Listings</h1>
+        <h1 className="page-title">My Listings</h1>
         <Link href="/marketplace/create" style={{ textDecoration: 'none' }}>
           <Button variant="primary">Create Listing</Button>
         </Link>

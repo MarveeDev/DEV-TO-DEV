@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Search as SearchIcon, Users, Folder, HelpCircle, AlertCircle } from 'lucide-react';
 import Card from '../../components/Card';
+import Skeleton from '../../components/Skeleton';
+import EmptyState from '../../components/EmptyState';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -23,16 +25,20 @@ export default function SearchPage() {
 
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!query.trim()) return;
+    await runSearch(query);
+  };
+
+  const runSearch = async (q: string) => {
+    if (!q.trim()) return;
 
     setLoading(true);
     setHasSearched(true);
     
     try {
       const [devsRes, projectsRes, questionsRes] = await Promise.all([
-        fetch(`/api/v1/developers?username=${encodeURIComponent(query)}`),
-        fetch(`/api/v1/projects?search=${encodeURIComponent(query)}`),
-        fetch(`/api/v1/questions?search=${encodeURIComponent(query)}`)
+        fetch(`/api/v1/developers?username=${encodeURIComponent(q)}`),
+        fetch(`/api/v1/projects?search=${encodeURIComponent(q)}`),
+        fetch(`/api/v1/questions?search=${encodeURIComponent(q)}`)
       ]);
 
       const [developers, projects, questions] = await Promise.all([
@@ -42,8 +48,6 @@ export default function SearchPage() {
       ]);
 
       setResults({
-        // Developers endpoint returns { developers: [], meta: {} } or { data: [], meta: {} } depending on standard
-        // Let's assume standard { data: [] } or raw array based on typical DEV-TO-DEV API patterns
         developers: Array.isArray(developers) ? developers : (developers.data || developers.developers || []),
         projects: Array.isArray(projects) ? projects : (projects.items || []),
         questions: Array.isArray(questions) ? questions : (questions.items || [])
@@ -54,6 +58,17 @@ export default function SearchPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('q');
+    if (q && q.trim()) {
+      setQuery(q);
+      runSearch(q);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const tabs = [
     { id: 'projects', label: 'Projects', icon: Folder, count: results.projects.length },
@@ -70,7 +85,7 @@ export default function SearchPage() {
         >
           <ArrowLeft size={24} />
         </button>
-        <h1 style={{ fontSize: '20px', fontWeight: 700, margin: 0, color: 'var(--foreground)' }}>Global Search</h1>
+        <h1 className="page-title">Global Search</h1>
       </div>
 
       <div style={{ padding: '24px' }}>
@@ -165,11 +180,21 @@ export default function SearchPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {loading ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--foreground-muted)' }}>Searching...</div>
-              ) : results[activeTab].length === 0 ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--foreground-muted)' }}>
-                  No {activeTab} found for "{query}".
+                <div role="status" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <span className="sr-only">Searching…</span>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Card key={i} padding="md" aria-hidden="true">
+                      <Skeleton width="50%" maxWidth={320} height={16} style={{ marginBottom: 8 }} />
+                      <Skeleton width="80%" maxWidth={520} height={13} />
+                    </Card>
+                  ))}
                 </div>
+              ) : results[activeTab].length === 0 ? (
+                <EmptyState
+                  icon={SearchIcon}
+                  title={`No ${activeTab} found`}
+                  description="Try a different search term."
+                />
               ) : (
                 results[activeTab].map((item: any, i) => (
                   <Card key={item.id || i} padding="md" style={{ border: '1px solid var(--border)' }}>

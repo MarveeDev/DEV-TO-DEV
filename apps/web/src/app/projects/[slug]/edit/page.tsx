@@ -218,7 +218,7 @@ export default function EditProjectPage({ params }: { params: Promise<{ slug: st
       <section className="page-header">
         <BackButton fallback={`/projects/${slug}`} />
         <div className="page-header-content">
-          <h1 className="text-wrap-safe" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)' }}>
+          <h1 className="text-wrap-safe" style={{ color: 'var(--foreground)' }}>
             Edit Project
           </h1>
           <p style={{ color: 'var(--foreground-muted)', fontSize: '16px', margin: 0 }}>Update your project details and settings.</p>

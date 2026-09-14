@@ -145,7 +145,7 @@ export default function SettingsPage() {
     <div style={{ padding: '40px 24px' }}>
       <div style={{ maxWidth: '640px', margin: '0 auto' }}>
         <div style={{ marginBottom: '32px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)', marginBottom: '8px' }}>Edit Profile</h1>
+          <h1 className="page-title" style={{ marginBottom: '8px' }}>Edit Profile</h1>
           <p style={{ color: 'var(--foreground-muted)', fontSize: '16px' }}>Update your public developer profile.</p>
         </div>
 

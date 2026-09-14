@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Card from './Card';
+import Avatar from './Avatar';
+import SkillTag from './SkillTag';
 import { Heart, MessageCircle, Share2 } from 'lucide-react';
 
 interface PostAuthor {
@@ -8,6 +10,7 @@ interface PostAuthor {
   profile: {
     username: string;
     displayName: string;
+    avatarUrl?: string | null;
   };
 }
 
@@ -90,38 +93,37 @@ export default function PostCard({ id, title, content, skills, attachments, crea
     gap: '6px',
     background: 'transparent',
     border: 'none',
-    padding: '6px 10px',
+    padding: '8px 12px',
     cursor: 'pointer',
     color: 'var(--foreground-muted)',
     fontSize: '13px',
     fontWeight: 600,
     textDecoration: 'none',
-    borderRadius: '8px',
+    borderRadius: 'var(--radius-md)',
   };
 
   return (
-    <Card padding="md" style={{ marginBottom: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
-          <div>
-            <Link href={`/developers/${author.profile.username}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-              <strong style={{ fontSize: '15px', color: 'var(--foreground)', display: 'block', marginBottom: '2px' }}>
-                {author.profile.displayName || 'Unknown'}
-              </strong>
-              <span style={{ fontSize: '13px', color: 'var(--foreground-muted)' }}>
-                @{author.profile.username}
-              </span>
-            </Link>
-          </div>
+    <Card padding="md" style={{ marginBottom: 16 }}>
+      {/* Author */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', minWidth: 0 }}>
+          <Avatar src={author.profile.avatarUrl} name={author.profile.displayName} size={42} />
+          <Link href={`/developers/${author.profile.username}`} style={{ textDecoration: 'none', color: 'inherit', minWidth: 0 }}>
+            <strong className="truncate" style={{ fontSize: 15, color: 'var(--foreground)', display: 'block' }}>
+              {author.profile.displayName || 'Unknown'}
+            </strong>
+            <span style={{ fontSize: 13, color: 'var(--foreground-subtle)' }}>
+              @{author.profile.username}
+            </span>
+          </Link>
         </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '12px', color: 'var(--foreground-muted)' }}>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+          <span style={{ fontSize: 12, color: 'var(--foreground-subtle)' }}>
             {new Date(createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
           </span>
           {isOwner && onDelete && (
-            <button 
+            <button
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -130,11 +132,11 @@ export default function PostCard({ id, title, content, skills, attachments, crea
               style={{
                 background: 'transparent',
                 border: 'none',
-                color: '#ef4444',
+                color: 'var(--danger)',
                 cursor: 'pointer',
-                fontSize: '12px',
+                fontSize: 12,
                 fontWeight: 600,
-                padding: '4px'
+                padding: 4,
               }}
               title="Delete post"
             >
@@ -143,14 +145,14 @@ export default function PostCard({ id, title, content, skills, attachments, crea
           )}
         </div>
       </div>
-      
+
       <Link href={`/posts/${id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
         {title && (
-          <h3 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 12px 0', color: 'var(--foreground)' }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 10px 0', color: 'var(--foreground)', letterSpacing: '-0.01em' }}>
             {title}
           </h3>
         )}
-        <p style={{ fontSize: '15px', color: 'var(--foreground)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap', marginBottom: '16px' }}>
+        <p style={{ fontSize: 15, color: 'var(--foreground)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap', marginBottom: 16 }}>
           {content}
         </p>
 
@@ -159,7 +161,7 @@ export default function PostCard({ id, title, content, skills, attachments, crea
             key={att.id}
             src={att.url}
             alt="Post attachment"
-            style={{ width: '100%', height: 'auto', display: 'block', borderRadius: '12px', marginBottom: '16px' }}
+            style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 'var(--radius-md)', marginBottom: 16 }}
           />
         ))}
 
@@ -168,7 +170,7 @@ export default function PostCard({ id, title, content, skills, attachments, crea
             key={att.id}
             src={att.url}
             controls
-            style={{ width: '100%', height: 'auto', borderRadius: '12px', marginBottom: '16px', display: 'block' }}
+            style={{ width: '100%', height: 'auto', borderRadius: 'var(--radius-md)', marginBottom: 16, display: 'block' }}
           />
         ))}
       </Link>
@@ -179,13 +181,13 @@ export default function PostCard({ id, title, content, skills, attachments, crea
           href={att.url}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ display: 'block', padding: '12px', background: 'var(--background)', color: 'var(--primary)', textDecoration: 'underline', fontSize: '14px', marginBottom: '16px' }}
+          style={{ display: 'block', padding: 12, background: 'var(--surface-muted)', color: 'var(--primary)', textDecoration: 'underline', fontSize: 14, marginBottom: 16, borderRadius: 'var(--radius-md)' }}
         >
           View Attachment
         </a>
       ))}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingTop: '12px', borderTop: '1px solid var(--border)', marginBottom: skills && skills.length > 0 ? '12px' : '0' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 12, borderTop: '1px solid var(--border)', marginBottom: skills && skills.length > 0 ? 12 : 0 }}>
         <button onClick={handleLikeToggle} disabled={likePending} style={{ ...engagementItemStyle, color: liked ? 'var(--primary)' : 'var(--foreground-muted)' }}>
           <Heart size={18} fill={liked ? 'currentColor' : 'none'} />
           <span>{liked ? 'Unlike' : 'Like'}{likesCount > 0 ? ` (${likesCount})` : ''}</span>
@@ -201,30 +203,9 @@ export default function PostCard({ id, title, content, skills, attachments, crea
       </div>
 
       {skills && skills.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {skills.map(skill => (
-            <span 
-              key={skill.id} 
-              style={{
-                fontSize: '12px',
-                padding: '4px 10px',
-                background: 'var(--primary-light)',
-                color: 'var(--primary)',
-                borderRadius: '999px',
-                fontWeight: 600,
-                display: 'inline-block',
-                transition: 'all 0.1s ease',
-                cursor: 'pointer'
-              }} 
-              className="skill-pill"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                window.location.href = `/skills/${skill.slug || skill.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
-              }}
-            >
-              {skill.name}
-            </span>
+            <SkillTag key={skill.id} name={skill.name} slug={skill.slug} />
           ))}
         </div>
       )}

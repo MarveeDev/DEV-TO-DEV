@@ -54,7 +54,7 @@ export default function AskQuestionPage() {
       <div className="page-header" style={{ marginBottom: '24px' }}>
         <BackButton fallback="/questions" />
         <div className="page-header-content">
-          <h1 style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <h1 style={{ margin: 0, color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <CircleHelp size={28} color="var(--primary)" />
             Ask a Question
           </h1>

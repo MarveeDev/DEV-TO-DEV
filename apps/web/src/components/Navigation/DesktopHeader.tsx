@@ -1,63 +1,134 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Bell, Settings } from 'lucide-react';
+import Avatar from '../Avatar';
+import SearchBar from '../SearchBar';
+import { useCurrentUser } from '../Auth/CurrentUserProvider';
 
 interface DesktopHeaderProps {
   isAuthenticated: boolean;
   loading: boolean;
-  onLogout: () => void;
+  unreadCount?: number;
 }
 
-export default function DesktopHeader({ isAuthenticated, loading, onLogout }: DesktopHeaderProps) {
+export default function DesktopHeader({ isAuthenticated, loading, unreadCount = 0 }: DesktopHeaderProps) {
+  const router = useRouter();
+  const { user } = useCurrentUser();
+  const profile = user?.developerProfile;
+  const [query, setQuery] = useState('');
+
+  const handleSearch = (value: string) => {
+    const q = value.trim();
+    router.push(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
+  };
+
   return (
-    <header style={{
-      position: 'fixed',
-      top: 0,
-      left: isAuthenticated ? 'var(--sidebar-width)' : 0,
-      right: 0,
-      height: '64px',
-      background: 'var(--surface)',
-      borderBottom: '1px solid var(--border)',
-      boxShadow: 'var(--shadow-sm)',
-      zIndex: 50,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '0 24px',
-      boxSizing: 'border-box'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '32px' }}>
+    <header
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: isAuthenticated ? 'var(--sidebar-width)' : 0,
+        right: 0,
+        height: 'var(--header-height)',
+        background: 'var(--surface)',
+        borderBottom: '1px solid var(--border)',
+        zIndex: 50,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 24px',
+        boxSizing: 'border-box',
+        gap: '16px',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
         {isAuthenticated && (
-          <Link href="/search" style={{ textDecoration: 'none' }}>
-            <div style={{
-              background: 'var(--background)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '8px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              width: '300px',
-              color: 'var(--foreground-muted)',
-              cursor: 'pointer'
-            }}>
-              <span style={{ fontSize: '14px' }}>Search developers, projects...</span>
-            </div>
-          </Link>
+          <SearchBar
+            value={query}
+            onChange={setQuery}
+            onSubmit={handleSearch}
+            placeholder="Search developers, projects, questions..."
+            style={{ width: 360, maxWidth: '100%' }}
+            inputStyle={{ background: 'var(--background)', border: 'none' }}
+          />
         )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-        {!loading && (
-          isAuthenticated ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--border)' }}></div>
-            </div>
-          ) : (
-            <Link href="/login" style={{ background: 'var(--primary)', color: '#ffffff', padding: '8px 16px', borderRadius: 'var(--radius-md)', textDecoration: 'none', fontWeight: 600, fontSize: '14px' }}>
-              Login
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {!loading && isAuthenticated ? (
+          <>
+            <Link
+              href="/notifications"
+              aria-label="Notifications"
+              style={{
+                position: 'relative',
+                width: 40,
+                height: 40,
+                borderRadius: 'var(--radius-md)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--foreground-muted)',
+              }}
+            >
+              <Bell size={20} />
+              {unreadCount > 0 && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 6,
+                    right: 6,
+                    minWidth: 16,
+                    height: 16,
+                    padding: '0 4px',
+                    borderRadius: 'var(--radius-full)',
+                    background: 'var(--primary)',
+                    color: '#fff',
+                    fontSize: 10,
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid var(--surface)',
+                  }}
+                >
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </Link>
-          )
+            <Link
+              href="/settings"
+              aria-label="Settings"
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 'var(--radius-md)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--foreground-muted)',
+              }}
+            >
+              <Settings size={20} />
+            </Link>
+            <Link href="/profile" aria-label="Profile" style={{ display: 'flex', marginLeft: 4 }}>
+              <Avatar
+                src={profile?.avatarUrl}
+                name={profile?.displayName}
+                size={36}
+              />
+            </Link>
+          </>
+        ) : (
+          <Link
+            href="/login"
+            className="btn btn--primary btn--md"
+          >
+            Login
+          </Link>
         )}
       </div>
     </header>

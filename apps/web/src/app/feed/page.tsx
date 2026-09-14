@@ -8,6 +8,10 @@ import Button from '../../components/Button';
 import Link from 'next/link';
 import BackButton from '../../components/Navigation/BackButton';
 import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
+import Skeleton from '../../components/Skeleton';
+import { PostCardSkeleton } from '../../components/skeletons';
+import EmptyState from '../../components/EmptyState';
+import { MessageSquare } from 'lucide-react';
 
 export default function FeedPage() {
   const router = useRouter();
@@ -79,7 +83,17 @@ export default function FeedPage() {
     }
   };
 
-  if (!user || loading) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--foreground-muted)' }}>Loading feed...</div>;
+  if (!user || loading) return (
+    <div style={{ maxWidth: 600, margin: '0 auto' }} role="status">
+      <span className="sr-only">Loading feed…</span>
+      <Card padding="md" aria-hidden="true" style={{ marginBottom: 32 }}>
+        <Skeleton width="100%" height={48} borderRadius="var(--radius-md)" />
+      </Card>
+      <PostCardSkeleton />
+      <PostCardSkeleton />
+      <PostCardSkeleton />
+    </div>
+  );
 
   return (
     <div>
@@ -89,7 +103,7 @@ export default function FeedPage() {
           <div className="page-header">
             <BackButton fallback="/dashboard" />
             <div className="page-header-content">
-              <h2 className="text-wrap-safe" style={{ fontSize: '24px', fontWeight: 800, color: 'var(--foreground)', margin: '0 0 8px 0' }}>Latest Activity</h2>
+              <h2 className="text-wrap-safe page-title" style={{ margin: '0 0 8px 0' }}>Latest Activity</h2>
               <p style={{ color: 'var(--foreground-muted)', margin: 0 }}>See what developers are building.</p>
             </div>
           </div>
@@ -119,9 +133,12 @@ export default function FeedPage() {
         </Card>
 
         {posts.length === 0 ? (
-          <Card padding="md" style={{ textAlign: 'center' }}>
-            <p style={{ color: 'var(--foreground-muted)' }}>No posts yet. Be the first to share!</p>
-          </Card>
+          <EmptyState
+            icon={MessageSquare}
+            title="No posts yet"
+            description="Share what you're building or learning with the community."
+            action={<Link href="/posts/create" style={{ textDecoration: 'none' }}><Button variant="primary">Create a post</Button></Link>}
+          />
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {posts.map(post => (

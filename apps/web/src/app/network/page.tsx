@@ -3,27 +3,29 @@
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import Badge from '../../components/Badge';
+import Avatar from '../../components/Avatar';
+import EmptyState from '../../components/EmptyState';
 
 import DiscoverTabs from '../../components/Navigation/DiscoverTabs';
 import BackButton from '../../components/Navigation/BackButton';
 import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
+import { Users } from 'lucide-react';
+import { DeveloperCardSkeleton } from '../../components/skeletons';
 
 export default function NetworkPage() {
   const router = useRouter();
   const { user, loading: authLoading, isAuthenticated } = useCurrentUser();
-  
+
   const [connections, setConnections] = useState<any[]>([]);
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const currentUserId = user?.id ?? null;
 
-  // Refs controlling the continuous auto-scroll (Network page only).
-  const autoScrollPausedRef = useRef(false);   // true while hovering / touching / tab hidden
-  const autoScrollCooldownRef = useRef(0);      // timestamp until which auto-scroll stays paused
+  const autoScrollPausedRef = useRef(false);
+  const autoScrollCooldownRef = useRef(0);
 
   useEffect(() => {
     if (authLoading) return;
@@ -49,7 +51,7 @@ export default function NetworkPage() {
     try {
       const url = action === 'delete' ? `/api/v1/connections/${id}` : `/api/v1/connections/${id}/${action}`;
       const method = action === 'delete' ? 'DELETE' : 'PATCH';
-      
+
       const res = await fetch(url, { method });
       if (res.ok) {
         if (action === 'accept') {
@@ -70,17 +72,12 @@ export default function NetworkPage() {
     }
   };
 
-  // Continuous, gentle auto-scroll of the network feed.
-  // Pauses on hover/touch/keyboard interaction and when the tab is hidden,
-  // respects prefers-reduced-motion, and loops back to the top at the bottom.
-  // Uses passive listeners and never intercepts pointer events, so every
-  // button/link stays fully clickable on both mobile and desktop.
   useEffect(() => {
     if (loading || typeof window === 'undefined') return;
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
     let rafId = 0;
-    const SPEED = 0.4; // px per frame — a subtle drift (~24px/s at 60fps)
+    const SPEED = 0.4;
 
     const scrollableDistance = () =>
       document.documentElement.scrollHeight - window.innerHeight;
@@ -92,8 +89,8 @@ export default function NetworkPage() {
       const paused = autoScrollPausedRef.current || Date.now() < autoScrollCooldownRef.current;
       if (!paused && scrollableDistance() > 4) {
         if (window.scrollY >= scrollableDistance() - 1) {
-          window.scrollTo({ top: 0, behavior: 'smooth' }); // loop to top
-          cooldown(1200); // let the reset animation finish before resuming
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          cooldown(1200);
         } else {
           window.scrollBy(0, SPEED);
         }
@@ -128,7 +125,17 @@ export default function NetworkPage() {
     };
   }, [loading]);
 
-  if (loading) return <div style={{ padding: '60px', textAlign: 'center', color: 'var(--foreground-muted)' }}>Loading network...</div>;
+  if (loading) return (
+    <div role="status" style={{ maxWidth: 800, margin: '0 auto' }}>
+      <span className="sr-only">Loading network…</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <DeveloperCardSkeleton />
+        <DeveloperCardSkeleton />
+        <DeveloperCardSkeleton />
+        <DeveloperCardSkeleton />
+      </div>
+    </div>
+  );
 
   const incomingRequests = requests.filter(r => r.addressee.id === currentUserId && r.status === 'PENDING');
   const outgoingRequests = requests.filter(r => r.requester.id === currentUserId && r.status === 'PENDING');
@@ -138,41 +145,36 @@ export default function NetworkPage() {
       onMouseEnter={() => { autoScrollPausedRef.current = true; }}
       onMouseLeave={() => { autoScrollPausedRef.current = false; }}
     >
-      <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-        
-        <div className="page-header" style={{ marginBottom: '24px' }}>
+      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+        <div className="page-header" style={{ marginBottom: 24 }}>
           <BackButton fallback="/dashboard" />
           <div className="page-header-content">
-            <h1 className="text-wrap-safe" style={{ fontSize: '32px', fontWeight: 800, color: 'var(--foreground)' }}>Network</h1>
+            <h1 className="text-wrap-safe" style={{ color: 'var(--foreground)' }}>Network</h1>
             <p style={{ color: 'var(--foreground-muted)' }}>Manage your professional connections.</p>
           </div>
         </div>
-        
+
         <DiscoverTabs />
 
         {incomingRequests.length > 0 && (
-          <div style={{ marginBottom: '48px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--foreground)', margin: '0 0 16px 0' }}>Pending Requests</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ marginBottom: 40 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--foreground)', margin: '0 0 16px 0' }}>Pending Requests</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {incomingRequests.map(req => (
-                <Card key={req.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    {req.requester.profile.avatarUrl ? (
-                      <Image src={req.requester.profile.avatarUrl} alt={req.requester.profile.displayName} width={48} height={48} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                    ) : (
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
-                    )}
-                    <div>
-                      <Link href={`/developers/${req.requester.profile.username}`} style={{ fontWeight: 700, textDecoration: 'none', color: 'var(--foreground)', fontSize: '16px', display: 'block', marginBottom: '2px' }}>
+                <Card key={req.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+                  <div style={{ display: 'flex', gap: 16, alignItems: 'center', minWidth: 0 }}>
+                    <Avatar src={req.requester.profile.avatarUrl} name={req.requester.profile.displayName} size={48} />
+                    <div style={{ minWidth: 0 }}>
+                      <Link href={`/developers/${req.requester.profile.username}`} style={{ fontWeight: 700, textDecoration: 'none', color: 'var(--foreground)', fontSize: 16, display: 'block', marginBottom: 2 }}>
                         {req.requester.profile.displayName}
                       </Link>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <span style={{ color: 'var(--foreground-muted)', fontSize: '13px' }}>@{req.requester.profile.username}</span>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <span style={{ color: 'var(--foreground-subtle)', fontSize: 13 }}>@{req.requester.profile.username}</span>
                         <Badge variant="outline">{req.requester.profile.experienceLevel}</Badge>
                       </div>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: 8 }}>
                     <Button onClick={() => handleAction(req.id, 'accept')} variant="primary" size="sm">Accept</Button>
                     <Button onClick={() => handleAction(req.id, 'reject')} variant="outline" size="sm">Reject</Button>
                   </div>
@@ -183,29 +185,21 @@ export default function NetworkPage() {
         )}
 
         {outgoingRequests.length > 0 && (
-          <div style={{ marginBottom: '48px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--foreground)', margin: '0 0 16px 0' }}>Outgoing Requests</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ marginBottom: 40 }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--foreground)', margin: '0 0 16px 0' }}>Outgoing Requests</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {outgoingRequests.map(req => (
-                <Card key={req.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    {req.addressee.profile.avatarUrl ? (
-                      <Image src={req.addressee.profile.avatarUrl} alt={req.addressee.profile.displayName} width={48} height={48} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                    ) : (
-                      <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
-                    )}
-                    <div>
-                      <Link href={`/developers/${req.addressee.profile.username}`} style={{ fontWeight: 700, textDecoration: 'none', color: 'var(--foreground)', fontSize: '16px', display: 'block', marginBottom: '2px' }}>
+                <Card key={req.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+                  <div style={{ display: 'flex', gap: 16, alignItems: 'center', minWidth: 0 }}>
+                    <Avatar src={req.addressee.profile.avatarUrl} name={req.addressee.profile.displayName} size={48} />
+                    <div style={{ minWidth: 0 }}>
+                      <Link href={`/developers/${req.addressee.profile.username}`} style={{ fontWeight: 700, textDecoration: 'none', color: 'var(--foreground)', fontSize: 16, display: 'block', marginBottom: 2 }}>
                         {req.addressee.profile.displayName}
                       </Link>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <span style={{ color: 'var(--foreground-muted)', fontSize: '13px' }}>@{req.addressee.profile.username}</span>
-                      </div>
+                      <span style={{ color: 'var(--foreground-subtle)', fontSize: 13 }}>@{req.addressee.profile.username}</span>
                     </div>
                   </div>
-                  <div>
-                    <Button onClick={() => handleAction(req.id, 'delete')} variant="ghost" size="sm">Cancel Request</Button>
-                  </div>
+                  <Button onClick={() => handleAction(req.id, 'delete')} variant="ghost" size="sm">Cancel Request</Button>
                 </Card>
               ))}
             </div>
@@ -213,34 +207,28 @@ export default function NetworkPage() {
         )}
 
         <div>
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>My Connections</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--foreground)', marginBottom: 16 }}>My Connections</h2>
           {connections.length === 0 ? (
-            <Card padding="md" style={{ textAlign: 'center' }}>
-              <p style={{ color: 'var(--foreground-muted)' }}>You don't have any connections yet.</p>
-            </Card>
+            <EmptyState icon={Users} title="No connections yet" description="Discover developers and send connection requests to grow your network." />
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {connections.map(conn => {
                 const partner = conn.requester.id === currentUserId ? conn.addressee : conn.requester;
                 return (
-                  <Card key={conn.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-                    <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                      {partner.profile.avatarUrl ? (
-                        <Image src={partner.profile.avatarUrl} alt={partner.profile.displayName} width={48} height={48} style={{ borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                      ) : (
-                        <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--border)', flexShrink: 0 }}></div>
-                      )}
-                      <div>
-                        <Link href={`/developers/${partner.profile.username}`} style={{ fontWeight: 700, textDecoration: 'none', color: 'var(--foreground)', fontSize: '16px', display: 'block', marginBottom: '2px' }}>
+                  <Card key={conn.id} padding="md" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+                    <div style={{ display: 'flex', gap: 16, alignItems: 'center', minWidth: 0 }}>
+                      <Avatar src={partner.profile.avatarUrl} name={partner.profile.displayName} size={48} />
+                      <div style={{ minWidth: 0 }}>
+                        <Link href={`/developers/${partner.profile.username}`} style={{ fontWeight: 700, textDecoration: 'none', color: 'var(--foreground)', fontSize: 16, display: 'block', marginBottom: 2 }}>
                           {partner.profile.displayName}
                         </Link>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <span style={{ color: 'var(--foreground-muted)', fontSize: '13px' }}>@{partner.profile.username}</span>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <span style={{ color: 'var(--foreground-subtle)', fontSize: 13 }}>@{partner.profile.username}</span>
                           <Badge variant="outline">{partner.profile.experienceLevel}</Badge>
                         </div>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', gap: 8 }}>
                       <Link href={`/messages/${partner.profile.username}`} style={{ textDecoration: 'none' }}>
                         <Button variant="primary" size="sm">Message</Button>
                       </Link>
