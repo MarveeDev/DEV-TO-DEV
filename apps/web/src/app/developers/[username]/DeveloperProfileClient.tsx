@@ -13,7 +13,7 @@ import BackButton from '../../../components/Navigation/BackButton';
 import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 import { ProfileSkeleton, PostCardSkeleton } from '../../../components/skeletons';
 import EmptyState from '../../../components/EmptyState';
-import { FileText } from 'lucide-react';
+import { FileText, MapPin, Globe, ExternalLink } from 'lucide-react';
 
 export default function DeveloperProfileClient({
   username,
@@ -132,6 +132,43 @@ export default function DeveloperProfileClient({
                   )}
                 </div>
               </div>
+
+              {(developer.location || developer.websiteUrl || developer.githubUrl) && (
+                <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {developer.location && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: 'var(--foreground-muted)' }}>
+                      <MapPin size={16} color="var(--foreground-subtle)" />
+                      <span>{developer.location}</span>
+                    </div>
+                  )}
+                  {(developer.websiteUrl || developer.githubUrl) && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                      {developer.websiteUrl && (
+                        <a
+                          href={developer.websiteUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}
+                        >
+                          <Globe size={16} />
+                          Website
+                        </a>
+                      )}
+                      {developer.githubUrl && (
+                        <a
+                          href={developer.githubUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}
+                        >
+                          <ExternalLink size={16} />
+                          GitHub
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {developer.bio && (
                 <div style={{ marginTop: '32px' }}>

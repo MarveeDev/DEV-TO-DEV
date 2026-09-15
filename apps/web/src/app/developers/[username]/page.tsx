@@ -20,14 +20,32 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const displayName = developer.displayName || developer.username;
+
+  const skillNames = (developer.skills || [])
+    .map((s: any) => s?.name)
+    .filter(Boolean)
+    .slice(0, 3);
+
+  const experienceLevel = developer.experienceLevel?.toLowerCase() || '';
+  const article = experienceLevel && /^[aeiou]/i.test(experienceLevel) ? 'an' : 'a';
+  const levelPhrase = experienceLevel ? `${article} ${experienceLevel} developer` : `${article} developer`;
+
   const description =
     truncate(developer.bio) ||
-    `${displayName} is a developer on DEV-TO-DEV.`;
+    truncate(
+      [
+        `${displayName} is ${levelPhrase} on DEV-TO-DEV`,
+        skillNames.length > 0 ? `working with ${skillNames.join(', ')}` : '',
+      ]
+        .filter(Boolean)
+        .join(', ') + '.',
+    );
 
   return pageMetadata({
     title: `${displayName} — Developer Profile`,
     description,
     path: `/developers/${developer.username}`,
+    type: "profile",
   });
 }
 

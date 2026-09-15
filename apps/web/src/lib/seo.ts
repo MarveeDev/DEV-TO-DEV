@@ -36,7 +36,7 @@ export function pageMetadata(opts: {
   title: string;
   description: string;
   path: string;
-  type?: "website" | "article";
+  type?: "website" | "article" | "profile";
   noBrand?: boolean;
 }): Metadata {
   const fullTitle = opts.noBrand ? opts.title : brand(opts.title);
