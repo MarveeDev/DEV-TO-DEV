@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCurrentUser } from '../Auth/CurrentUserProvider';
 import Avatar from '../Avatar';
+import AdminNotifications from './AdminNotifications';
 import {
   LayoutDashboard,
   Users,
@@ -17,7 +18,6 @@ import {
   LogOut,
   Menu,
   X,
-  Bell,
   ChevronRight,
 } from 'lucide-react';
 
@@ -298,26 +298,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Link
-              href="/notifications"
-              aria-label="Notifications"
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: 10,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--foreground-muted)',
-                textDecoration: 'none',
-                border: '1px solid transparent',
-                transition: 'background 0.12s ease, color 0.12s ease',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-hover)'; e.currentTarget.style.color = 'var(--foreground)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--foreground-muted)'; }}
-            >
-              <Bell size={18} />
-            </Link>
+            <AdminNotifications />
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '8px', marginLeft: '4px', borderLeft: '1px solid var(--border)' }}>
               <Avatar src={me.developerProfile?.avatarUrl} name={avatarName} size={36} />
