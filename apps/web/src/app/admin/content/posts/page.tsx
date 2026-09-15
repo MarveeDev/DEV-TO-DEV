@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Table, Td, Pagination, EmptyState, SearchInput } from '../../../../components/admin/AdminUi';
+import { Table, Td, Pagination, EmptyState, SearchInput, PageHeader, TableSkeleton } from '../../../../components/admin/AdminUi';
 import ContentTabs from '../../../../components/admin/ContentTabs';
 
 function formatDate(v: string) {
@@ -32,13 +32,14 @@ export default function AdminContentPostsPage() {
 
   return (
     <div>
+      <PageHeader title="Posts" description="Browse and search all developer posts." />
       <ContentTabs />
       <div style={{ marginBottom: '20px' }}>
         <SearchInput value={search} onChange={setSearch} placeholder="Search posts..." />
       </div>
 
       {loading ? (
-        <EmptyState message="Loading posts..." />
+        <TableSkeleton rows={7} columns={5} />
       ) : items.length === 0 ? (
         <EmptyState message="No posts found." />
       ) : (

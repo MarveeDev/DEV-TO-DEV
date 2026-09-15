@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Badge, Table, Td, Pagination, EmptyState, SelectInput } from '../../../components/admin/AdminUi';
+import { Badge, Table, Td, Pagination, EmptyState, SelectInput, PageHeader, TableSkeleton } from '../../../components/admin/AdminUi';
 import { formatPrice } from '../../../lib/currency';
 
 const STATUSES = ['PENDING', 'REVIEWING', 'RESOLVED', 'DISMISSED'];
@@ -48,6 +48,8 @@ export default function AdminReportsPage() {
 
   return (
     <div>
+      <PageHeader title="Reports" description="Review and moderate marketplace listing reports." />
+
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <SelectInput
           value={status}
@@ -60,7 +62,7 @@ export default function AdminReportsPage() {
       </div>
 
       {loading ? (
-        <EmptyState message="Loading reports..." />
+        <TableSkeleton rows={7} columns={6} />
       ) : items.length === 0 ? (
         <EmptyState message="No reports found." />
       ) : (

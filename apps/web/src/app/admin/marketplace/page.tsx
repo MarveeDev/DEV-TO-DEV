@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Badge, Table, Td, Pagination, EmptyState, SearchInput } from '../../../components/admin/AdminUi';
+import { Badge, Table, Td, Pagination, EmptyState, SearchInput, PageHeader, TableSkeleton } from '../../../components/admin/AdminUi';
 import { formatPrice } from '../../../lib/currency';
 
 function formatDate(v: string) {
@@ -32,12 +32,14 @@ export default function AdminMarketplacePage() {
 
   return (
     <div>
+      <PageHeader title="Marketplace" description="Review marketplace listings and their report counts." />
+
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <SearchInput value={search} onChange={setSearch} placeholder="Search listings..." />
       </div>
 
       {loading ? (
-        <EmptyState message="Loading listings..." />
+        <TableSkeleton rows={7} columns={6} />
       ) : items.length === 0 ? (
         <EmptyState message="No listings found." />
       ) : (

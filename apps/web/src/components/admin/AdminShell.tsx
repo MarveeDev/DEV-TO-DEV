@@ -4,18 +4,21 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCurrentUser } from '../Auth/CurrentUserProvider';
+import Avatar from '../Avatar';
 import {
   LayoutDashboard,
   Users,
   Store,
   Flag,
   FileText,
-  AlertTriangle,
+  ShieldAlert,
   ScrollText,
   Settings,
   LogOut,
   Menu,
   X,
+  Bell,
+  ChevronRight,
 } from 'lucide-react';
 
 interface NavItem {
@@ -26,15 +29,20 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { name: 'Overview', href: '/admin', icon: LayoutDashboard },
+  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
   { name: 'Users', href: '/admin/users', icon: Users },
+  { name: 'Content', href: '/admin/content', icon: FileText },
   { name: 'Marketplace', href: '/admin/marketplace', icon: Store },
   { name: 'Reports', href: '/admin/reports', icon: Flag },
-  { name: 'Content', href: '/admin/content', icon: FileText },
-  { name: 'Violations', href: '/admin/violations', icon: AlertTriangle },
+  { name: 'Moderation', href: '/admin/violations', icon: ShieldAlert },
   { name: 'Audit Logs', href: '/admin/audit-logs', icon: ScrollText, adminOnly: true },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];
+
+const ROLE_LABEL: Record<string, string> = {
+  ADMIN: 'System Administrator',
+  MODERATOR: 'Moderator',
+};
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -49,6 +57,10 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     }
   }, [loading, me, router]);
 
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
   const handleLogout = async () => {
     await logout();
     router.replace('/login');
@@ -56,7 +68,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--foreground-muted)' }}>
+      <div className="admin-root" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--foreground-muted)', background: 'var(--background)' }}>
         Loading admin dashboard...
       </div>
     );
@@ -66,7 +78,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   if (me.role !== 'ADMIN' && me.role !== 'MODERATOR') {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center' }}>
+      <div className="admin-root" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', background: 'var(--background)' }}>
         <div style={{ fontSize: '48px', fontWeight: 800, color: 'var(--foreground)' }}>403</div>
         <p style={{ color: 'var(--foreground-muted)', margin: '8px 0 24px' }}>
           You do not have permission to access the admin dashboard.
@@ -80,88 +92,173 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   const isAdmin = me.role === 'ADMIN';
   const visibleItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin);
-
   const current = NAV_ITEMS.find((item) => pathname === item.href || pathname.startsWith(item.href + '/'));
 
-  const sidebar = (
-    <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '16px 12px', flex: 1, overflowY: 'auto' }}>
-      {visibleItems.map((item) => {
-        const active = pathname === item.href || pathname.startsWith(item.href + '/');
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={() => setSidebarOpen(false)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '10px 12px',
-              borderRadius: 'var(--radius-md)',
-              color: active ? 'var(--primary)' : 'var(--foreground)',
-              background: active ? 'var(--primary-light)' : 'transparent',
-              fontWeight: active ? 600 : 500,
-              fontSize: '14px',
-              textDecoration: 'none',
-            }}
-          >
-            <Icon size={18} strokeWidth={2} />
-            {item.name}
-          </Link>
-        );
-      })}
-    </nav>
+  const displayName = me.developerProfile?.displayName || me.email || 'Administrator';
+  const roleLabel = ROLE_LABEL[me.role] || me.role || 'Admin';
+  const avatarName = me.developerProfile?.displayName || me.email || 'Admin';
+
+  const sidebarContent = (
+    <>
+      <div style={{ padding: '20px 20px 16px', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+        <img
+          src="/logo.png"
+          alt="DEV-TO-DEV"
+          style={{ height: 30, width: 30, objectFit: 'contain', flexShrink: 0, borderRadius: 6 }}
+        />
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--foreground)', letterSpacing: '-0.01em', lineHeight: 1.2 }}>
+            DEV-TO-DEV
+          </div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--foreground-muted)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            Admin Console
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding: '8px 16px 16px', flexShrink: 0 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--foreground-subtle)', padding: '0 8px 8px' }}>
+          Management
+        </div>
+        <nav style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+          {visibleItems.map((item) => {
+            const active = pathname === item.href || pathname.startsWith(item.href + '/');
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? 'page' : undefined}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '9px 12px',
+                  borderRadius: 10,
+                  color: active ? '#ffffff' : 'var(--foreground-muted)',
+                  background: active ? 'var(--primary)' : 'transparent',
+                  fontWeight: active ? 600 : 500,
+                  fontSize: '14px',
+                  textDecoration: 'none',
+                  transition: 'background 0.12s ease, color 0.12s ease',
+                }}
+              >
+                <Icon size={18} strokeWidth={active ? 2.2 : 2} />
+                <span style={{ flex: 1 }}>{item.name}</span>
+                {active && <ChevronRight size={15} strokeWidth={2.2} />}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+
+      <div style={{ marginTop: 'auto', padding: '16px', flexShrink: 0, borderTop: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Avatar src={me.developerProfile?.avatarUrl} name={avatarName} size={38} />
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--foreground)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {displayName}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--foreground-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {roleLabel}
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={handleLogout}
+          style={{
+            marginTop: '14px',
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            padding: '9px 12px',
+            borderRadius: 10,
+            border: '1px solid var(--border)',
+            background: 'transparent',
+            color: 'var(--foreground-muted)',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'background 0.12s ease, color 0.12s ease, border-color 0.12s ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--danger-light)';
+            e.currentTarget.style.color = 'var(--danger)';
+            e.currentTarget.style.borderColor = 'var(--danger)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = 'var(--foreground-muted)';
+            e.currentTarget.style.borderColor = 'var(--border)';
+          }}
+        >
+          <LogOut size={16} />
+          Logout
+        </button>
+      </div>
+    </>
   );
 
   return (
-    <div style={{ position: 'fixed', inset: 0, display: 'flex', background: 'var(--background)', zIndex: 100 }}>
+    <div className="admin-root" style={{ position: 'fixed', inset: 0, display: 'flex', background: 'var(--background)', zIndex: 100, color: 'var(--foreground)' }}>
       {/* Desktop sidebar */}
       <aside
+        className="admin-sidebar-desktop"
         style={{
-          width: '240px',
+          width: '252px',
           flexShrink: 0,
           background: 'var(--surface)',
           borderRight: '1px solid var(--border)',
           display: 'none',
           flexDirection: 'column',
         }}
-        className="admin-sidebar-desktop"
       >
-        <div style={{ padding: '20px 16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <img src="/logo.png" alt="DEV-TO-DEV" style={{ height: '28px', width: 'auto', objectFit: 'contain' }} />
-          <span style={{ fontWeight: 800, color: 'var(--foreground)', fontSize: '14px' }}>Admin</span>
-        </div>
-        {sidebar}
+        {sidebarContent}
       </aside>
 
       {/* Mobile sidebar drawer */}
       {sidebarOpen && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 130 }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)' }} onClick={() => setSidebarOpen(false)} />
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(2, 6, 16, 0.6)' }} onClick={() => setSidebarOpen(false)} />
           <aside
             style={{
               position: 'absolute',
               left: 0,
               top: 0,
               bottom: 0,
-              width: '260px',
+              width: '272px',
+              maxWidth: '85vw',
               background: 'var(--surface)',
               borderRight: '1px solid var(--border)',
               display: 'flex',
               flexDirection: 'column',
+              boxShadow: 'var(--shadow-lg)',
             }}
           >
-            <div style={{ padding: '16px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <img src="/logo.png" alt="DEV-TO-DEV" style={{ height: '24px', width: 'auto' }} />
-                <span style={{ fontWeight: 800, color: 'var(--foreground)', fontSize: '14px' }}>Admin</span>
-              </div>
-              <button onClick={() => setSidebarOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--foreground)' }}>
-                <X size={20} />
-              </button>
-            </div>
-            {sidebar}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Close menu"
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 14,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--foreground-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+              }}
+            >
+              <X size={20} />
+            </button>
+            {sidebarContent}
           </aside>
         </div>
       )}
@@ -190,40 +287,50 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             >
               <Menu size={22} />
             </button>
-            <h1 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--foreground)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {current ? current.name : 'Admin'}
-            </h1>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--foreground)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {current ? current.name : 'Admin'}
+              </div>
+              <div style={{ fontSize: '12px', color: 'var(--foreground-subtle)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} className="admin-header-subtitle">
+                Learn. Connect. Build. Grow.
+              </div>
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <span style={{ fontSize: '13px', color: 'var(--foreground-muted)', display: 'none' }} className="admin-identity">
-              {me.email}
-            </span>
-            <span
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Link
+              href="/notifications"
+              aria-label="Notifications"
               style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                padding: '4px 8px',
-                borderRadius: '999px',
-                background: isAdmin ? 'var(--primary-light)' : 'var(--border)',
-                color: isAdmin ? 'var(--primary)' : 'var(--foreground-muted)',
+                width: 38,
+                height: 38,
+                borderRadius: 10,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--foreground-muted)',
+                textDecoration: 'none',
+                border: '1px solid transparent',
+                transition: 'background 0.12s ease, color 0.12s ease',
               }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface-hover)'; e.currentTarget.style.color = 'var(--foreground)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--foreground-muted)'; }}
             >
-              {me.role}
-            </span>
-            <button
-              onClick={handleLogout}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--foreground-muted)', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600 }}
-            >
-              <LogOut size={16} />
-              <span style={{ display: 'none' }} className="admin-logout-label">Logout</span>
-            </button>
+              <Bell size={18} />
+            </Link>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingLeft: '8px', marginLeft: '4px', borderLeft: '1px solid var(--border)' }}>
+              <Avatar src={me.developerProfile?.avatarUrl} name={avatarName} size={36} />
+              <div style={{ display: 'none' }} className="admin-header-identity">
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--foreground)', lineHeight: 1.2 }}>{displayName}</div>
+                <div style={{ fontSize: '11px', color: 'var(--foreground-muted)' }}>{roleLabel}</div>
+              </div>
+            </div>
           </div>
         </header>
 
         {/* Content */}
-        <main style={{ flex: 1, overflowY: 'auto', padding: '24px 20px 40px' }}>{children}</main>
+        <main style={{ flex: 1, overflowY: 'auto', padding: '28px 20px 48px' }}>{children}</main>
       </div>
 
       <style jsx global>{`
@@ -231,7 +338,10 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         @media (min-width: 1024px) {
           .admin-sidebar-desktop { display: flex; }
           .admin-menu-button { display: none; }
-          .admin-identity, .admin-logout-label { display: inline; }
+          .admin-header-identity { display: block; }
+        }
+        @media (max-width: 640px) {
+          .admin-header-subtitle { display: none; }
         }
       `}</style>
     </div>

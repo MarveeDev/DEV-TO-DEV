@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Image from 'next/image';
-import { Badge, Table, Td, Pagination, EmptyState, SearchInput, SelectInput } from '../../../components/admin/AdminUi';
+import { Badge, Table, Td, Pagination, EmptyState, SearchInput, SelectInput, PageHeader, TableSkeleton } from '../../../components/admin/AdminUi';
+import Avatar from '../../../components/Avatar';
 import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 
 function formatDate(v: string) {
@@ -52,6 +52,8 @@ export default function AdminUsersPage() {
 
   return (
     <div>
+      <PageHeader title="Users" description="Manage developer accounts, roles, and account status." />
+
       <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <SearchInput value={search} onChange={setSearch} placeholder="Search by name, username, or email..." />
         <SelectInput
@@ -67,7 +69,7 @@ export default function AdminUsersPage() {
       </div>
 
       {loading ? (
-        <EmptyState message="Loading users..." />
+        <TableSkeleton rows={7} columns={6} />
       ) : users.length === 0 ? (
         <EmptyState message="No users found." />
       ) : (
@@ -76,13 +78,9 @@ export default function AdminUsersPage() {
             {users.map((u) => (
               <tr key={u.id}>
                 <Td>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {u.developerProfile?.avatarUrl ? (
-                      <Image src={u.developerProfile.avatarUrl} alt="" width={32} height={32} style={{ borderRadius: '50%', objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--border)' }} />
-                    )}
-                    <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Avatar src={u.developerProfile?.avatarUrl} name={u.developerProfile?.displayName || u.email} size={34} />
+                    <div style={{ minWidth: 0 }}>
                       <div style={{ fontWeight: 600 }}>{u.developerProfile?.displayName || '—'}</div>
                       <div style={{ fontSize: '12px', color: 'var(--foreground-muted)' }}>
                         {u.developerProfile?.username ? `@${u.developerProfile.username}` : ''}

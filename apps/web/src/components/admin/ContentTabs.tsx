@@ -12,7 +12,18 @@ const TABS = [
 export default function ContentTabs() {
   const pathname = usePathname();
   return (
-    <div style={{ display: 'flex', gap: '4px', borderBottom: '1px solid var(--border)', marginBottom: '20px', flexWrap: 'wrap' }}>
+    <div
+      style={{
+        display: 'inline-flex',
+        gap: '4px',
+        padding: '4px',
+        borderRadius: 12,
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        marginBottom: '24px',
+        flexWrap: 'wrap',
+      }}
+    >
       {TABS.map((t) => {
         const active = pathname === t.href;
         return (
@@ -20,12 +31,14 @@ export default function ContentTabs() {
             key={t.href}
             href={t.href}
             style={{
-              padding: '10px 16px',
-              color: active ? 'var(--primary)' : 'var(--foreground-muted)',
-              borderBottom: `2px solid ${active ? 'var(--primary)' : 'transparent'}`,
-              fontWeight: active ? 600 : 500,
-              fontSize: '14px',
+              padding: '8px 16px',
+              borderRadius: 9,
+              color: active ? '#ffffff' : 'var(--foreground-muted)',
+              background: active ? 'var(--primary)' : 'transparent',
+              fontWeight: 600,
+              fontSize: '13px',
               textDecoration: 'none',
+              transition: 'background 0.12s ease, color 0.12s ease',
             }}
           >
             {t.name}

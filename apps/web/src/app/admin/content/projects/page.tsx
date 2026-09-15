@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Badge, Table, Td, Pagination, EmptyState, SearchInput } from '../../../../components/admin/AdminUi';
+import { Badge, Table, Td, Pagination, EmptyState, SearchInput, PageHeader, TableSkeleton } from '../../../../components/admin/AdminUi';
 import ContentTabs from '../../../../components/admin/ContentTabs';
 
 function formatDate(v: string) {
@@ -32,13 +32,14 @@ export default function AdminContentProjectsPage() {
 
   return (
     <div>
+      <PageHeader title="Projects" description="Browse and search all developer projects." />
       <ContentTabs />
       <div style={{ marginBottom: '20px' }}>
         <SearchInput value={search} onChange={setSearch} placeholder="Search projects..." />
       </div>
 
       {loading ? (
-        <EmptyState message="Loading projects..." />
+        <TableSkeleton rows={7} columns={5} />
       ) : items.length === 0 ? (
         <EmptyState message="No projects found." />
       ) : (

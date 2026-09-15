@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Badge, Table, Td, Pagination, EmptyState, SelectInput } from '../../../components/admin/AdminUi';
+import { Badge, Table, Td, Pagination, EmptyState, SelectInput, PageHeader, TableSkeleton } from '../../../components/admin/AdminUi';
 
 const TYPES = [
   'SCAM_FRAUD',
@@ -85,6 +85,8 @@ export default function AdminViolationsPage() {
 
   return (
     <div>
+      <PageHeader title="Moderation" description="Create violations and manage severity and status." />
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <SelectInput
           value={status}
@@ -144,7 +146,7 @@ export default function AdminViolationsPage() {
       )}
 
       {loading ? (
-        <EmptyState message="Loading violations..." />
+        <TableSkeleton rows={7} columns={5} />
       ) : items.length === 0 ? (
         <EmptyState message="No violations found." />
       ) : (

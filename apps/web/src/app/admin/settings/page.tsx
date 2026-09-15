@@ -1,6 +1,6 @@
 'use client';
 
-import { Badge } from '../../../components/admin/AdminUi';
+import { Badge, PageHeader } from '../../../components/admin/AdminUi';
 import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
@@ -16,7 +16,9 @@ export default function AdminSettingsPage() {
   const { user: me } = useCurrentUser();
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', maxWidth: '720px' }}>
+    <div>
+      <PageHeader title="Settings" description="Admin account and moderation configuration." />
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', maxWidth: '720px' }}>
       <Card title="Admin Account">
         <div style={{ fontSize: '14px', color: 'var(--foreground-muted)', lineHeight: 1.7 }}>
           <div>Signed in as: <strong style={{ color: 'var(--foreground)' }}>{me?.email || '—'}</strong></div>
@@ -52,6 +54,7 @@ export default function AdminSettingsPage() {
           </p>
         </div>
       </Card>
+    </div>
     </div>
   );
 }

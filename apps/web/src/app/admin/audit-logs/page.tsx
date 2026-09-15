@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Table, Td, Pagination, EmptyState, SelectInput } from '../../../components/admin/AdminUi';
+import { Table, Td, Pagination, EmptyState, SelectInput, PageHeader, TableSkeleton } from '../../../components/admin/AdminUi';
 
 const ACTIONS = ['USER_ROLE_CHANGED', 'REPORT_STATUS_CHANGED', 'VIOLATION_CREATED', 'VIOLATION_STATUS_CHANGED'];
 
@@ -33,6 +33,8 @@ export default function AdminAuditLogsPage() {
 
   return (
     <div>
+      <PageHeader title="Audit Logs" description="Track administrative actions across the platform." />
+
       <div style={{ marginBottom: '20px' }}>
         <SelectInput
           value={action}
@@ -42,7 +44,7 @@ export default function AdminAuditLogsPage() {
       </div>
 
       {loading ? (
-        <EmptyState message="Loading audit logs..." />
+        <TableSkeleton rows={7} columns={6} />
       ) : items.length === 0 ? (
         <EmptyState message="No audit logs found." />
       ) : (

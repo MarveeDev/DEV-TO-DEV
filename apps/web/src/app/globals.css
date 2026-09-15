@@ -514,3 +514,75 @@ select {
   color: var(--foreground-muted);
   margin-top: 2px;
 }
+
+/* ---------------------------------------------------------------------------
+   Admin console dark theme
+   Scoped to the `.admin-root` wrapper so the rest of DEV-TO-DEV stays light.
+--------------------------------------------------------------------------- */
+.admin-root {
+  color-scheme: dark;
+
+  --background: #0b1220;
+  --surface: #111a2e;
+  --surface-muted: #16213a;
+  --surface-hover: #1c2a47;
+  --foreground: #e7ecf5;
+  --foreground-muted: #9aa7bd;
+  --foreground-subtle: #6b7a95;
+  --border: #1f2b45;
+  --border-strong: #2c3a58;
+
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-light: rgba(59, 130, 246, 0.16);
+  --accent: #8b7cf6;
+  --accent-light: rgba(139, 124, 246, 0.16);
+
+  --success: #34d399;
+  --success-light: rgba(52, 211, 153, 0.14);
+  --danger: #f87171;
+  --danger-light: rgba(248, 113, 113, 0.14);
+  --warning: #fbbf24;
+  --warning-light: rgba(251, 191, 36, 0.14);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
+.admin-root ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.admin-root ::-webkit-scrollbar-thumb {
+  background: #2c3a58;
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.admin-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-root .admin-table tbody tr {
+  transition: background 0.12s ease;
+}
+
+.admin-root .admin-table tbody tr:hover {
+  background: var(--surface-hover);
+}
+
+.admin-root .admin-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.admin-root ::placeholder {
+  color: var(--foreground-subtle);
+}
+
+.admin-root select option {
+  background: var(--surface);
+  color: var(--foreground);
+}
