@@ -179,6 +179,45 @@ export default function PostDetailsPage({ params }: { params: Promise<{ id: stri
         }}>
           {post.content}
         </div>
+
+        {post.attachments && post.attachments.length > 0 && (
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {post.attachments.map((att: any) => {
+              const type = (att.type || '').toLowerCase();
+              if (type === 'video') {
+                return (
+                  <video
+                    key={att.id}
+                    src={att.url}
+                    controls
+                    style={{ width: '100%', height: 'auto', borderRadius: 'var(--radius-md)', display: 'block' }}
+                  />
+                );
+              }
+              if (type === 'image') {
+                return (
+                  <img
+                    key={att.id}
+                    src={att.url}
+                    alt="Post attachment"
+                    style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 'var(--radius-md)' }}
+                  />
+                );
+              }
+              return (
+                <a
+                  key={att.id}
+                  href={att.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: 'block', padding: 12, background: 'var(--surface-muted)', color: 'var(--primary)', textDecoration: 'underline', fontSize: 14, borderRadius: 'var(--radius-md)' }}
+                >
+                  View Attachment
+                </a>
+              );
+            })}
+          </div>
+        )}
       </Card>
 
       <Card padding="lg" style={{ marginTop: '24px' }}>
