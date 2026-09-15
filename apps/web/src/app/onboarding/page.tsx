@@ -6,7 +6,7 @@ import MultiSelect, { Option } from '../../components/MultiSelect';
 import Select from '../../components/Select';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
-import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
+import { useRequireAuth } from '../../components/Auth/useRequireAuth';
 
 
 const EXPERIENCE_OPTIONS = [
@@ -18,7 +18,8 @@ const EXPERIENCE_OPTIONS = [
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user } = useCurrentUser();
+  const { user, refreshUser } = useRequireAuth();
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     username: '',
     displayName: '',
@@ -68,20 +69,33 @@ export default function OnboardingPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const res = await fetch('/api/v1/profile/onboard', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...formData,
-        skills: selectedSkills,
-        goals: selectedGoals,
-      }),
-    });
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/v1/profile/onboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          skills: selectedSkills,
+          goals: selectedGoals,
+        }),
+      });
 
-    if (res.ok) {
-      router.push('/dashboard');
-    } else {
-      alert('Failed to save profile. Make sure username is unique.');
+      if (!res.ok) {
+        alert('Failed to save profile. Make sure username is unique.');
+        return;
+      }
+
+      // Refresh the shared cached user so the dashboard sees developerProfile.
+      const fresh = await refreshUser();
+      if (fresh && fresh.developerProfile) {
+        router.push('/dashboard');
+      } else {
+        alert('Your profile was created, but we could not confirm your session. Please reload the page to continue.');
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -155,8 +169,8 @@ export default function OnboardingPage() {
             </div>
 
             <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-end' }}>
-              <Button type="submit" size="lg" variant="primary">
-                Complete Profile
+              <Button type="submit" size="lg" variant="primary" disabled={submitting}>
+                {submitting ? 'Completing...' : 'Complete Profile'}
               </Button>
             </div>
           </form>

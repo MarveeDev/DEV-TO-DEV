@@ -7,8 +7,10 @@ import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import { Pencil, Trash2 } from 'lucide-react';
 import { formatPrice } from '../../../lib/currency';
+import { useRequireAuth } from '../../../components/Auth/useRequireAuth';
 
 export default function MyListingsPage() {
+  useRequireAuth();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 

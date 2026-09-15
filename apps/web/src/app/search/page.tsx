@@ -6,11 +6,13 @@ import { ArrowLeft, Search as SearchIcon, Users, Folder, HelpCircle, AlertCircle
 import Card from '../../components/Card';
 import Skeleton from '../../components/Skeleton';
 import EmptyState from '../../components/EmptyState';
+import { useRequireAuth } from '../../components/Auth/useRequireAuth';
 import Link from 'next/link';
 import Image from 'next/image';
 
 export default function SearchPage() {
   const router = useRouter();
+  useRequireAuth();
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'developers' | 'projects' | 'questions'>('projects');
   

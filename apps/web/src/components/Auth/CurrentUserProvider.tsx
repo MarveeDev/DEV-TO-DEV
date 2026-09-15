@@ -24,6 +24,7 @@ interface CurrentUserContextValue {
   loading: boolean;
   isAuthenticated: boolean;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<CurrentUser | null>;
 }
 
 const CurrentUserContext = createContext<CurrentUserContextValue>({
@@ -31,6 +32,7 @@ const CurrentUserContext = createContext<CurrentUserContextValue>({
   loading: true,
   isAuthenticated: false,
   logout: async () => {},
+  refreshUser: async () => null,
 });
 
 /**
@@ -67,9 +69,26 @@ export function CurrentUserProvider({ children }: { children: React.ReactNode })
     setUser(null);
   }, []);
 
+  // Re-fetches the current user and updates the shared cache. Returns the fresh
+  // user (or null when the session is no longer valid / the request failed).
+  const refreshUser = useCallback(async (): Promise<CurrentUser | null> => {
+    try {
+      const res = await fetch('/api/v1/auth/me');
+      if (!res.ok) {
+        setUser(null);
+        return null;
+      }
+      const data: CurrentUser | null = await res.json();
+      setUser(data);
+      return data;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const value = useMemo(
-    () => ({ user, loading, isAuthenticated: Boolean(user), logout }),
-    [user, loading, logout],
+    () => ({ user, loading, isAuthenticated: Boolean(user), logout, refreshUser }),
+    [user, loading, logout, refreshUser],
   );
 
   return (

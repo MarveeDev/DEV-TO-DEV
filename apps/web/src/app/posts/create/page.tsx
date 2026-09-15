@@ -7,9 +7,11 @@ import Button from '../../../components/Button';
 import BackButton from '../../../components/Navigation/BackButton';
 import { MediaUploader } from '../../../components/MediaUploader';
 import { MessageSquarePlus, X } from 'lucide-react';
+import { useRequireAuth } from '../../../components/Auth/useRequireAuth';
 
 export default function CreatePostPage() {
   const router = useRouter();
+  useRequireAuth();
   
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');

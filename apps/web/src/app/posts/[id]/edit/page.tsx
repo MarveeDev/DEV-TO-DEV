@@ -6,9 +6,11 @@ import Card from '../../../../components/Card';
 import Button from '../../../../components/Button';
 import BackButton from '../../../../components/Navigation/BackButton';
 import { Edit2 } from 'lucide-react';
+import { useRequireAuth } from '../../../../components/Auth/useRequireAuth';
 
 export default function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  useRequireAuth();
   const { id } = React.use(params);
   
   const [title, setTitle] = useState('');

@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { MessageSquarePlus, FolderPlus, CircleHelp, TrendingUp, PlaySquare, ArrowLeft, Bookmark, FileText, LayoutTemplate, HelpCircle } from 'lucide-react';
 import Card from '../../components/Card';
+import { useRequireAuth } from '../../components/Auth/useRequireAuth';
 
 export default function ActionsPage() {
   const router = useRouter();
+  useRequireAuth();
 
   const mainActions = [
     { name: 'Create Post', path: '/posts/create', icon: MessageSquarePlus, color: '#3b82f6' },

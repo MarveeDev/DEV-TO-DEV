@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
+import { useRequireAuth } from '../../../components/Auth/useRequireAuth';
 
 const STATUS_OPTIONS = [
   { value: 'ACTIVE', label: 'Active (In Development)' },
@@ -126,6 +127,7 @@ import BackButton from '../../../components/Navigation/BackButton';
 
 export default function CreateProjectPage() {
   const router = useRouter();
+  useRequireAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   

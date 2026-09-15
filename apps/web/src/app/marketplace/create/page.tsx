@@ -10,6 +10,7 @@ import { MediaUploader } from '../../../components/MediaUploader';
 import { SUPPORTED_CURRENCIES } from '../../../lib/currency';
 
 import { ArrowLeft } from 'lucide-react';
+import { useRequireAuth } from '../../../components/Auth/useRequireAuth';
 
 const CATEGORIES = [
   'Software & Source Code',
@@ -24,6 +25,7 @@ const CATEGORIES = [
 
 export default function CreateListingPage() {
   const router = useRouter();
+  useRequireAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
