@@ -29,6 +29,22 @@ export class AuthController {
     return process.env.FRONTEND_URL || 'http://localhost:3000';
   }
 
+  /**
+   * Decide where to send a user immediately after a successful OAuth sign-in.
+   * Uses the authenticated user's server-backed role from the database (never a
+   * client-supplied value). Admin Console users land in /admin; brand-new users
+   * go through onboarding; everyone else goes to their normal dashboard.
+   */
+  private postLoginDestination(user: { role?: string } | null, isNewUser: boolean): string {
+    if (user && (user.role === 'ADMIN' || user.role === 'MODERATOR')) {
+      return `${this.frontendUrl}/admin`;
+    }
+    if (isNewUser) {
+      return `${this.frontendUrl}/onboarding`;
+    }
+    return `${this.frontendUrl}/dashboard`;
+  }
+
   @Get('github')
   async githubAuth(@Req() req: Request, @Res() res: Response) {
     // Generate secure single-use state
@@ -93,11 +109,8 @@ export class AuthController {
         maxAge: 14 * 24 * 60 * 60 * 1000,
       });
 
-      // Redirect to frontend onboarding if new user, otherwise profile
-      if (isNewUser) {
-        return res.redirect(`${this.frontendUrl}/onboarding`);
-      }
-      return res.redirect(`${this.frontendUrl}/dashboard`);
+      // Redirect to the correct destination based on role / new-user status
+      return res.redirect(this.postLoginDestination(user, isNewUser));
     } catch (e) {
       // Safe error redirect
       return res.redirect(`${this.frontendUrl}/login?error=${encodeURIComponent(e.message)}`);
@@ -163,10 +176,8 @@ export class AuthController {
         maxAge: 14 * 24 * 60 * 60 * 1000,
       });
 
-      if (isNewUser) {
-        return res.redirect(`${this.frontendUrl}/onboarding`);
-      }
-      return res.redirect(`${this.frontendUrl}/dashboard`);
+      // Redirect to the correct destination based on role / new-user status
+      return res.redirect(this.postLoginDestination(user, isNewUser));
     } catch (e) {
       return res.redirect(`${this.frontendUrl}/login?error=${encodeURIComponent(e.message)}`);
     }
