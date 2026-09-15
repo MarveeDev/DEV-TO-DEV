@@ -135,7 +135,7 @@ export default function RoadmapDetailsClient({
               })().entries()
             ).map(([stageName, nodes]) => (
               <div key={stageName}>
-                <h3 style={{
+                <h2 style={{
                   fontSize: '14px',
                   fontWeight: 700,
                   color: 'var(--foreground-muted)',
@@ -144,7 +144,7 @@ export default function RoadmapDetailsClient({
                   margin: '0 0 16px 16px'
                 }}>
                   {stageName}
-                </h3>
+                </h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {nodes.map((node: any) => {
                     const isCompleted = progress.some(p => p.nodeId === node.id);
@@ -176,9 +176,9 @@ export default function RoadmapDetailsClient({
                           )}
 
                           <div style={{ flex: 1 }}>
-                            <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: 600, color: isLocked ? 'var(--foreground-muted)' : 'var(--foreground)' }}>
+                            <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: 600, color: isLocked ? 'var(--foreground-muted)' : 'var(--foreground)' }}>
                               {node.title}
-                            </h4>
+                            </h3>
                             <p style={{ margin: 0, fontSize: '14px', color: 'var(--foreground-muted)' }}>
                               {node.description}
                             </p>

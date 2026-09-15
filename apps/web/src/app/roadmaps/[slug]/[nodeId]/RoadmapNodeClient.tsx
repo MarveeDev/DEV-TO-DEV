@@ -136,9 +136,9 @@ export default function RoadmapNodeClient({
 
           {node.learningObjectives && node.learningObjectives.length > 0 && (
             <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--foreground)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--foreground)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Learning Objectives
-              </h4>
+              </h2>
               <ul style={{ margin: 0, paddingLeft: '20px', color: 'var(--foreground-muted)', fontSize: '15px', lineHeight: 1.6 }}>
                 {node.learningObjectives.map((obj: string, i: number) => (
                   <li key={i} style={{ marginBottom: '6px' }}>{obj}</li>
@@ -149,9 +149,9 @@ export default function RoadmapNodeClient({
 
           {node.topics && node.topics.length > 0 && (
             <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--foreground)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--foreground)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Core Topics
-              </h4>
+              </h2>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {node.topics.map((topic: string, i: number) => (
                   <span key={i} style={{ fontSize: '14px', background: 'var(--border)', color: 'var(--foreground)', padding: '6px 12px', borderRadius: '4px' }}>
@@ -164,10 +164,10 @@ export default function RoadmapNodeClient({
 
           {node.practicalExercise && (
             <div style={{ marginBottom: '32px', padding: '16px', background: 'rgba(59, 130, 246, 0.05)', borderRadius: '8px', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
-              <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--primary)', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--primary)', margin: '0 0 12px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><line x1="10" y1="9" x2="8" y2="9"></line></svg>
                 Practical Exercise
-              </h4>
+              </h2>
               <p style={{ margin: 0, fontSize: '15px', color: 'var(--foreground-muted)', lineHeight: 1.6 }}>
                 {node.practicalExercise}
               </p>
@@ -176,10 +176,10 @@ export default function RoadmapNodeClient({
 
           {(node.recommendedBookUrl || node.videoUrl) && (
             <div style={{ marginBottom: '32px', padding: '16px', background: 'var(--surface)', borderRadius: '8px', border: '1px solid var(--border)' }}>
-              <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--foreground)', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--foreground)', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"></path></svg>
                 Recommended Learning Resources
-              </h4>
+              </h2>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '24px' }}>
                 {node.recommendedBookUrl && (
@@ -252,7 +252,7 @@ export default function RoadmapNodeClient({
 
           <div style={{ paddingTop: '24px', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ flex: 1 }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 600, margin: '0 0 12px 0', color: 'var(--foreground)' }}>Related Skills</h3>
+              <h2 style={{ fontSize: '16px', fontWeight: 600, margin: '0 0 12px 0', color: 'var(--foreground)' }}>Related Skills</h2>
               {node.skills && node.skills.length > 0 ? (
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {node.skills.map((s: any) => (

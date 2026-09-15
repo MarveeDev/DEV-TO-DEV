@@ -117,7 +117,7 @@ export default function RootLayout({
               <main className="page-container">
                 {children}
               </main>
-              <footer className="site-footer">
+              <footer className="site-footer" data-nosnippet="">
                 <nav>
                   <Link href="/privacy">Privacy Policy</Link>
                   <Link href="/terms">Terms &amp; Conditions</Link>

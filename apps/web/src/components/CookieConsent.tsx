@@ -84,6 +84,7 @@ export default function CookieConsent() {
   return (
     <>
       <div
+        data-nosnippet=""
         style={{
           position: 'fixed',
           bottom: 0,
@@ -153,6 +154,7 @@ export default function CookieConsent() {
 
       {showSettings && (
         <div
+          data-nosnippet=""
           style={{
             position: 'fixed',
             inset: 0,
