@@ -45,6 +45,10 @@ export const getMarketplaceListing = cache((id: string) =>
   fetchApi<any>(`/marketplace/${encodeURIComponent(id)}`)
 );
 
+export const getSoundById = cache((id: string) =>
+  fetchApi<any>(`/sounds/${encodeURIComponent(id)}`)
+);
+
 export const getPublicDevelopers = cache((limit = 20) =>
   fetchApi<any>(`/developers/public?limit=${limit}`)
 );

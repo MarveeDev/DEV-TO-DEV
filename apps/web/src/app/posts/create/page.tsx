@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Card from '../../../components/Card';
 import Button from '../../../components/Button';
 import BackButton from '../../../components/Navigation/BackButton';
 import { MediaUploader } from '../../../components/MediaUploader';
-import { MessageSquarePlus, X } from 'lucide-react';
+import SoundPicker, { Sound } from '../../../components/SoundPicker';
+import { MessageSquarePlus, X, Music } from 'lucide-react';
 import { useRequireAuth } from '../../../components/Auth/useRequireAuth';
 
 export default function CreatePostPage() {
@@ -17,8 +18,23 @@ export default function CreatePostPage() {
   const [content, setContent] = useState('');
   const [skills, setSkills] = useState('');
   const [mediaIds, setMediaIds] = useState<string[]>([]);
+  const [selectedSound, setSelectedSound] = useState<Sound | null>(null);
+  const [soundPickerOpen, setSoundPickerOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Pre-select a sound when arriving from a sound detail page ("Use this sound").
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const soundId = params.get('soundId');
+    if (!soundId) return;
+    fetch(`/api/v1/sounds/${encodeURIComponent(soundId)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) setSelectedSound(data);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +56,7 @@ export default function CreatePostPage() {
       const res = await fetch('/api/v1/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content, skills: skillsArray, mediaIds })
+        body: JSON.stringify({ title, content, skills: skillsArray, mediaIds, soundId: selectedSound?.id || undefined })
       });
 
       const data = await res.json();
@@ -144,6 +160,27 @@ export default function CreatePostPage() {
             />
           </div>
 
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '14px', fontWeight: 600, color: 'var(--foreground)' }}>Background Sound</label>
+            {selectedSound ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 14px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--background)' }}>
+                <Music size={18} color="var(--primary)" style={{ flexShrink: 0 }} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--foreground)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{selectedSound.title}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--foreground-muted)' }}>{selectedSound.artist}</div>
+                </div>
+                <Button variant="outline" size="sm" type="button" onClick={() => setSoundPickerOpen(true)}>Change</Button>
+                <Button variant="outline" size="sm" type="button" onClick={() => setSelectedSound(null)}>Remove</Button>
+              </div>
+            ) : (
+              <div>
+                <Button variant="outline" type="button" onClick={() => setSoundPickerOpen(true)}>
+                  <Music size={16} style={{ marginRight: '6px' }} /> Add Background Sound
+                </Button>
+              </div>
+            )}
+          </div>
+
           <div style={{ paddingTop: '8px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
             <Button variant="outline" type="button" onClick={() => router.push('/feed')} disabled={loading}>Cancel</Button>
             <Button variant="primary" type="submit" disabled={loading}>
@@ -152,6 +189,8 @@ export default function CreatePostPage() {
           </div>
         </form>
       </Card>
+
+      <SoundPicker open={soundPickerOpen} onClose={() => setSoundPickerOpen(false)} onSelect={setSelectedSound} />
     </div>
   );
 }

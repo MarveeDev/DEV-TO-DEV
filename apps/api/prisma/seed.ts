@@ -229,6 +229,25 @@ async function main() {
     }
   }
 
+  // Background sounds — development catalog.
+  // NOTE: audioUrl values below are placeholder/demo files (royalty-free test
+  // audio from SoundHelix) for local development only. Replace them with the
+  // approved production audio assets before shipping.
+  const backgroundSounds = [
+    { title: 'Lo-fi Coding', artist: 'DEV-TO-DEV', category: 'Lo-fi', duration: 60, audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3' },
+    { title: 'Ambient Focus', artist: 'DEV-TO-DEV', category: 'Ambient', duration: 60, audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3' },
+    { title: 'Code Flow', artist: 'DEV-TO-DEV', category: 'Instrumental', duration: 60, audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3' },
+    { title: 'Deep Work', artist: 'DEV-TO-DEV', category: 'Focus', duration: 60, audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3' },
+    { title: 'Night Build', artist: 'DEV-TO-DEV', category: 'Lo-fi', duration: 60, audioUrl: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3' },
+  ];
+
+  for (const s of backgroundSounds) {
+    const existing = await prisma.backgroundSound.findFirst({ where: { title: s.title, artist: s.artist } });
+    if (!existing) {
+      await prisma.backgroundSound.create({ data: s });
+    }
+  }
+
   console.log('Seed data inserted successfully.');
 }
 

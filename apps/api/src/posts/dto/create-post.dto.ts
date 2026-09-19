@@ -17,4 +17,8 @@ export class CreatePostDto {
   @IsString({ each: true })
   @IsOptional()
   mediaIds?: string[];
+
+  @IsString()
+  @IsOptional()
+  soundId?: string;
 }

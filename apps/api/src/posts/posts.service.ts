@@ -23,11 +23,21 @@ export class PostsService {
       throw new BadRequestException('At least one skill is required');
     }
 
+    let backgroundSoundId: string | undefined;
+    if (data.soundId) {
+      const sound = await this.prisma.backgroundSound.findUnique({ where: { id: data.soundId } });
+      if (!sound || !sound.isActive) {
+        throw new BadRequestException('Background sound not found');
+      }
+      backgroundSoundId = sound.id;
+    }
+
     const post = await this.prisma.post.create({
       data: {
         title: data.title.trim(),
         content: data.content.trim(),
         authorId: userId,
+        backgroundSoundId,
       },
       include: {
         author: {
@@ -79,12 +89,20 @@ export class PostsService {
       }
     }
 
+    if (backgroundSoundId) {
+      await this.prisma.backgroundSound.update({
+        where: { id: backgroundSoundId },
+        data: { usageCount: { increment: 1 } },
+      });
+    }
+
     const completePost = await this.prisma.post.findUnique({
       where: { id: post.id },
       include: {
         author: { include: { developerProfile: true } },
         skills: { include: { skill: true } },
-        attachments: true
+        attachments: true,
+        backgroundSound: true,
       }
     });
 
@@ -131,6 +149,7 @@ export class PostsService {
             include: { skill: true }
           },
           attachments: true,
+          backgroundSound: true,
           _count: { select: { likes: true } },
         },
       }),
@@ -152,6 +171,7 @@ export class PostsService {
       createdAt: post.createdAt,
       skills: post.skills.map(s => s.skill),
       attachments: post.attachments,
+      backgroundSound: post.backgroundSound,
       likeCount: post._count.likes,
       likedByMe: likedPostIds.has(post.id),
       author: {
@@ -184,6 +204,7 @@ export class PostsService {
           include: { skill: true }
         },
         attachments: true,
+        backgroundSound: true,
         _count: { select: { likes: true } },
       }
     });

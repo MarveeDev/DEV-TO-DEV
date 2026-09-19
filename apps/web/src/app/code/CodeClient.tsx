@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Avatar from '../../components/Avatar';
 import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
-import { Heart, MessageCircle, Share2, RefreshCw, Clapperboard, VolumeX, Volume2 } from 'lucide-react';
+import { Heart, MessageCircle, Share2, RefreshCw, Clapperboard, VolumeX, Volume2, Music } from 'lucide-react';
 
 interface CodePost {
   id: string;
@@ -14,6 +14,7 @@ interface CodePost {
   createdAt: string;
   skills?: { id: string; name: string; slug?: string }[];
   attachments?: { id: string; url: string; type: string }[];
+  backgroundSound?: { id: string; title: string; artist: string } | null;
   likeCount?: number;
   likedByMe?: boolean;
   author?: { id: string; profile?: { username?: string; displayName?: string; avatarUrl?: string | null } | null };
@@ -426,6 +427,18 @@ export default function CodeClient() {
                   >
                     {post.content}
                   </p>
+                )}
+
+                {post.backgroundSound && (
+                  <Link
+                    href={`/sounds/${post.backgroundSound.id}`}
+                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', alignSelf: 'flex-start' }}
+                  >
+                    <Music size={14} color="rgba(255,255,255,0.85)" />
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: 'rgba(255,255,255,0.9)' }}>
+                      {post.backgroundSound.title} — {post.backgroundSound.artist}
+                    </span>
+                  </Link>
                 )}
 
                 {post.skills && post.skills.length > 0 && (
