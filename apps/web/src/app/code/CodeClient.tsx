@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Avatar from '../../components/Avatar';
 import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
-import { Heart, MessageCircle, Share2, RefreshCw, Clapperboard } from 'lucide-react';
+import { Heart, MessageCircle, Share2, RefreshCw, Clapperboard, VolumeX, Volume2 } from 'lucide-react';
 
 interface CodePost {
   id: string;
@@ -27,6 +27,24 @@ function skillSlug(name: string, slug?: string) {
   return slug || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 }
 
+// Play a video with the current sound preference; if unmuted autoplay is
+// rejected by the browser, fall back to muted playback without changing the
+// user's global sound preference.
+async function playVideoWithFallback(el: HTMLVideoElement) {
+  try {
+    await el.play();
+  } catch {
+    if (!el.muted) {
+      el.muted = true;
+      try {
+        await el.play();
+      } catch {
+        // graceful failure — leave the video paused
+      }
+    }
+  }
+}
+
 export default function CodeClient() {
   const router = useRouter();
   const { user } = useCurrentUser();
@@ -38,6 +56,7 @@ export default function CodeClient() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const videoEls = useRef<Record<string, HTMLVideoElement>>({});
@@ -124,12 +143,19 @@ export default function CodeClient() {
   useEffect(() => {
     Object.entries(videoEls.current).forEach(([id, el]) => {
       if (id === activeId) {
-        el.play().catch(() => {});
+        playVideoWithFallback(el);
       } else {
         el.pause();
       }
     });
   }, [activeId]);
+
+  // Keep every video's muted state in sync with the user's sound preference.
+  useEffect(() => {
+    Object.values(videoEls.current).forEach((el) => {
+      el.muted = isMuted;
+    });
+  }, [isMuted, posts]);
 
   const setVideoRef = (id: string) => (el: HTMLVideoElement | null) => {
     if (el) videoEls.current[id] = el;
@@ -437,6 +463,19 @@ export default function CodeClient() {
                   gap: '18px',
                 }}
               >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsMuted((m) => !m);
+                  }}
+                  aria-label={isMuted ? 'Unmute video' : 'Mute video'}
+                  title={isMuted ? 'Unmute video' : 'Mute video'}
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: '#fff' }}
+                >
+                  {isMuted ? <VolumeX size={28} /> : <Volume2 size={28} />}
+                  <span style={{ fontSize: '12px', fontWeight: 700 }}>{isMuted ? 'Unmute' : 'Mute'}</span>
+                </button>
+
                 <button
                   onClick={() => handleLike(post)}
                   aria-label={post.likedByMe ? 'Unlike' : 'Like'}
