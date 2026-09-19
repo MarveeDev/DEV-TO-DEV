@@ -14,6 +14,7 @@ import {
   Store,
   LogOut,
   Map,
+  Clapperboard,
 } from 'lucide-react';
 
 interface DesktopSidebarProps {
@@ -25,6 +26,7 @@ interface DesktopSidebarProps {
 export default function DesktopSidebar({ currentPath, onLogout, unreadCount = 0 }: DesktopSidebarProps) {
   const navItems = [
     { name: 'Home', path: '/dashboard', icon: House },
+    { name: 'CODE', path: '/code', icon: Clapperboard },
     { name: 'Discover', path: '/developers', icon: Compass },
     { name: 'Marketplace', path: '/marketplace', icon: Store },
     { name: 'Roadmaps', path: '/roadmaps', icon: Map },

@@ -39,12 +39,14 @@ export class PostsController {
     @Query('username') username?: string,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
+    @Query('type') type?: string,
   ) {
     const viewerId = await this.getViewerIdOrNull(req);
     return this.postsService.getPosts({
       username,
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 20,
+      type,
     }, viewerId);
   }
 

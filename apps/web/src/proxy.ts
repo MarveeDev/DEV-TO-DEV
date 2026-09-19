@@ -14,6 +14,7 @@ const NOINDEX_PREFIXES = [
   '/onboarding',
   '/profile',
   '/admin',
+  '/code',
 ];
 
 // Routes that require a session. `/feed` is intentionally excluded so the feed

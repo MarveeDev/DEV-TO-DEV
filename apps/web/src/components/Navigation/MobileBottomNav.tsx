@@ -2,14 +2,14 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { House, Compass, Plus, Store, UserRound } from 'lucide-react';
+import { House, Compass, Plus, Clapperboard, UserRound } from 'lucide-react';
 
 export default function MobileBottomNav({ currentPath }: { currentPath: string }) {
   const items = [
     { name: 'Home', path: '/dashboard', icon: House },
     { name: 'Discover', path: '/developers', icon: Compass },
     { name: 'Create', path: '/actions', icon: Plus, isCreate: true },
-    { name: 'Marketplace', path: '/marketplace', icon: Store },
+    { name: 'CODE', path: '/code', icon: Clapperboard },
     { name: 'Profile', path: '/profile', icon: UserRound },
   ];
 

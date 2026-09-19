@@ -93,7 +93,7 @@ export class PostsService {
     return completePost;
   }
 
-  async getPosts(query: { username?: string; page?: number; limit?: number }, viewerId?: string) {
+  async getPosts(query: { username?: string; page?: number; limit?: number; type?: string }, viewerId?: string) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 20;
     const skip = (page - 1) * limit;
@@ -105,6 +105,12 @@ export class PostsService {
         developerProfile: {
           username: query.username,
         },
+      };
+    }
+
+    if (query.type === 'video') {
+      where.attachments = {
+        some: { type: MediaType.VIDEO },
       };
     }
 
