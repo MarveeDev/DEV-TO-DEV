@@ -16,8 +16,36 @@ const NOINDEX_PREFIXES = [
   '/admin',
 ];
 
-function isPrivateRoute(path: string): boolean {
+// Routes that require a session. `/feed` is intentionally excluded so the feed
+// is publicly viewable; it remains in NOINDEX_PREFIXES so it stays noindex.
+const AUTH_REQUIRED_PREFIXES = [
+  '/dashboard',
+  '/settings',
+  '/messages',
+  '/notifications',
+  '/network',
+  '/actions',
+  '/search',
+  '/onboarding',
+  '/profile',
+  '/admin',
+];
+
+function isNoIndexRoute(path: string): boolean {
   if (NOINDEX_PREFIXES.some((p) => path === p || path.startsWith(p + '/'))) {
+    return true;
+  }
+  if (path === '/questions/ask' || path === '/marketplace/my-listings') {
+    return true;
+  }
+  if (path.endsWith('/create') || path.endsWith('/edit')) {
+    return true;
+  }
+  return false;
+}
+
+function isAuthRequiredRoute(path: string): boolean {
+  if (AUTH_REQUIRED_PREFIXES.some((p) => path === p || path.startsWith(p + '/'))) {
     return true;
   }
   if (path === '/questions/ask' || path === '/marketplace/my-listings') {
@@ -44,22 +72,17 @@ export function proxy(request: NextRequest) {
   const token = request.cookies.get('session_id');
   const path = request.nextUrl.pathname;
 
-  const isAuthRoute = path === '/login';
-
-  // The full set of routes that require authentication is already described by
-  // isPrivateRoute() (also used for noindex); /login is public and handled above.
-  const isProtectedRoute = isPrivateRoute(path) && !isAuthRoute;
-
-  // Early UX guard: unauthenticated visitors are redirected away from private
-  // routes. This is NOT the security boundary — the NestJS API still validates
-  // the session — it only prevents the page shell from being served to
-  // logged-out visitors.
+  // Early UX guard: unauthenticated visitors are redirected away from routes
+  // that require a session. This is NOT the security boundary — the NestJS API
+  // still validates the session — it only prevents the page shell from being
+  // served to logged-out visitors. `/feed` is intentionally public.
+  const isProtectedRoute = isAuthRequiredRoute(path);
   if (isProtectedRoute && !token) {
     return NextResponse.redirect(new URL('/login', request.url), 307);
   }
 
   const response = NextResponse.next();
-  if (isPrivateRoute(path)) {
+  if (isNoIndexRoute(path)) {
     response.headers.set('X-Robots-Tag', 'noindex, nofollow');
   }
   return response;

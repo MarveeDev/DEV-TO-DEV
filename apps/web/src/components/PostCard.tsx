@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Card from './Card';
 import Avatar from './Avatar';
 import SkillTag from './SkillTag';
@@ -38,6 +39,7 @@ const isImageType = (type: string) => (type || '').toLowerCase() === 'image';
 const isVideoType = (type: string) => (type || '').toLowerCase() === 'video';
 
 export default function PostCard({ id, title, content, skills, attachments, createdAt, author, currentUserId, onDelete, likeCount = 0, likedByMe = false }: PostProps) {
+  const router = useRouter();
   const isOwner = currentUserId === author.id;
   const [liked, setLiked] = useState(likedByMe);
   const [likesCount, setLikesCount] = useState(likeCount);
@@ -49,6 +51,10 @@ export default function PostCard({ id, title, content, skills, attachments, crea
 
   const handleLikeToggle = async () => {
     if (likePending) return;
+    if (!currentUserId) {
+      router.push('/login');
+      return;
+    }
     const wasLiked = liked;
     setLiked(!wasLiked);
     setLikesCount(c => c + (wasLiked ? -1 : 1));

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import PostCard from '../../components/PostCard';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -14,8 +13,7 @@ import EmptyState from '../../components/EmptyState';
 import { MessageSquare } from 'lucide-react';
 
 export default function FeedPage() {
-  const router = useRouter();
-  const { user, loading: authLoading, isAuthenticated } = useCurrentUser();
+  const { user, loading: authLoading } = useCurrentUser();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newContent, setNewContent] = useState('');
@@ -24,15 +22,8 @@ export default function FeedPage() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!isAuthenticated || !user) {
-      router.push('/login');
-    }
-  }, [authLoading, isAuthenticated, user, router]);
-
-  useEffect(() => {
-    if (!user) return;
     fetchPosts(page);
-  }, [page, user]);
+  }, [page, authLoading]);
 
   const fetchPosts = async (p: number) => {
     try {
@@ -83,7 +74,7 @@ export default function FeedPage() {
     }
   };
 
-  if (!user || loading) return (
+  if (authLoading || loading) return (
     <div style={{ maxWidth: 600, margin: '0 auto' }} role="status">
       <span className="sr-only">Loading feed…</span>
       <Card padding="md" aria-hidden="true" style={{ marginBottom: 32 }}>
@@ -107,9 +98,15 @@ export default function FeedPage() {
               <p style={{ color: 'var(--foreground-muted)', margin: 0 }}>See what developers are building.</p>
             </div>
           </div>
-          <Link href="/profile" style={{ textDecoration: 'none' }}>
-            <Button variant="outline">My Profile</Button>
-          </Link>
+          {user ? (
+            <Link href="/profile" style={{ textDecoration: 'none' }}>
+              <Button variant="outline">My Profile</Button>
+            </Link>
+          ) : (
+            <Link href="/login" style={{ textDecoration: 'none' }}>
+              <Button variant="outline">Sign in</Button>
+            </Link>
+          )}
         </div>
 
         <Card padding="md" style={{ marginBottom: '32px' }}>
@@ -145,7 +142,7 @@ export default function FeedPage() {
               <PostCard 
                 key={post.id} 
                 {...post} 
-                currentUserId={user.id} 
+                currentUserId={user?.id}
                 onDelete={handleDelete} 
               />
             ))}
