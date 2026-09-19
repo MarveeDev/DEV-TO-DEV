@@ -78,7 +78,7 @@ export class ProjectsService {
       where: { slug },
       include: {
         owner: {
-          select: { id: true, userId: true, displayName: true, username: true, avatarUrl: true, bio: true }
+          select: { id: true, displayName: true, username: true, avatarUrl: true }
         },
         skills: {
           include: { skill: true }

@@ -19,12 +19,26 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     });
   }
 
+  const skillNames = (project.skills || [])
+    .map((ps: any) => ps?.skill?.name)
+    .filter(Boolean)
+    .slice(0, 3);
+
+  const skillPhrase =
+    skillNames.length > 1
+      ? `${skillNames.slice(0, -1).join(', ')} and ${skillNames[skillNames.length - 1]}`
+      : skillNames[0] || '';
+
   const description =
     truncate(project.description) ||
-    `Explore the ${project.title} project on DEV-TO-DEV and find collaborators.`;
+    truncate(
+      skillPhrase
+        ? `${project.title} is a developer project on DEV-TO-DEV, built with ${skillPhrase}.`
+        : `${project.title} is a developer project on DEV-TO-DEV.`,
+    );
 
   return pageMetadata({
-    title: project.title,
+    title: `${project.title} — Developer Project`,
     description,
     path: `/projects/${project.slug}`,
   });
