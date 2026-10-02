@@ -20,8 +20,12 @@ model User {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
+  phoneNumber     String?
+  phoneVerifiedAt DateTime?
+
   authIdentities      AuthIdentity[]
   sessions            Session[]
+  phoneVerifications  PhoneVerification[]
   developerProfile    DeveloperProfile?
   sentConnections     Connection[]      @relation("SentConnections")
   receivedConnections Connection[]      @relation("ReceivedConnections")
@@ -59,6 +63,21 @@ model Session {
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
+}
+
+model PhoneVerification {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phoneNumber String
+  codeHash    String
+  attempts    Int       @default(0)
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, phoneNumber])
+  @@index([expiresAt])
 }
 
 model DeveloperProfile {

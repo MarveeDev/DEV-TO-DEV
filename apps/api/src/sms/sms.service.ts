@@ -11,7 +11,7 @@ import {
   GonlineRawResponse,
   isGonlineErrorCode,
 } from './gonline.client';
-import { normalizeGhanaPhone } from './phone.util';
+import { normalizePhone } from './phone.util';
 
 export interface SendSmsResult {
   success: boolean;
@@ -63,7 +63,7 @@ export class SmsService {
   async sendSms(to: string, message: string): Promise<SendSmsResult> {
     this.ensureConfigured();
 
-    const normalized = normalizeGhanaPhone(to);
+    const normalized = normalizePhone(to);
     if (!normalized) {
       throw new BadRequestException('Invalid phone number');
     }

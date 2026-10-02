@@ -62,6 +62,9 @@ importers:
       ioredis:
         specifier: ^6.0.0
         version: 6.0.0
+      libphonenumber-js:
+        specifier: ^1.13.11
+        version: 1.13.11
       multer:
         specifier: ^2.2.0
         version: 2.2.0

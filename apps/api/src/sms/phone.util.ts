@@ -1,51 +1,50 @@
-/**
- * Ghana phone number normalization/validation.
- *
- * Kept isolated so we can expand to other countries later without touching
- * callers. Only E.164-compatible Ghana numbers are accepted in this phase.
- */
-export const GHANA_COUNTRY_CODE = '233';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
+import type { CountryCode } from 'libphonenumber-js';
 
-/** Ghana national (subscriber) numbers are 9 digits starting with 2, 3, or 5. */
-const GHANA_NATIONAL_NUMBER = /^[235]\d{8}$/;
+const GHANA_COUNTRY_CODE = '233';
 
 /**
- * Normalizes a Ghana phone number to E.164 format (`+233XXXXXXXXX`).
+ * Normalizes a phone number to E.164 format (`+CCNNNNNNNNN`).
  *
- * Accepts international (`+233244000000`, `233244000000`, `00233244000000`)
- * and local (`0244000000`) formats. Returns `null` for anything that is not a
- * valid Ghana number; it never guesses or invents a number.
+ * Accepted inputs:
+ * - International E.164: `+14155552671`, `+442079460958`, `+233244000000`
+ * - `00` international prefix: `00233244000000`
+ * - Ghana country code without `+`: `233244000000`
+ * - Ghana local (leading `0`): `0244000000`
+ *
+ * Separators (spaces, hyphens, parentheses, dots) are ignored. Returns `null`
+ * for anything invalid or ambiguous; it never guesses an arbitrary country.
  */
-export function normalizeGhanaPhone(input: string): string | null {
+export function normalizePhone(input: string): string | null {
   if (!input) {
     return null;
   }
 
-  let value = input.trim().replace(/[\s\-().]/g, '');
+  const value = input.trim().replace(/[\s\-().]/g, '');
 
   if (value.startsWith('+')) {
-    value = value.slice(1);
-  } else if (value.startsWith('00')) {
-    value = value.slice(2);
+    return parseE164(value);
   }
 
-  let national: string;
+  if (value.startsWith('00')) {
+    return parseE164(`+${value.slice(2)}`);
+  }
+
   if (value.startsWith(GHANA_COUNTRY_CODE)) {
-    national = value.slice(GHANA_COUNTRY_CODE.length);
-  } else if (value.startsWith('0')) {
-    national = value.slice(1);
-  } else {
-    return null;
+    return parseE164(`+${value}`);
   }
 
-  if (!GHANA_NATIONAL_NUMBER.test(national)) {
-    return null;
+  if (value.startsWith('0')) {
+    return parseE164(value, 'GH');
   }
 
-  return `+${GHANA_COUNTRY_CODE}${national}`;
+  return null;
 }
 
-/** Returns true when the input is a valid Ghana phone number. */
-export function isValidGhanaPhone(input: string): boolean {
-  return normalizeGhanaPhone(input) !== null;
+function parseE164(value: string, defaultCountry?: CountryCode): string | null {
+  const parsed = parsePhoneNumberFromString(value, defaultCountry);
+  if (!parsed || !parsed.isValid()) {
+    return null;
+  }
+  return parsed.format('E.164');
 }

@@ -8,6 +8,7 @@ import MultiSelect, { Option } from '../../components/MultiSelect';
 import { MediaUploader } from '../../components/MediaUploader';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
+import PhoneVerification from '../../components/PhoneVerification';
 import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
 
 const EXPERIENCE_OPTIONS = [
@@ -249,6 +250,10 @@ export default function SettingsPage() {
             </div>
           </form>
         </Card>
+
+        <div style={{ marginTop: '24px' }}>
+          <PhoneVerification />
+        </div>
       </div>
     </div>
   );
