@@ -19,6 +19,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  MessageSquareText,
 } from 'lucide-react';
 
 interface NavItem {
@@ -35,6 +36,7 @@ const NAV_ITEMS: NavItem[] = [
   { name: 'Marketplace', href: '/admin/marketplace', icon: Store },
   { name: 'Reports', href: '/admin/reports', icon: Flag },
   { name: 'Moderation', href: '/admin/violations', icon: ShieldAlert },
+  { name: 'SMS Campaigns', href: '/admin/sms-campaigns', icon: MessageSquareText, adminOnly: true },
   { name: 'Audit Logs', href: '/admin/audit-logs', icon: ScrollText, adminOnly: true },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ];

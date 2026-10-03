@@ -133,6 +133,25 @@ export class AuthService {
         }
       }
 
+      // Link to an existing account that already uses the same email (e.g.
+      // created via Google). Avoid creating a duplicate User with a duplicate
+      // email. GitHub's primary/verified email is used for this lookup.
+      if (email) {
+        const existingByEmail = await this.prisma.user.findUnique({
+          where: { email },
+        });
+        if (existingByEmail) {
+          await this.prisma.authIdentity.create({
+            data: {
+              userId: existingByEmail.id,
+              provider: 'github',
+              providerAccountId,
+            },
+          });
+          return { user: existingByEmail, isNewUser: false };
+        }
+      }
+
       // Create new user and identity
       const newUser = await this.prisma.user.create({
         data: {
@@ -230,6 +249,25 @@ export class AuthService {
     if (intent === 'new_login') {
       if (existingIdentity) {
         return { user: existingIdentity.user, isNewUser: false };
+      }
+
+      // Google emails are always verified, so it is safe to link this identity
+      // to an existing account that already uses the same email (e.g. created
+      // via GitHub). Avoid creating a duplicate User with a duplicate email.
+      if (email) {
+        const existingByEmail = await this.prisma.user.findUnique({
+          where: { email },
+        });
+        if (existingByEmail) {
+          await this.prisma.authIdentity.create({
+            data: {
+              userId: existingByEmail.id,
+              provider: 'google',
+              providerAccountId,
+            },
+          });
+          return { user: existingByEmail, isNewUser: false };
+        }
       }
 
       const newUser = await this.prisma.user.create({

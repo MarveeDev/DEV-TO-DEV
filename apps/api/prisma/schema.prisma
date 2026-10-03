@@ -794,3 +794,54 @@ model AdminAuditLog {
   @@index([createdAt])
 }
 
+enum SmsCampaignStatus {
+  DRAFT
+  READY
+  SENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum SmsRecipientStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model SmsCampaign {
+  id             String            @id @default(uuid())
+  name           String
+  message        String
+  status         SmsCampaignStatus @default(DRAFT)
+  recipientCount Int               @default(0)
+  sentCount      Int               @default(0)
+  failedCount    Int               @default(0)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  recipients SmsCampaignRecipient[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model SmsCampaignRecipient {
+  id                String             @id @default(uuid())
+  campaignId        String
+  campaign          SmsCampaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  phoneNumber       String
+  normalizedPhone   String
+  status            SmsRecipientStatus @default(PENDING)
+  providerMessageId String?
+  error             String?
+  sentAt            DateTime?
+  createdAt         DateTime           @default(now())
+
+  @@unique([campaignId, normalizedPhone])
+  @@index([campaignId])
+  @@index([normalizedPhone])
+  @@index([status])
+}
+
