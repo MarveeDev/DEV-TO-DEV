@@ -17,6 +17,8 @@ import { Roles } from '../admin/roles.decorator';
 import { SmsCampaignsService } from './sms-campaigns.service';
 import { CreateSmsCampaignDto } from './dto/create-sms-campaign.dto';
 import { UpdateSmsCampaignDto } from './dto/update-sms-campaign.dto';
+import { SendTestSmsDto } from './dto/send-test-sms.dto';
+import { SendCampaignDto } from './dto/send-campaign.dto';
 
 @Controller('admin/sms-campaigns')
 @UseGuards(RolesGuard)
@@ -85,5 +87,32 @@ export class SmsCampaignsController {
     @Param('recipientId') recipientId: string,
   ) {
     return this.smsCampaignsService.removeRecipient(id, recipientId);
+  }
+
+  // ---- Sending lifecycle ----
+
+  @Post(':id/ready')
+  markReady(@Param('id') id: string) {
+    return this.smsCampaignsService.markReady(id);
+  }
+
+  @Post(':id/cancel')
+  cancelCampaign(@Param('id') id: string) {
+    return this.smsCampaignsService.cancelCampaign(id);
+  }
+
+  @Get(':id/send-preview')
+  getSendPreview(@Param('id') id: string) {
+    return this.smsCampaignsService.getSendPreview(id);
+  }
+
+  @Post(':id/test')
+  sendTestSms(@Param('id') id: string, @Body() data: SendTestSmsDto) {
+    return this.smsCampaignsService.sendTestSms(id, data.phoneNumber);
+  }
+
+  @Post(':id/send')
+  sendCampaign(@Param('id') id: string, @Body() data: SendCampaignDto) {
+    return this.smsCampaignsService.sendCampaign(id, data.confirmation);
   }
 }
