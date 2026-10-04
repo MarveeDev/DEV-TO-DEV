@@ -37,6 +37,10 @@ import {
 import { pilotLessonEnrichment } from './pilot-lessons-enrichment.data';
 import { csFoundationLessons } from './cs-foundations.data';
 import { csAdvancedLessons } from './cs-advanced.data';
+import { seBatch1Lessons } from './se-batch1.data';
+import { seBatch2Lessons } from './se-batch2.data';
+import { seBatch3Lessons } from './se-batch3.data';
+import { seBatch4Lessons } from './se-batch4.data';
 
 function loadEnvFiles(paths: string[]): void {
   for (const filePath of paths) {
@@ -107,6 +111,10 @@ const allLessons = [
   ...enrichedLessons,
   ...csFoundationLessons,
   ...csAdvancedLessons,
+  ...seBatch1Lessons,
+  ...seBatch2Lessons,
+  ...seBatch3Lessons,
+  ...seBatch4Lessons,
 ];
 
 function validateAll(): ValidationIssue[] {
