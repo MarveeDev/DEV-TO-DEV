@@ -162,7 +162,7 @@ export default function RoadmapNodeClient({
 
   const lessonBlocks: LessonBlock[] = node.lessonBlocks || [];
   const learningBlocks = lessonBlocks.filter((b) =>
-    ['EXPLANATION', 'SYNTAX', 'EXAMPLE', 'KEY_TAKEAWAYS', 'NOTE'].includes(b.type),
+    ['EXPLANATION', 'SYNTAX', 'EXAMPLE', 'KEY_TAKEAWAYS', 'NOTE', 'SECTION'].includes(b.type),
   );
   const tryItBlocks = lessonBlocks.filter((b) => b.type === 'TRY_IT');
   const exerciseBlocks = lessonBlocks.filter((b) => b.type === 'EXERCISE');

@@ -544,6 +544,7 @@ enum LessonBlockType {
   QUIZ
   KEY_TAKEAWAYS
   NOTE
+  SECTION
 }
 
 model LessonBlock {

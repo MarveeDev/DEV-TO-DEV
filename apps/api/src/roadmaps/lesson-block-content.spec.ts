@@ -13,6 +13,7 @@ describe('isLessonBlockType', () => {
     'QUIZ',
     'KEY_TAKEAWAYS',
     'NOTE',
+    'SECTION',
   ])('accepts %s', (type) => {
     expect(isLessonBlockType(type)).toBe(true);
   });
@@ -257,6 +258,86 @@ describe('validateLessonBlockContent', () => {
     it('rejects a missing text', () => {
       expect(validateLessonBlockContent('NOTE', { title: 'x' })).toBeNull();
       expect(validateLessonBlockContent('NOTE', {})).toBeNull();
+    });
+  });
+
+  describe('SECTION', () => {
+    it('accepts a rich section with multiple item kinds', () => {
+      expect(
+        validateLessonBlockContent('SECTION', {
+          title: 'How It Works',
+          items: [
+            { kind: 'paragraph', text: 'An introduction.' },
+            { kind: 'subheading', text: 'Steps' },
+            { kind: 'steps', items: ['One', 'Two'] },
+            { kind: 'bullets', items: ['a', 'b'] },
+            { kind: 'code', code: 'print(1)', language: 'python' },
+            {
+              kind: 'table',
+              headers: ['A', 'B'],
+              rows: [['1', '2']],
+            },
+            { kind: 'flow', steps: ['In', 'Out'] },
+            { kind: 'layers', layers: ['Tools', 'Methods'] },
+            { kind: 'callout', variant: 'warning', text: 'Careful' },
+          ],
+        }),
+      ).toEqual({
+        title: 'How It Works',
+        items: [
+          { kind: 'paragraph', text: 'An introduction.' },
+          { kind: 'subheading', text: 'Steps' },
+          { kind: 'steps', items: ['One', 'Two'] },
+          { kind: 'bullets', items: ['a', 'b'] },
+          { kind: 'code', code: 'print(1)', language: 'python' },
+          { kind: 'table', headers: ['A', 'B'], rows: [['1', '2']] },
+          { kind: 'flow', steps: ['In', 'Out'] },
+          { kind: 'layers', layers: ['Tools', 'Methods'] },
+          { kind: 'callout', variant: 'warning', text: 'Careful' },
+        ],
+      });
+    });
+
+    it('rejects a missing title', () => {
+      expect(
+        validateLessonBlockContent('SECTION', {
+          items: [{ kind: 'paragraph', text: 'x' }],
+        }),
+      ).toBeNull();
+    });
+
+    it('rejects a missing or empty items array', () => {
+      expect(validateLessonBlockContent('SECTION', { title: 'T' })).toBeNull();
+      expect(
+        validateLessonBlockContent('SECTION', { title: 'T', items: 'x' }),
+      ).toBeNull();
+    });
+
+    it('rejects an unknown item kind', () => {
+      expect(
+        validateLessonBlockContent('SECTION', {
+          title: 'T',
+          items: [{ kind: 'bogus', text: 'x' }],
+        }),
+      ).toBeNull();
+    });
+
+    it('rejects a malformed table (non-string cells)', () => {
+      expect(
+        validateLessonBlockContent('SECTION', {
+          title: 'T',
+          items: [{ kind: 'table', headers: ['A'], rows: [[1]] }],
+        }),
+      ).toBeNull();
+    });
+
+    it('rejects a callout with an invalid variant', () => {
+      expect(
+        validateLessonBlockContent('SECTION', {
+          title: 'T',
+          items: [{ kind: 'callout', variant: 'bogus', text: 'x' }],
+        }),
+      ).toBeNull();
     });
   });
 });

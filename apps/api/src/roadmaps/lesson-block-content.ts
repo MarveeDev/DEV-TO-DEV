@@ -17,6 +17,7 @@ export const LESSON_BLOCK_TYPES = [
   'QUIZ',
   'KEY_TAKEAWAYS',
   'NOTE',
+  'SECTION',
 ] as const;
 
 export type LessonBlockType = (typeof LESSON_BLOCK_TYPES)[number];
@@ -84,6 +85,87 @@ export interface NoteContent {
   variant?: NoteVariant;
 }
 
+export type SectionItemKind =
+  | 'paragraph'
+  | 'subheading'
+  | 'bullets'
+  | 'steps'
+  | 'code'
+  | 'table'
+  | 'flow'
+  | 'layers'
+  | 'callout';
+
+export interface ParagraphItem {
+  kind: 'paragraph';
+  text: string;
+}
+
+export interface SubheadingItem {
+  kind: 'subheading';
+  text: string;
+}
+
+export interface BulletsItem {
+  kind: 'bullets';
+  items: string[];
+}
+
+export interface StepsItem {
+  kind: 'steps';
+  items: string[];
+}
+
+export interface CodeItem {
+  kind: 'code';
+  code: string;
+  language?: string;
+}
+
+export interface TableItem {
+  kind: 'table';
+  headers: string[];
+  rows: string[][];
+}
+
+export interface FlowItem {
+  kind: 'flow';
+  steps: string[];
+}
+
+export interface LayersItem {
+  kind: 'layers';
+  layers: string[];
+}
+
+export interface CalloutItem {
+  kind: 'callout';
+  variant: NoteVariant;
+  text: string;
+}
+
+export type SectionItem =
+  | ParagraphItem
+  | SubheadingItem
+  | BulletsItem
+  | StepsItem
+  | CodeItem
+  | TableItem
+  | FlowItem
+  | LayersItem
+  | CalloutItem;
+
+/**
+ * A flexible, titled rich-content section. Expresses deep educational content
+ * (definitions, characteristics, types, processes, comparisons, diagrams,
+ * case studies, real-world applications, etc.) via a validated list of
+ * structured items.
+ */
+export interface SectionContent {
+  title: string;
+  items: SectionItem[];
+}
+
 export interface LessonBlockContentMap {
   EXPLANATION: ExplanationContent;
   SYNTAX: SyntaxContent;
@@ -93,6 +175,7 @@ export interface LessonBlockContentMap {
   QUIZ: QuizContent;
   KEY_TAKEAWAYS: KeyTakeawaysContent;
   NOTE: NoteContent;
+  SECTION: SectionContent;
 }
 
 export type LessonBlockContent<T extends LessonBlockType = LessonBlockType> =
@@ -113,6 +196,16 @@ function isOptionalString(value: unknown): value is string | undefined {
 function isStringArray(value: unknown): value is string[] {
   return (
     Array.isArray(value) && value.every((item) => typeof item === 'string')
+  );
+}
+
+function isStringMatrix(value: unknown): value is string[][] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (row) =>
+        Array.isArray(row) && row.every((cell) => typeof cell === 'string'),
+    )
   );
 }
 
@@ -240,6 +333,69 @@ function validateNote(value: unknown): NoteContent | null {
   return result;
 }
 
+function validateSectionItem(value: unknown): SectionItem | null {
+  if (!isRecord(value) || !isString(value.kind)) return null;
+
+  switch (value.kind) {
+    case 'paragraph':
+      return isString(value.text)
+        ? { kind: 'paragraph', text: value.text }
+        : null;
+    case 'subheading':
+      return isString(value.text)
+        ? { kind: 'subheading', text: value.text }
+        : null;
+    case 'bullets':
+      return isStringArray(value.items)
+        ? { kind: 'bullets', items: value.items }
+        : null;
+    case 'steps':
+      return isStringArray(value.items)
+        ? { kind: 'steps', items: value.items }
+        : null;
+    case 'code':
+      if (!isString(value.code) || !isOptionalString(value.language))
+        return null;
+      return value.language === undefined
+        ? { kind: 'code', code: value.code }
+        : { kind: 'code', code: value.code, language: value.language };
+    case 'table':
+      if (!isStringArray(value.headers) || !isStringMatrix(value.rows))
+        return null;
+      return { kind: 'table', headers: value.headers, rows: value.rows };
+    case 'flow':
+      return isStringArray(value.steps)
+        ? { kind: 'flow', steps: value.steps }
+        : null;
+    case 'layers':
+      return isStringArray(value.layers)
+        ? { kind: 'layers', layers: value.layers }
+        : null;
+    case 'callout':
+      if (!isNoteVariant(value.variant) || !isString(value.text)) return null;
+      return { kind: 'callout', variant: value.variant, text: value.text };
+    default:
+      return null;
+  }
+}
+
+function validateSection(value: unknown): SectionContent | null {
+  if (
+    !isRecord(value) ||
+    !isString(value.title) ||
+    !Array.isArray(value.items)
+  ) {
+    return null;
+  }
+  const items: SectionItem[] = [];
+  for (const raw of value.items) {
+    const item = validateSectionItem(raw);
+    if (item === null) return null;
+    items.push(item);
+  }
+  return { title: value.title, items };
+}
+
 /**
  * Validates raw JSON against the contract for the given block type.
  * Returns the cleaned, typed content or `null` when the payload is malformed.
@@ -265,6 +421,8 @@ export function validateLessonBlockContent<T extends LessonBlockType>(
       return validateKeyTakeaways(value) as LessonBlockContentMap[T] | null;
     case 'NOTE':
       return validateNote(value) as LessonBlockContentMap[T] | null;
+    case 'SECTION':
+      return validateSection(value) as LessonBlockContentMap[T] | null;
     default:
       return null;
   }

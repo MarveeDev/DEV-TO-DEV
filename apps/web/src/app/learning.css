@@ -694,6 +694,158 @@
 }
 
 /* ============================================================
+   Rich section (SECTION block) content
+   ============================================================ */
+.lesson-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.lesson-subheading {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 8px 0 0;
+}
+.lesson-list {
+  margin: 0;
+  padding-left: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lesson-list li {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--foreground-muted);
+}
+.lesson-list--steps {
+  list-style: decimal;
+}
+
+.lesson-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin: 4px 0;
+  min-width: 0;
+}
+.lesson-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 420px;
+}
+.lesson-table th,
+.lesson-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.lesson-table th {
+  background: var(--surface-muted);
+  font-weight: 700;
+  color: var(--foreground);
+}
+.lesson-table td {
+  color: var(--foreground-muted);
+  line-height: 1.5;
+}
+.lesson-table tr:last-child th,
+.lesson-table tr:last-child td {
+  border-bottom: none;
+}
+
+.lesson-flow {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  margin: 4px 0;
+}
+.lesson-flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.lesson-flow-box {
+  width: 100%;
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.lesson-flow-arrow {
+  color: var(--primary);
+  font-size: 18px;
+  line-height: 1;
+  padding: 4px 0;
+}
+
+.lesson-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0;
+}
+.lesson-layer {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.lesson-callout {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+}
+.lesson-callout--info {
+  border-left-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.08);
+}
+.lesson-callout--tip {
+  border-left-color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+}
+.lesson-callout--warning {
+  border-left-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+}
+.lesson-callout-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.lesson-callout--info .lesson-callout-icon {
+  color: #3b82f6;
+}
+.lesson-callout--tip .lesson-callout-icon {
+  color: #10b981;
+}
+.lesson-callout--warning .lesson-callout-icon {
+  color: #f59e0b;
+}
+.lesson-callout-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--foreground-muted);
+}
+
+/* ============================================================
    Code playground
    ============================================================ */
 .playground {

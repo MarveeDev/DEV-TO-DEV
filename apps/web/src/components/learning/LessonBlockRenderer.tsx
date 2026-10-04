@@ -13,7 +13,8 @@ export type LessonBlockType =
   | 'EXERCISE'
   | 'QUIZ'
   | 'KEY_TAKEAWAYS'
-  | 'NOTE';
+  | 'NOTE'
+  | 'SECTION';
 
 export type NoteVariant = 'info' | 'tip' | 'warning';
 
@@ -87,6 +88,24 @@ export interface NoteBlock {
   content: { title?: string; text: string; variant?: NoteVariant };
 }
 
+export type SectionItem =
+  | { kind: 'paragraph'; text: string }
+  | { kind: 'subheading'; text: string }
+  | { kind: 'bullets'; items: string[] }
+  | { kind: 'steps'; items: string[] }
+  | { kind: 'code'; code: string; language?: string }
+  | { kind: 'table'; headers: string[]; rows: string[][] }
+  | { kind: 'flow'; steps: string[] }
+  | { kind: 'layers'; layers: string[] }
+  | { kind: 'callout'; variant: NoteVariant; text: string };
+
+export interface SectionBlock {
+  id: string;
+  type: 'SECTION';
+  order: number;
+  content: { title: string; items: SectionItem[] };
+}
+
 export type LessonBlock =
   | ExplanationBlock
   | SyntaxBlock
@@ -95,7 +114,8 @@ export type LessonBlock =
   | ExerciseBlock
   | QuizBlock
   | KeyTakeawaysBlock
-  | NoteBlock;
+  | NoteBlock
+  | SectionBlock;
 
 const SECTION_TITLES: Record<LessonBlockType, string> = {
   EXPLANATION: 'Explanation',
@@ -106,6 +126,7 @@ const SECTION_TITLES: Record<LessonBlockType, string> = {
   QUIZ: 'Quiz',
   KEY_TAKEAWAYS: 'Key Takeaways',
   NOTE: 'Note',
+  SECTION: 'Section',
 };
 
 const NOTE_ICONS: Record<NoteVariant, typeof Info> = {
@@ -278,6 +299,88 @@ export default function LessonBlockRenderer({ blocks }: { blocks: LessonBlock[] 
               </aside>
             );
           }
+
+          case 'SECTION':
+            return (
+              <section key={block.id} className="lesson-block">
+                <h3 className="lesson-block-heading">{block.content.title}</h3>
+                <div className="lesson-section">
+                  {block.content.items.map((item, i) => {
+                    switch (item.kind) {
+                      case 'paragraph':
+                        return <p key={i} className="lesson-block-text">{item.text}</p>;
+                      case 'subheading':
+                        return <h4 key={i} className="lesson-subheading">{item.text}</h4>;
+                      case 'bullets':
+                        return (
+                          <ul key={i} className="lesson-list">
+                            {item.items.map((x, j) => <li key={j}>{x}</li>)}
+                          </ul>
+                        );
+                      case 'steps':
+                        return (
+                          <ol key={i} className="lesson-list lesson-list--steps">
+                            {item.items.map((x, j) => <li key={j}>{x}</li>)}
+                          </ol>
+                        );
+                      case 'code':
+                        return <CodeBlock key={i} code={item.code} language={item.language} />;
+                      case 'table':
+                        return (
+                          <div key={i} className="lesson-table-wrap">
+                            <table className="lesson-table">
+                              <thead>
+                                <tr>
+                                  {item.headers.map((h, j) => <th key={j}>{h}</th>)}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {item.rows.map((row, r) => (
+                                  <tr key={r}>
+                                    {row.map((cell, c) => <td key={c}>{cell}</td>)}
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      case 'flow':
+                        return (
+                          <div key={i} className="lesson-flow">
+                            {item.steps.map((step, j) => (
+                              <div key={j} className="lesson-flow-step">
+                                <div className="lesson-flow-box">{step}</div>
+                                {j < item.steps.length - 1 && (
+                                  <div className="lesson-flow-arrow">↓</div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      case 'layers':
+                        return (
+                          <div key={i} className="lesson-layers">
+                            {item.layers.map((layer, j) => (
+                              <div key={j} className="lesson-layer">{layer}</div>
+                            ))}
+                          </div>
+                        );
+                      case 'callout': {
+                        const Icon = NOTE_ICONS[item.variant];
+                        return (
+                          <aside key={i} className={`lesson-callout lesson-callout--${item.variant}`}>
+                            <div className="lesson-callout-icon"><Icon size={16} /></div>
+                            <p className="lesson-callout-text">{item.text}</p>
+                          </aside>
+                        );
+                      }
+                      default:
+                        return null;
+                    }
+                  })}
+                </div>
+              </section>
+            );
 
           default:
             return null;
