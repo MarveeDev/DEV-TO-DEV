@@ -4,9 +4,11 @@ import {
   findDuplicatePositions,
   findDuplicateSemanticEntries,
   resolveSemanticNodes,
+  computeDeploymentPlan,
   normalizeJson,
   CURRICULUM_NODES,
   ProductionNode,
+  ExistingBlock,
   EXPECTED_CS_BLOCKS,
   EXPECTED_SE_BLOCKS,
   EXPECTED_TOTAL_BLOCKS,
@@ -166,5 +168,83 @@ describe('resolveSemanticNodes', () => {
     const before = JSON.stringify(CURRICULUM_NODES);
     resolveSemanticNodes(CURRICULUM_NODES, mockProductionNodes());
     expect(JSON.stringify(CURRICULUM_NODES)).toBe(before);
+  });
+});
+
+describe('computeDeploymentPlan', () => {
+  const lessons = assembleCurriculumLessons();
+
+  function mockMapping(): Map<string, string> {
+    const m = new Map<string, string>();
+    CURRICULUM_NODES.forEach((n, i) => m.set(n.sourceNodeId, `prod-${i}`));
+    return m;
+  }
+
+  function mockExistingAll(): ExistingBlock[] {
+    const mapping = mockMapping();
+    const blocks: ExistingBlock[] = [];
+    for (const lesson of lessons) {
+      const prodId = mapping.get(lesson.nodeId)!;
+      lesson.blocks.forEach((b, i) => {
+        blocks.push({
+          nodeId: prodId,
+          type: b.type,
+          order: i,
+          content: b.content,
+        });
+      });
+    }
+    return blocks;
+  }
+
+  it('empty production -> 471 inserts, zero conflicts', () => {
+    const plan = computeDeploymentPlan(lessons, mockMapping(), []);
+    expect(plan.conflicts).toEqual([]);
+    expect(plan.toInsert.length).toBe(EXPECTED_TOTAL_BLOCKS);
+    expect(plan.toInsert.length).toBe(471);
+    expect(plan.csExisting).toBe(0);
+    expect(plan.seExisting).toBe(0);
+  });
+
+  it('existing identical blocks -> 0 inserts', () => {
+    const plan = computeDeploymentPlan(
+      lessons,
+      mockMapping(),
+      mockExistingAll(),
+    );
+    expect(plan.conflicts).toEqual([]);
+    expect(plan.toInsert.length).toBe(0);
+  });
+
+  it('mixed existing/missing blocks -> inserts only the missing ones', () => {
+    const existing = mockExistingAll().filter((b) => b.order !== 0);
+    const plan = computeDeploymentPlan(lessons, mockMapping(), existing);
+    expect(plan.conflicts).toEqual([]);
+    // Each of the 30 lessons is missing its position-0 block.
+    expect(plan.toInsert.length).toBe(30);
+  });
+
+  it('conflicting existing block -> abort (reports conflict)', () => {
+    const existing = mockExistingAll().map((b) =>
+      b.order === 0 && b.nodeId === 'prod-0'
+        ? { ...b, type: 'WRONG' as const }
+        : b,
+    );
+    const plan = computeDeploymentPlan(lessons, mockMapping(), existing);
+    expect(plan.conflicts.length).toBe(1);
+    expect(plan.conflicts[0].reason).toContain('conflicting block');
+  });
+
+  it('maps source IDs to production IDs in the insert payload', () => {
+    const plan = computeDeploymentPlan(lessons, mockMapping(), []);
+    const prodIds = new Set(plan.toInsert.map((b) => b.nodeId));
+    expect([...prodIds].every((id) => id.startsWith('prod-'))).toBe(true);
+    expect([...prodIds].some((id) => id.includes('a24a7356'))).toBe(false);
+  });
+
+  it('does not mutate source lesson data', () => {
+    const before = JSON.stringify(lessons);
+    computeDeploymentPlan(lessons, mockMapping(), []);
+    expect(JSON.stringify(lessons)).toBe(before);
   });
 });

@@ -478,3 +478,140 @@ function sortObjectKeys(value: unknown): unknown {
 export function normalizeJson(value: unknown): string {
   return JSON.stringify(sortObjectKeys(value));
 }
+
+export interface ExistingBlock {
+  nodeId: string;
+  type: string;
+  order: number;
+  content: unknown;
+}
+
+export interface PlannedBlock {
+  nodeId: string;
+  type: string;
+  order: number;
+  content: unknown;
+}
+
+export interface DeploymentConflict {
+  nodeId: string;
+  title: string;
+  reason: string;
+}
+
+export interface DeploymentPlan {
+  conflicts: DeploymentConflict[];
+  toInsert: PlannedBlock[];
+  csExisting: number;
+  seExisting: number;
+}
+
+/**
+ * Compute a deployment plan purely in memory, given the assembled source
+ * lessons, the resolved source->production node mapping, and all existing
+ * LessonBlocks for the resolved production nodes (fetched in a single query).
+ *
+ * STATE A: no existing blocks for a node -> its blocks are eligible for insert.
+ * STATE B: existing blocks exactly match -> skipped (not inserted).
+ * STATE C: an existing block differs -> reported as a conflict (abort).
+ *
+ * Never overwrites, updates, or deletes existing blocks.
+ */
+export function computeDeploymentPlan(
+  lessons: PilotLesson[],
+  mapping: Map<string, string>,
+  existingBlocks: ExistingBlock[],
+): DeploymentPlan {
+  const existingByNode = new Map<string, ExistingBlock[]>();
+  for (const b of existingBlocks) {
+    const list = existingByNode.get(b.nodeId) ?? [];
+    list.push(b);
+    existingByNode.set(b.nodeId, list);
+  }
+
+  const manifestBySource = new Map(
+    CURRICULUM_NODES.map((n) => [n.sourceNodeId, n]),
+  );
+
+  const conflicts: DeploymentConflict[] = [];
+  const toInsert: PlannedBlock[] = [];
+  let csExisting = 0;
+  let seExisting = 0;
+
+  for (const lesson of lessons) {
+    const productionNodeId = mapping.get(lesson.nodeId);
+    if (!productionNodeId) {
+      conflicts.push({
+        nodeId: lesson.nodeId,
+        title: lesson.nodeTitle,
+        reason: 'unresolved source node',
+      });
+      continue;
+    }
+
+    const existing = existingByNode.get(productionNodeId) ?? [];
+    const manifestEntry = manifestBySource.get(lesson.nodeId);
+    if (manifestEntry?.roadmapSlug === CS_ROADMAP_SLUG)
+      csExisting += existing.length;
+    else if (manifestEntry?.roadmapSlug === SE_ROADMAP_SLUG)
+      seExisting += existing.length;
+
+    const intendedByOrder = new Map(
+      lesson.blocks.map((b, i) => [
+        i,
+        { type: b.type, content: normalizeJson(b.content) },
+      ]),
+    );
+
+    const existingByOrder = new Map<number, ExistingBlock[]>();
+    for (const b of existing) {
+      const list = existingByOrder.get(b.order) ?? [];
+      list.push(b);
+      existingByOrder.set(b.order, list);
+    }
+
+    let conflict: string | null = null;
+    for (const [order, blocks] of existingByOrder) {
+      if (blocks.length > 1) {
+        conflict = `duplicate existing blocks at position ${order}`;
+        break;
+      }
+      const block = blocks[0];
+      const want = intendedByOrder.get(order);
+      if (!want) {
+        conflict = `unexpected existing block at position ${order} (type ${block.type})`;
+        break;
+      }
+      if (
+        block.type !== want.type ||
+        normalizeJson(block.content) !== want.content
+      ) {
+        conflict = `conflicting block at position ${order} (type ${block.type})`;
+        break;
+      }
+    }
+
+    if (conflict) {
+      conflicts.push({
+        nodeId: lesson.nodeId,
+        title: lesson.nodeTitle,
+        reason: conflict,
+      });
+      continue;
+    }
+
+    const existingOrders = new Set(existing.map((b) => b.order));
+    lesson.blocks.forEach((block, index) => {
+      if (!existingOrders.has(index)) {
+        toInsert.push({
+          nodeId: productionNodeId,
+          type: block.type,
+          order: index,
+          content: block.content,
+        });
+      }
+    });
+  }
+
+  return { conflicts, toInsert, csExisting, seExisting };
+}
