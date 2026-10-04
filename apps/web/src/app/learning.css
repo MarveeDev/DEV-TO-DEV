@@ -117,6 +117,7 @@
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   padding: 24px 28px 32px;
+  min-width: 0;
 }
 .learn-breadcrumb {
   display: flex;
@@ -232,6 +233,7 @@
 
 .learn-content {
   max-width: 720px;
+  min-width: 0;
 }
 .learn-title {
   font-size: 26px;
@@ -461,10 +463,12 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-width: 0;
 }
 .lesson-block {
   padding-bottom: 24px;
   border-bottom: 1px solid var(--border);
+  min-width: 0;
 }
 .lesson-block:last-child {
   border-bottom: none;
@@ -698,6 +702,8 @@
   border-radius: 12px;
   overflow: hidden;
   background: #0b1220;
+  min-width: 0;
+  max-width: 100%;
 }
 .pg-toolbar {
   display: flex;
@@ -838,7 +844,7 @@
 }
 @media (max-width: 900px) {
   .learn-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .learn-nav {
     display: none;
