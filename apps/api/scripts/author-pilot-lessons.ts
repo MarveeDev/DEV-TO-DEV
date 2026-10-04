@@ -1,21 +1,22 @@
 /**
- * DEV-TO-DEV Curriculum Authoring Pilot — LessonBlock writer.
+ * DEV-TO-DEV Curriculum Authoring — LessonBlock writer (development only).
  *
  * This is an isolated, versioned development script (NOT part of the running
  * application and never executed during build/startup/tests). It writes the
- * structured lessons defined in `pilot-lessons.data.ts` into the `LessonBlock`
- * table for the selected Computer Science pilot nodes.
+ * assembled curriculum (see `curriculum.ts`) into the `LessonBlock` table for
+ * the Computer Science and Software Engineering nodes.
+ *
+ * For production data delivery, use `deploy-curriculum-lessons.ts` instead.
  *
  * Guarantees:
  *   - Reads only: RoadmapNode lookups are used solely to confirm the target
  *     node exists. No Roadmap, RoadmapNode, RoadmapProgress, prerequisite, or
  *     book/video field is ever modified.
- *   - Validates: every block's content is checked against the LessonBlock
- *     content contract BEFORE any write. If anything is malformed, the script
- *     aborts without touching the database.
- *   - Idempotent: for each pilot node it deletes any existing LessonBlocks for
- *     that node and then recreates them, so re-running never duplicates or
- *     leaves stale blocks.
+ *   - Validates every block against the LessonBlock content contract before
+ *     writing. If anything is malformed, the script aborts without writing.
+ *   - Idempotent: for each node it deletes any existing LessonBlocks for that
+ *     node and recreates them, so re-running never duplicates or leaves stale
+ *     blocks.
  *
  * Usage (from apps/api):
  *   pnpm exec ts-node scripts/author-pilot-lessons.ts
@@ -26,21 +27,9 @@ import { PrismaClient, LessonBlockType } from '@prisma/client';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import {
-  isLessonBlockType,
-  validateLessonBlockContent,
-} from '../src/roadmaps/lesson-block-content';
-import {
-  pilotLessons,
-  PilotLesson,
-  LessonBlockInput,
-} from './pilot-lessons.data';
-import { pilotLessonEnrichment } from './pilot-lessons-enrichment.data';
-import { csFoundationLessons } from './cs-foundations.data';
-import { csAdvancedLessons } from './cs-advanced.data';
-import { seBatch1Lessons } from './se-batch1.data';
-import { seBatch2Lessons } from './se-batch2.data';
-import { seBatch3Lessons } from './se-batch3.data';
-import { seBatch4Lessons } from './se-batch4.data';
+  assembleCurriculumLessons,
+  validateAssembledLessons,
+} from './curriculum';
 
 function loadEnvFiles(paths: string[]): void {
   for (const filePath of paths) {
@@ -76,81 +65,10 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg(new Pool({ connectionString })),
 });
 
-type ValidationIssue = {
-  nodeId: string;
-  nodeTitle: string;
-  index: number;
-  type: string;
-  reason: string;
-};
-
-/**
- * Merges rich SECTION enrichment blocks into each lesson, inserting them right
- * after the lesson's EXPLANATION block so the "Learn" tab reads: Explanation →
- * rich sections → Syntax → Examples. The base lesson blocks are left untouched.
- */
-function enrichLessons(
-  lessons: PilotLesson[],
-  enrichment: Record<string, LessonBlockInput[]>,
-): PilotLesson[] {
-  return lessons.map((lesson) => {
-    const extra = enrichment[lesson.nodeId];
-    if (!extra || extra.length === 0) return lesson;
-
-    const blocks = [...lesson.blocks];
-    const insertAt = blocks.findIndex((b) => b.type === 'EXPLANATION');
-    const index = insertAt >= 0 ? insertAt + 1 : 0;
-    blocks.splice(index, 0, ...extra);
-
-    return { ...lesson, blocks };
-  });
-}
-
-const enrichedLessons = enrichLessons(pilotLessons, pilotLessonEnrichment);
-const allLessons = [
-  ...enrichedLessons,
-  ...csFoundationLessons,
-  ...csAdvancedLessons,
-  ...seBatch1Lessons,
-  ...seBatch2Lessons,
-  ...seBatch3Lessons,
-  ...seBatch4Lessons,
-];
-
-function validateAll(): ValidationIssue[] {
-  const issues: ValidationIssue[] = [];
-
-  for (const lesson of allLessons) {
-    lesson.blocks.forEach((block, index) => {
-      if (!isLessonBlockType(block.type)) {
-        issues.push({
-          nodeId: lesson.nodeId,
-          nodeTitle: lesson.nodeTitle,
-          index,
-          type: String(block.type),
-          reason: 'unknown block type',
-        });
-        return;
-      }
-
-      const content = validateLessonBlockContent(block.type, block.content);
-      if (content === null) {
-        issues.push({
-          nodeId: lesson.nodeId,
-          nodeTitle: lesson.nodeTitle,
-          index,
-          type: block.type,
-          reason: 'content failed type-specific validation',
-        });
-      }
-    });
-  }
-
-  return issues;
-}
-
 async function main(): Promise<void> {
-  const issues = validateAll();
+  const allLessons = assembleCurriculumLessons();
+
+  const issues = validateAssembledLessons(allLessons);
   if (issues.length > 0) {
     console.error(
       `Aborting: ${issues.length} malformed block(s) found. Nothing was written.`,
@@ -174,7 +92,7 @@ async function main(): Promise<void> {
 
     if (!node) {
       throw new Error(
-        `Pilot node not found: ${lesson.nodeTitle} (${lesson.nodeId})`,
+        `Curriculum node not found: ${lesson.nodeTitle} (${lesson.nodeId})`,
       );
     }
 
@@ -201,7 +119,7 @@ async function main(): Promise<void> {
     });
   }
 
-  console.log('Pilot lessons authored:');
+  console.log('Curriculum lessons authored:');
   for (const row of summary) {
     console.log(`  - ${row.nodeTitle}: ${row.count} LessonBlock(s)`);
   }
