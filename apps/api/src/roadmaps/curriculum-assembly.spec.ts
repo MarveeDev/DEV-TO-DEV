@@ -2,17 +2,31 @@ import {
   assembleCurriculumLessons,
   validateAssembledLessons,
   findDuplicatePositions,
+  findDuplicateSemanticEntries,
+  resolveSemanticNodes,
   normalizeJson,
   CURRICULUM_NODES,
+  ProductionNode,
   EXPECTED_CS_BLOCKS,
   EXPECTED_SE_BLOCKS,
   EXPECTED_TOTAL_BLOCKS,
 } from '../../scripts/curriculum';
 
+function mockProductionNodes(): ProductionNode[] {
+  // Different IDs than the source manifest, same semantic identity.
+  return CURRICULUM_NODES.map((n, i) => ({
+    id: `prod-${i}`,
+    title: n.exactTitle,
+    roadmapSlug: n.roadmapSlug,
+    stage: n.stage,
+    order: n.order,
+  }));
+}
+
 describe('curriculum assembly', () => {
   const lessons = assembleCurriculumLessons();
   const slugByNode = new Map(
-    CURRICULUM_NODES.map((n) => [n.nodeId, n.roadmapSlug]),
+    CURRICULUM_NODES.map((n) => [n.sourceNodeId, n.roadmapSlug]),
   );
 
   it('assembles exactly the expected total block count', () => {
@@ -35,12 +49,21 @@ describe('curriculum assembly', () => {
     expect(se).toBe(271);
   });
 
-  it('covers exactly the 30 manifest nodes', () => {
+  it('covers exactly the 30 manifest nodes by source identity', () => {
     expect(CURRICULUM_NODES.length).toBe(30);
     const lessonNodeIds = new Set(lessons.map((l) => l.nodeId));
     expect(lessonNodeIds.size).toBe(30);
     for (const n of CURRICULUM_NODES) {
-      expect(lessonNodeIds.has(n.nodeId)).toBe(true);
+      expect(lessonNodeIds.has(n.sourceNodeId)).toBe(true);
+    }
+  });
+
+  it('keeps lesson data keyed by sourceNodeId (does not mutate to production IDs)', () => {
+    for (const l of lessons) {
+      const manifestEntry = CURRICULUM_NODES.find(
+        (n) => n.sourceNodeId === l.nodeId,
+      );
+      expect(manifestEntry).toBeDefined();
     }
   });
 
@@ -73,5 +96,75 @@ describe('curriculum assembly', () => {
     expect(normalizeJson({ nested: { x: 1, y: 2 } })).toBe(
       normalizeJson({ nested: { y: 2, x: 1 } }),
     );
+  });
+});
+
+describe('semantic manifest', () => {
+  it('has no duplicate roadmapSlug + exactTitle entries', () => {
+    expect(findDuplicateSemanticEntries(CURRICULUM_NODES)).toEqual([]);
+  });
+
+  it('has exactly 15 Computer Science and 15 Software Engineering targets', () => {
+    const cs = CURRICULUM_NODES.filter(
+      (n) => n.roadmapSlug === 'computer-science',
+    );
+    const se = CURRICULUM_NODES.filter(
+      (n) => n.roadmapSlug === 'software-engineering',
+    );
+    expect(cs.length).toBe(15);
+    expect(se.length).toBe(15);
+  });
+});
+
+describe('resolveSemanticNodes', () => {
+  it('resolves all 30 nodes by semantic identity with different production IDs', () => {
+    const { mapping, errors } = resolveSemanticNodes(
+      CURRICULUM_NODES,
+      mockProductionNodes(),
+    );
+    expect(errors).toEqual([]);
+    expect(mapping.size).toBe(30);
+    // Source IDs map to distinct production IDs.
+    expect(mapping.get(CURRICULUM_NODES[0].sourceNodeId)).toBe('prod-0');
+    expect(mapping.get(CURRICULUM_NODES[15].sourceNodeId)).toBe('prod-15');
+  });
+
+  it('reports an error when a production node is missing', () => {
+    const nodes = mockProductionNodes().filter((n) => n.id !== 'prod-0');
+    const { errors } = resolveSemanticNodes(CURRICULUM_NODES, nodes);
+    expect(errors.length).toBe(1);
+    expect(errors[0]).toContain('no production node');
+  });
+
+  it('reports an ambiguity error when two production nodes share a title', () => {
+    const nodes = mockProductionNodes();
+    nodes.push({ ...nodes[0], id: 'prod-dup' });
+    const { errors } = resolveSemanticNodes(CURRICULUM_NODES, nodes);
+    expect(errors.length).toBe(1);
+    expect(errors[0]).toContain('ambiguous');
+  });
+
+  it('reports an error on a wrong roadmap (title found under another slug)', () => {
+    const nodes = mockProductionNodes().map((n) =>
+      n.id === 'prod-0' ? { ...n, roadmapSlug: 'other-roadmap' as const } : n,
+    );
+    const { errors } = resolveSemanticNodes(CURRICULUM_NODES, nodes);
+    expect(errors.length).toBe(1);
+    expect(errors[0]).toContain('no production node');
+  });
+
+  it('reports an error on a stage mismatch', () => {
+    const nodes = mockProductionNodes().map((n) =>
+      n.id === 'prod-0' ? { ...n, stage: 'WRONG' } : n,
+    );
+    const { errors } = resolveSemanticNodes(CURRICULUM_NODES, nodes);
+    expect(errors.length).toBe(1);
+    expect(errors[0]).toContain('stage mismatch');
+  });
+
+  it('does not mutate the source manifest', () => {
+    const before = JSON.stringify(CURRICULUM_NODES);
+    resolveSemanticNodes(CURRICULUM_NODES, mockProductionNodes());
+    expect(JSON.stringify(CURRICULUM_NODES)).toBe(before);
   });
 });

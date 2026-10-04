@@ -7,6 +7,15 @@
  * production deployment script use this module, so the two can never drift.
  *
  * It is pure: no database access, no environment reads, no side effects.
+ *
+ * Identity model:
+ *   - The lesson data files are keyed by `sourceNodeId` (the local-development
+ *     UUID used during authoring). Those IDs are NOT assumed to be portable
+ *     across databases.
+ *   - `CURRICULUM_NODES` is a SEMANTIC manifest keyed by roadmap slug + exact
+ *     title, which is stable across independently-seeded databases.
+ *   - `resolveSemanticNodes` maps semantic manifest entries to actual
+ *     production node IDs at deployment time.
  */
 
 import {
@@ -28,163 +37,229 @@ import { seBatch4Lessons } from './se-batch4.data';
 
 export interface CurriculumNode {
   roadmapSlug: 'computer-science' | 'software-engineering';
-  nodeId: string;
-  title: string;
+  /** Stable semantic identity — must match the production node title exactly. */
+  exactTitle: string;
+  /** Local-development UUID used by the lesson data files (authoring identity). */
+  sourceNodeId: string;
+  /** Expected stage, verified against production when present. */
+  stage: string;
+  /** Expected order within the roadmap, verified against production when present. */
+  order: number;
 }
 
-/** Immutable manifest of the exact 30 nodes this curriculum targets. */
+/** Immutable semantic manifest of the exact 30 nodes this curriculum targets. */
 export const CURRICULUM_NODES: CurriculumNode[] = [
   // Computer Science
   {
     roadmapSlug: 'computer-science',
-    nodeId: 'a24a7356-1a98-4a70-8db8-5b3de0cc097d',
-    title: 'Computer Fundamentals',
+    exactTitle: 'Computer Fundamentals',
+    sourceNodeId: 'a24a7356-1a98-4a70-8db8-5b3de0cc097d',
+    stage: 'FOUNDATIONS',
+    order: 1,
   },
   {
     roadmapSlug: 'computer-science',
-    nodeId: 'f02f2841-c820-4dee-854b-0e7b19ceb0ed',
-    title: 'Binary & Number Systems',
+    exactTitle: 'Binary & Number Systems',
+    sourceNodeId: 'f02f2841-c820-4dee-854b-0e7b19ceb0ed',
+    stage: 'FOUNDATIONS',
+    order: 2,
   },
   {
     roadmapSlug: 'computer-science',
-    nodeId: '4400fc11-9425-4ccf-b170-82e4a43e7aec',
-    title: 'Discrete Mathematics',
+    exactTitle: 'Discrete Mathematics',
+    sourceNodeId: '4400fc11-9425-4ccf-b170-82e4a43e7aec',
+    stage: 'FOUNDATIONS',
+    order: 3,
   },
   {
     roadmapSlug: 'computer-science',
-    nodeId: 'dad87655-2c48-4ac3-99ee-8b82d093d4d6',
-    title: 'Programming Fundamentals',
+    exactTitle: 'Programming Fundamentals',
+    sourceNodeId: 'dad87655-2c48-4ac3-99ee-8b82d093d4d6',
+    stage: 'PROGRAMMING',
+    order: 4,
   },
   {
     roadmapSlug: 'computer-science',
-    nodeId: '99bbe1e6-ff75-4f32-88d7-04597543136a',
-    title: 'Git & Version Control',
+    exactTitle: 'Git & Version Control',
+    sourceNodeId: '99bbe1e6-ff75-4f32-88d7-04597543136a',
+    stage: 'PROGRAMMING',
+    order: 5,
   },
   {
     roadmapSlug: 'computer-science',
-    nodeId: '1476172e-3ba2-43ee-b0d0-b90c3ff043a1',
-    title: 'Arrays & Linked Lists',
+    exactTitle: 'Arrays & Linked Lists',
+    sourceNodeId: '1476172e-3ba2-43ee-b0d0-b90c3ff043a1',
+    stage: 'DATA STRUCTURES',
+    order: 6,
   },
   {
     roadmapSlug: 'computer-science',
-    nodeId: 'e4e1bd7b-8617-4dac-b243-1aad7a5756ac',
-    title: 'Stacks & Queues',
+    exactTitle: 'Stacks & Queues',
+    sourceNodeId: 'e4e1bd7b-8617-4dac-b243-1aad7a5756ac',
+    stage: 'DATA STRUCTURES',
+    order: 7,
   },
   {
     roadmapSlug: 'computer-science',
-    nodeId: 'b3951972-a9f2-4435-9301-c9d73c2cdebf',
-    title: 'Trees & Graphs',
+    exactTitle: 'Trees & Graphs',
+    sourceNodeId: 'b3951972-a9f2-4435-9301-c9d73c2cdebf',
+    stage: 'DATA STRUCTURES',
+    order: 8,
   },
   {
     roadmapSlug: 'computer-science',
-    nodeId: '9b01e6a5-71a4-46e6-8ec2-8ca79bbb17af',
-    title: 'Complexity & Big O',
+    exactTitle: 'Complexity & Big O',
+    sourceNodeId: '9b01e6a5-71a4-46e6-8ec2-8ca79bbb17af',
+    stage: 'ALGORITHMS',
+    order: 9,
   },
   {
     roadmapSlug: 'computer-science',
-    nodeId: 'df74e250-d57b-4212-be6e-d3c131ab6671',
-    title: 'Sorting & Searching',
+    exactTitle: 'Sorting & Searching',
+    sourceNodeId: 'df74e250-d57b-4212-be6e-d3c131ab6671',
+    stage: 'ALGORITHMS',
+    order: 10,
   },
   {
     roadmapSlug: 'computer-science',
-    nodeId: 'fc792f8a-9ba5-4c93-9a77-7cf9969fb98b',
-    title: 'Dynamic Programming',
+    exactTitle: 'Dynamic Programming',
+    sourceNodeId: 'fc792f8a-9ba5-4c93-9a77-7cf9969fb98b',
+    stage: 'ALGORITHMS',
+    order: 11,
   },
   {
     roadmapSlug: 'computer-science',
-    nodeId: 'f76fe362-1457-4399-b1a7-cb3d94715f0f',
-    title: 'Computer Architecture',
+    exactTitle: 'Computer Architecture',
+    sourceNodeId: 'f76fe362-1457-4399-b1a7-cb3d94715f0f',
+    stage: 'CORE COMPUTER SCIENCE',
+    order: 12,
   },
   {
     roadmapSlug: 'computer-science',
-    nodeId: '2ed7de72-3647-47a5-afab-140788e2470e',
-    title: 'Operating Systems',
+    exactTitle: 'Operating Systems',
+    sourceNodeId: '2ed7de72-3647-47a5-afab-140788e2470e',
+    stage: 'CORE COMPUTER SCIENCE',
+    order: 13,
   },
   {
     roadmapSlug: 'computer-science',
-    nodeId: '6814e0ae-687b-4e08-97ad-6b0a7088a766',
-    title: 'Databases',
+    exactTitle: 'Databases',
+    sourceNodeId: '6814e0ae-687b-4e08-97ad-6b0a7088a766',
+    stage: 'CORE COMPUTER SCIENCE',
+    order: 14,
   },
   {
     roadmapSlug: 'computer-science',
-    nodeId: '26e7e2ed-2214-4325-918a-cad5c513c1a6',
-    title: 'Computer Networks',
+    exactTitle: 'Computer Networks',
+    sourceNodeId: '26e7e2ed-2214-4325-918a-cad5c513c1a6',
+    stage: 'CORE COMPUTER SCIENCE',
+    order: 15,
   },
   // Software Engineering
   {
     roadmapSlug: 'software-engineering',
-    nodeId: 'a45fe94d-0c97-4bb7-a5a6-8f5a554abfee',
-    title: 'Language Fundamentals',
+    exactTitle: 'Language Fundamentals',
+    sourceNodeId: 'a45fe94d-0c97-4bb7-a5a6-8f5a554abfee',
+    stage: 'PROGRAMMING',
+    order: 1,
   },
   {
     roadmapSlug: 'software-engineering',
-    nodeId: 'cd4efb1a-5f17-45dc-95b0-8614505934b9',
-    title: 'Version Control (Git)',
+    exactTitle: 'Version Control (Git)',
+    sourceNodeId: 'cd4efb1a-5f17-45dc-95b0-8614505934b9',
+    stage: 'PROGRAMMING',
+    order: 2,
   },
   {
     roadmapSlug: 'software-engineering',
-    nodeId: '27514966-1d6b-456b-ab33-06599b489611',
-    title: 'Web Fundamentals',
+    exactTitle: 'Web Fundamentals',
+    sourceNodeId: '27514966-1d6b-456b-ab33-06599b489611',
+    stage: 'FRONTEND',
+    order: 3,
   },
   {
     roadmapSlug: 'software-engineering',
-    nodeId: '9880296a-723e-4d55-bf22-1e04e8643d86',
-    title: 'Frontend Frameworks',
+    exactTitle: 'Frontend Frameworks',
+    sourceNodeId: '9880296a-723e-4d55-bf22-1e04e8643d86',
+    stage: 'FRONTEND',
+    order: 4,
   },
   {
     roadmapSlug: 'software-engineering',
-    nodeId: '90b878b8-a560-4c22-a451-1c37a3aaa77b',
-    title: 'Backend Fundamentals',
+    exactTitle: 'Backend Fundamentals',
+    sourceNodeId: '90b878b8-a560-4c22-a451-1c37a3aaa77b',
+    stage: 'BACKEND',
+    order: 5,
   },
   {
     roadmapSlug: 'software-engineering',
-    nodeId: 'bf11cdbf-55f7-4ead-a9a2-9f2b513876fc',
-    title: 'RESTful APIs',
+    exactTitle: 'RESTful APIs',
+    sourceNodeId: 'bf11cdbf-55f7-4ead-a9a2-9f2b513876fc',
+    stage: 'BACKEND',
+    order: 6,
   },
   {
     roadmapSlug: 'software-engineering',
-    nodeId: 'c38dcf96-8a4c-43af-8ab2-f6ce92dd05bf',
-    title: 'Databases & ORMs',
+    exactTitle: 'Databases & ORMs',
+    sourceNodeId: 'c38dcf96-8a4c-43af-8ab2-f6ce92dd05bf',
+    stage: 'BACKEND',
+    order: 7,
   },
   {
     roadmapSlug: 'software-engineering',
-    nodeId: '88b4feed-c9a8-4668-8fd3-b8ecfd31da90',
-    title: 'Unit Testing',
+    exactTitle: 'Unit Testing',
+    sourceNodeId: '88b4feed-c9a8-4668-8fd3-b8ecfd31da90',
+    stage: 'TESTING',
+    order: 8,
   },
   {
     roadmapSlug: 'software-engineering',
-    nodeId: '244fea6b-7880-4a11-a670-6dd16b088e0a',
-    title: 'Integration & E2E Testing',
+    exactTitle: 'Integration & E2E Testing',
+    sourceNodeId: '244fea6b-7880-4a11-a670-6dd16b088e0a',
+    stage: 'TESTING',
+    order: 9,
   },
   {
     roadmapSlug: 'software-engineering',
-    nodeId: '7e07c1db-3136-41b3-b7d3-ff6bdf77d389',
-    title: 'Clean Code & Refactoring',
+    exactTitle: 'Clean Code & Refactoring',
+    sourceNodeId: '7e07c1db-3136-41b3-b7d3-ff6bdf77d389',
+    stage: 'DESIGN',
+    order: 10,
   },
   {
     roadmapSlug: 'software-engineering',
-    nodeId: 'd8968cd1-a02f-4645-ab53-50910690cc2d',
-    title: 'Design Patterns',
+    exactTitle: 'Design Patterns',
+    sourceNodeId: 'd8968cd1-a02f-4645-ab53-50910690cc2d',
+    stage: 'DESIGN',
+    order: 11,
   },
   {
     roadmapSlug: 'software-engineering',
-    nodeId: '0c9a8b25-2a9c-4a75-b586-9b9826144d85',
-    title: 'System Architecture',
+    exactTitle: 'System Architecture',
+    sourceNodeId: '0c9a8b25-2a9c-4a75-b586-9b9826144d85',
+    stage: 'SYSTEM DESIGN',
+    order: 12,
   },
   {
     roadmapSlug: 'software-engineering',
-    nodeId: 'e24fed91-6df9-48c5-bcbd-4b329880ffe5',
-    title: 'CI/CD',
+    exactTitle: 'CI/CD',
+    sourceNodeId: 'e24fed91-6df9-48c5-bcbd-4b329880ffe5',
+    stage: 'DEVOPS',
+    order: 13,
   },
   {
     roadmapSlug: 'software-engineering',
-    nodeId: '7a4d4811-a1c4-4d9f-803d-dd4fe08e73e9',
-    title: 'Containerization',
+    exactTitle: 'Containerization',
+    sourceNodeId: '7a4d4811-a1c4-4d9f-803d-dd4fe08e73e9',
+    stage: 'DEVOPS',
+    order: 14,
   },
   {
     roadmapSlug: 'software-engineering',
-    nodeId: '57ade220-9c75-4015-ae6c-8b57e4b4695c',
-    title: 'Deployment & Hosting',
+    exactTitle: 'Deployment & Hosting',
+    sourceNodeId: '57ade220-9c75-4015-ae6c-8b57e4b4695c',
+    stage: 'DEVOPS',
+    order: 15,
   },
 ];
 
@@ -194,6 +269,91 @@ export const EXPECTED_TOTAL_BLOCKS = EXPECTED_CS_BLOCKS + EXPECTED_SE_BLOCKS;
 
 export const CS_ROADMAP_SLUG = 'computer-science';
 export const SE_ROADMAP_SLUG = 'software-engineering';
+
+export interface ProductionNode {
+  id: string;
+  title: string;
+  roadmapSlug: string;
+  stage?: string | null;
+  order?: number | null;
+}
+
+export interface ResolutionResult {
+  /** sourceNodeId -> production node id */
+  mapping: Map<string, string>;
+  errors: string[];
+}
+
+/**
+ * Resolve each semantic manifest entry to exactly one production node using
+ * roadmap slug + exact title. Zero matches or multiple matches are errors.
+ * When stage/order are present on both sides, they are additionally verified.
+ */
+export function resolveSemanticNodes(
+  manifest: CurriculumNode[],
+  productionNodes: ProductionNode[],
+): ResolutionResult {
+  const byKey = new Map<string, ProductionNode[]>();
+  for (const node of productionNodes) {
+    const key = `${node.roadmapSlug}\u0000${node.title}`;
+    const list = byKey.get(key) ?? [];
+    list.push(node);
+    byKey.set(key, list);
+  }
+
+  const mapping = new Map<string, string>();
+  const errors: string[] = [];
+
+  for (const entry of manifest) {
+    const key = `${entry.roadmapSlug}\u0000${entry.exactTitle}`;
+    const matches = byKey.get(key) ?? [];
+
+    if (matches.length === 0) {
+      errors.push(
+        `no production node for ${entry.roadmapSlug} / "${entry.exactTitle}" (source ${entry.sourceNodeId})`,
+      );
+      continue;
+    }
+    if (matches.length > 1) {
+      errors.push(
+        `ambiguous: ${matches.length} production nodes for ${entry.roadmapSlug} / "${entry.exactTitle}"`,
+      );
+      continue;
+    }
+
+    const node = matches[0];
+    if (entry.stage && node.stage != null && node.stage !== entry.stage) {
+      errors.push(
+        `stage mismatch for "${entry.exactTitle}": expected ${entry.stage}, got ${node.stage}`,
+      );
+      continue;
+    }
+    if (entry.order && node.order != null && node.order !== entry.order) {
+      errors.push(
+        `order mismatch for "${entry.exactTitle}": expected ${entry.order}, got ${node.order}`,
+      );
+      continue;
+    }
+
+    mapping.set(entry.sourceNodeId, node.id);
+  }
+
+  return { mapping, errors };
+}
+
+/** Detect duplicate (roadmapSlug + exactTitle) entries in the manifest. */
+export function findDuplicateSemanticEntries(
+  manifest: CurriculumNode[],
+): CurriculumNode[] {
+  const seen = new Set<string>();
+  const duplicates: CurriculumNode[] = [];
+  for (const entry of manifest) {
+    const key = `${entry.roadmapSlug}\u0000${entry.exactTitle}`;
+    if (seen.has(key)) duplicates.push(entry);
+    seen.add(key);
+  }
+  return duplicates;
+}
 
 /**
  * Merge rich SECTION enrichment blocks into each lesson, inserting them right

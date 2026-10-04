@@ -5,16 +5,22 @@
  * Software Engineering, 471 blocks) into a target database. This is the
  * production counterpart to the development-only `author-pilot-lessons.ts`.
  *
+ * Identity model: the authored lesson data is keyed by local-development
+ * `sourceNodeId`. Production nodes are resolved by SEMANTIC identity
+ * (roadmap slug + exact title) at deploy time, because UUIDs are not portable
+ * across independently-seeded databases. `curriculum.ts` owns this logic.
+ *
  * Modes:
  *   --dry-run  Inspect only. Prints a report and writes NOTHING.
  *   --apply    Perform the validated deployment inside a transaction.
  *
  * Without either flag the script prints usage and exits without writing.
  *
- * Guardrails (fail closed): verifies the LessonBlock table exists, verifies
- * every target node matches its expected roadmap + title, detects duplicate
- * positions, detects conflicting existing blocks, and never modifies
- * RoadmapNode / RoadmapProgress / prerequisites / users or any other roadmap.
+ * Guardrails (fail closed): verifies the LessonBlock table exists, resolves and
+ * verifies every target node by roadmap + title (and stage/order), detects
+ * duplicate positions and duplicate semantic manifest entries, detects
+ * conflicting existing blocks, and never modifies RoadmapNode / RoadmapProgress
+ * / prerequisites / users or any other roadmap.
  */
 import { existsSync, readFileSync } from 'fs';
 import { resolve } from 'path';
@@ -25,6 +31,8 @@ import {
   assembleCurriculumLessons,
   validateAssembledLessons,
   findDuplicatePositions,
+  findDuplicateSemanticEntries,
+  resolveSemanticNodes,
   normalizeJson,
   CURRICULUM_NODES,
   EXPECTED_CS_BLOCKS,
@@ -58,7 +66,7 @@ function loadEnvFiles(paths: string[]): void {
 
 loadEnvFiles([
   resolve(__dirname, '..', '.env'), // apps/api/.env
-  resolve(__dirname, '..', '..', '.env'), // repo root .env
+  resolve(__dirname, '..', '..', '.env'), // apps/.env (does not exist today)
 ]);
 
 const connectionString =
@@ -76,25 +84,17 @@ interface ExistingBlock {
 }
 
 async function databaseIdentity(): Promise<string> {
-  let currentDb = 'unknown';
-  try {
-    const rows = await prisma.$queryRawUnsafe<{ current_database: string }[]>(
-      'SELECT current_database() AS current_database',
-    );
-    currentDb = rows[0]?.current_database ?? 'unknown';
-  } catch {
-    currentDb = 'unknown';
-  }
-
+  let db = 'unknown';
   let host = 'unknown';
   try {
     const url = new URL(connectionString);
     host = url.hostname;
+    const path = url.pathname.replace(/^\//, '');
+    if (path) db = path;
   } catch {
-    host = 'unknown';
+    // ignore; leave unknowns
   }
-
-  return `database=${currentDb} host=${host}`;
+  return `database=${db} host=${host}`;
 }
 
 function usage(): string {
@@ -186,7 +186,7 @@ async function main(): Promise<void> {
     `Validation: PASS (${lessons.length} lessons, ${EXPECTED_TOTAL_BLOCKS} blocks)`,
   );
 
-  // 2. Duplicate check.
+  // 2. Duplicate position check.
   const dupes = findDuplicatePositions(lessons);
   if (dupes.length > 0) {
     console.error(`Duplicate check: FAIL (${dupes.length} duplicate(s))`);
@@ -195,65 +195,66 @@ async function main(): Promise<void> {
     process.exitCode = 1;
     return;
   }
-  if (CURRICULUM_NODES.length !== 30) {
+  console.log('Duplicate check: PASS');
+
+  // 3. Manifest sanity: exactly 30 semantic targets, 15 CS + 15 SE, no dupes.
+  const semanticDupes = findDuplicateSemanticEntries(CURRICULUM_NODES);
+  const csManifest = CURRICULUM_NODES.filter(
+    (n) => n.roadmapSlug === CS_ROADMAP_SLUG,
+  ).length;
+  const seManifest = CURRICULUM_NODES.filter(
+    (n) => n.roadmapSlug === SE_ROADMAP_SLUG,
+  ).length;
+  if (
+    semanticDupes.length > 0 ||
+    CURRICULUM_NODES.length !== 30 ||
+    csManifest !== 15 ||
+    seManifest !== 15
+  ) {
     console.error(
-      `Node manifest: FAIL (expected 30 nodes, got ${CURRICULUM_NODES.length})`,
+      `Manifest: FAIL (entries=${CURRICULUM_NODES.length}, CS=${csManifest}, SE=${seManifest}, dupes=${semanticDupes.length})`,
     );
     process.exitCode = 1;
     return;
   }
-  console.log(`Duplicate check: PASS`);
-  console.log(`Node manifest: ${CURRICULUM_NODES.length} nodes expected`);
+  console.log(
+    `Manifest: PASS (${CURRICULUM_NODES.length} semantic targets: CS=${csManifest}, SE=${seManifest})`,
+  );
 
-  // 3. Verify nodes exist with correct roadmap + title.
-  const nodeIds = CURRICULUM_NODES.map((n) => n.nodeId);
-  const dbNodes = await prisma.roadmapNode.findMany({
-    where: { id: { in: nodeIds } },
-    select: { id: true, title: true, roadmap: { select: { slug: true } } },
+  // 4. Resolve production nodes by semantic identity.
+  const productionNodes = await prisma.roadmapNode.findMany({
+    where: { roadmap: { slug: { in: [CS_ROADMAP_SLUG, SE_ROADMAP_SLUG] } } },
+    select: {
+      id: true,
+      title: true,
+      stage: true,
+      order: true,
+      roadmap: { select: { slug: true } },
+    },
   });
-  const dbNodeMap = new Map(dbNodes.map((n) => [n.id, n]));
 
-  const manifestConflicts: NodeConflict[] = [];
-  for (const manifestNode of CURRICULUM_NODES) {
-    const dbNode = dbNodeMap.get(manifestNode.nodeId);
-    if (!dbNode) {
-      manifestConflicts.push({
-        nodeId: manifestNode.nodeId,
-        title: manifestNode.title,
-        reason: 'missing node',
-      });
-      continue;
-    }
-    if (dbNode.roadmap.slug !== manifestNode.roadmapSlug) {
-      manifestConflicts.push({
-        nodeId: manifestNode.nodeId,
-        title: manifestNode.title,
-        reason: `roadmap mismatch: expected ${manifestNode.roadmapSlug}, got ${dbNode.roadmap.slug}`,
-      });
-      continue;
-    }
-    if (dbNode.title !== manifestNode.title) {
-      manifestConflicts.push({
-        nodeId: manifestNode.nodeId,
-        title: manifestNode.title,
-        reason: `title mismatch: got "${dbNode.title}"`,
-      });
-    }
-  }
+  const { mapping, errors } = resolveSemanticNodes(
+    CURRICULUM_NODES,
+    productionNodes.map((n) => ({
+      id: n.id,
+      title: n.title,
+      roadmapSlug: n.roadmap.slug,
+      stage: n.stage,
+      order: n.order,
+    })),
+  );
 
-  if (manifestConflicts.length > 0) {
-    console.error(
-      `Node manifest: FAIL (${manifestConflicts.length} mismatch(es))`,
-    );
-    for (const c of manifestConflicts) {
-      console.error(`  - ${c.title} (${c.nodeId}): ${c.reason}`);
-    }
+  if (errors.length > 0) {
+    console.error(`Resolution: FAIL (${errors.length} error(s))`);
+    for (const e of errors) console.error(`  - ${e}`);
     process.exitCode = 1;
     return;
   }
-  console.log('Node manifest: PASS');
+  console.log(
+    `Resolved production nodes: ${mapping.size}/${CURRICULUM_NODES.length}`,
+  );
 
-  // 4. Scope check: report (never modify) LessonBlocks on other roadmaps.
+  // 5. Scope check: report (never modify) LessonBlocks on other roadmaps.
   const otherBlocks = await prisma.lessonBlock.count({
     where: {
       node: {
@@ -265,26 +266,36 @@ async function main(): Promise<void> {
     `Scope check: ${otherBlocks} LessonBlock(s) exist on other roadmaps (ignored)`,
   );
 
-  // 5. Compare existing LessonBlocks for each target node.
+  // 6. Compare existing LessonBlocks for each resolved production node.
   let csExisting = 0;
   let seExisting = 0;
   let totalToInsert = 0;
   const conflicts: NodeConflict[] = [];
-  const nodeInserts: { nodeId: string; count: number }[] = [];
 
   for (const lesson of lessons) {
+    const productionNodeId = mapping.get(lesson.nodeId);
+    if (!productionNodeId) {
+      conflicts.push({
+        nodeId: lesson.nodeId,
+        title: lesson.nodeTitle,
+        reason: 'unresolved source node',
+      });
+      continue;
+    }
+
     const existing = await prisma.lessonBlock.findMany({
-      where: { nodeId: lesson.nodeId },
+      where: { nodeId: productionNodeId },
       orderBy: { order: 'asc' },
       select: { id: true, type: true, order: true, content: true },
     });
 
-    const roadmapSlug = CURRICULUM_NODES.find(
-      (n) => n.nodeId === lesson.nodeId,
-    )?.roadmapSlug;
-
-    if (roadmapSlug === CS_ROADMAP_SLUG) csExisting += existing.length;
-    else if (roadmapSlug === SE_ROADMAP_SLUG) seExisting += existing.length;
+    const manifestEntry = CURRICULUM_NODES.find(
+      (n) => n.sourceNodeId === lesson.nodeId,
+    );
+    if (manifestEntry?.roadmapSlug === CS_ROADMAP_SLUG)
+      csExisting += existing.length;
+    else if (manifestEntry?.roadmapSlug === SE_ROADMAP_SLUG)
+      seExisting += existing.length;
 
     const result = classifyNode(lesson.blocks, existing);
     if (result.conflict) {
@@ -295,10 +306,7 @@ async function main(): Promise<void> {
       });
       continue;
     }
-    if (result.missing > 0) {
-      totalToInsert += result.missing;
-      nodeInserts.push({ nodeId: lesson.nodeId, count: result.missing });
-    }
+    if (result.missing > 0) totalToInsert += result.missing;
   }
 
   if (conflicts.length > 0) {
@@ -327,7 +335,8 @@ async function main(): Promise<void> {
   console.log(`  To insert: ${totalToInsert}`);
   console.log('');
   console.log('Validation: PASS');
-  console.log('Node manifest: PASS');
+  console.log('Manifest: PASS');
+  console.log('Resolution: PASS');
   console.log('Conflict check: PASS');
   console.log('Scope check: PASS');
 
@@ -337,24 +346,49 @@ async function main(): Promise<void> {
     return;
   }
 
-  // 6. APPLY: re-run guardrails inside a transaction and insert missing blocks.
+  // 7. APPLY: re-resolve + re-verify inside a transaction, insert missing blocks.
   console.log('Transaction: STARTING');
   try {
     await prisma.$transaction(async (tx) => {
-      // Re-verify nodes inside the transaction.
+      // Re-resolve production nodes inside the transaction.
       const recheckNodes = await tx.roadmapNode.findMany({
-        where: { id: { in: nodeIds } },
-        select: { id: true },
+        where: {
+          roadmap: { slug: { in: [CS_ROADMAP_SLUG, SE_ROADMAP_SLUG] } },
+        },
+        select: {
+          id: true,
+          title: true,
+          stage: true,
+          order: true,
+          roadmap: { select: { slug: true } },
+        },
       });
-      if (recheckNodes.length !== nodeIds.length) {
-        throw new Error('Target nodes changed since guardrail check.');
+      const recheck = resolveSemanticNodes(
+        CURRICULUM_NODES,
+        recheckNodes.map((n) => ({
+          id: n.id,
+          title: n.title,
+          roadmapSlug: n.roadmap.slug,
+          stage: n.stage,
+          order: n.order,
+        })),
+      );
+      if (
+        recheck.errors.length > 0 ||
+        recheck.mapping.size !== CURRICULUM_NODES.length
+      ) {
+        throw new Error('Resolution changed since guardrail check; aborting.');
       }
 
-      // Build the full insert payload for missing blocks.
+      // Compute missing blocks using resolved production node IDs.
       const toCreate: Prisma.LessonBlockCreateManyInput[] = [];
       for (const lesson of lessons) {
+        const productionNodeId = recheck.mapping.get(lesson.nodeId);
+        if (!productionNodeId)
+          throw new Error(`Unresolved node: ${lesson.nodeId}`);
+
         const existing = await tx.lessonBlock.findMany({
-          where: { nodeId: lesson.nodeId },
+          where: { nodeId: productionNodeId },
           orderBy: { order: 'asc' },
           select: { order: true },
         });
@@ -362,7 +396,7 @@ async function main(): Promise<void> {
         lesson.blocks.forEach((block, index) => {
           if (!existingOrders.has(index)) {
             toCreate.push({
-              nodeId: lesson.nodeId,
+              nodeId: productionNodeId,
               type: block.type as LessonBlockType,
               content: block.content as Prisma.InputJsonValue,
               order: index,
@@ -379,14 +413,12 @@ async function main(): Promise<void> {
       const created = await tx.lessonBlock.createMany({ data: toCreate });
       console.log(`Inserted ${created.count} LessonBlock(s)`);
 
-      // Verify final counts.
       const csCount = await tx.lessonBlock.count({
         where: { node: { roadmap: { slug: CS_ROADMAP_SLUG } } },
       });
       const seCount = await tx.lessonBlock.count({
         where: { node: { roadmap: { slug: SE_ROADMAP_SLUG } } },
       });
-
       if (csCount !== EXPECTED_CS_BLOCKS || seCount !== EXPECTED_SE_BLOCKS) {
         throw new Error(
           `Verification failed: CS=${csCount} (expected ${EXPECTED_CS_BLOCKS}), SE=${seCount} (expected ${EXPECTED_SE_BLOCKS})`,
