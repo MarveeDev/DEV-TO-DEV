@@ -29,7 +29,14 @@ import {
   isLessonBlockType,
   validateLessonBlockContent,
 } from '../src/roadmaps/lesson-block-content';
-import { pilotLessons, PilotLesson } from './pilot-lessons.data';
+import {
+  pilotLessons,
+  PilotLesson,
+  LessonBlockInput,
+} from './pilot-lessons.data';
+import { pilotLessonEnrichment } from './pilot-lessons-enrichment.data';
+import { csFoundationLessons } from './cs-foundations.data';
+import { csAdvancedLessons } from './cs-advanced.data';
 
 function loadEnvFiles(paths: string[]): void {
   for (const filePath of paths) {
@@ -73,10 +80,39 @@ type ValidationIssue = {
   reason: string;
 };
 
+/**
+ * Merges rich SECTION enrichment blocks into each lesson, inserting them right
+ * after the lesson's EXPLANATION block so the "Learn" tab reads: Explanation →
+ * rich sections → Syntax → Examples. The base lesson blocks are left untouched.
+ */
+function enrichLessons(
+  lessons: PilotLesson[],
+  enrichment: Record<string, LessonBlockInput[]>,
+): PilotLesson[] {
+  return lessons.map((lesson) => {
+    const extra = enrichment[lesson.nodeId];
+    if (!extra || extra.length === 0) return lesson;
+
+    const blocks = [...lesson.blocks];
+    const insertAt = blocks.findIndex((b) => b.type === 'EXPLANATION');
+    const index = insertAt >= 0 ? insertAt + 1 : 0;
+    blocks.splice(index, 0, ...extra);
+
+    return { ...lesson, blocks };
+  });
+}
+
+const enrichedLessons = enrichLessons(pilotLessons, pilotLessonEnrichment);
+const allLessons = [
+  ...enrichedLessons,
+  ...csFoundationLessons,
+  ...csAdvancedLessons,
+];
+
 function validateAll(): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
 
-  for (const lesson of pilotLessons) {
+  for (const lesson of allLessons) {
     lesson.blocks.forEach((block, index) => {
       if (!isLessonBlockType(block.type)) {
         issues.push({
@@ -122,7 +158,7 @@ async function main(): Promise<void> {
 
   const summary: { nodeId: string; nodeTitle: string; count: number }[] = [];
 
-  for (const lesson of pilotLessons) {
+  for (const lesson of allLessons) {
     const node = await prisma.roadmapNode.findUnique({
       where: { id: lesson.nodeId },
       select: { id: true, title: true },
