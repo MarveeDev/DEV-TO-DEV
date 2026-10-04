@@ -29,9 +29,10 @@ import { SoundsModule } from './sounds/sounds.module';
 import { SmsModule } from './sms/sms.module';
 import { PhoneVerificationModule } from './phone-verification/phone-verification.module';
 import { SmsCampaignsModule } from './sms-campaigns/sms-campaigns.module';
+import { CodeModule } from './code/code.module';
 
 @Module({
-  imports: [PrismaModule, RedisModule, SessionsModule, AuthModule, ProfileModule, ConnectionsModule, DevelopersModule, NotificationsModule, PostsModule, ScoreModule, ProjectsModule, QuestionsModule, RoadmapsModule, SkillsModule, MediaModule, TrendingModule, VideosModule, MarketplaceModule, MessagesModule, AdminModule, SoundsModule, SmsModule, PhoneVerificationModule, SmsCampaignsModule],
+  imports: [PrismaModule, RedisModule, SessionsModule, AuthModule, ProfileModule, ConnectionsModule, DevelopersModule, NotificationsModule, PostsModule, ScoreModule, ProjectsModule, QuestionsModule, RoadmapsModule, SkillsModule, MediaModule, TrendingModule, VideosModule, MarketplaceModule, MessagesModule, AdminModule, SoundsModule, SmsModule, PhoneVerificationModule, SmsCampaignsModule, CodeModule],
   controllers: [AppController],
   providers: [AppService],
 })

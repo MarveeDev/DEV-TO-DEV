@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle2, Circle, Lightbulb, Info, AlertTriangle, Code2 } from 'lucide-react';
+import { CheckCircle2, Circle, Lightbulb, Info, AlertTriangle } from 'lucide-react';
 import CodeBlock from './CodeBlock';
+import CodePlayground from './CodePlayground';
 
 export type LessonBlockType =
   | 'EXPLANATION'
@@ -166,17 +167,6 @@ function Quiz({ questions }: { questions: QuizBlock['content']['questions'] }) {
   );
 }
 
-function EditorShell() {
-  return (
-    <div className="lesson-editor-shell">
-      <div className="lesson-editor-shell-head">
-        <Code2 size={14} /> Execution (coming soon)
-      </div>
-      <div className="lesson-editor-shell-body"># Code execution is planned for a future phase</div>
-    </div>
-  );
-}
-
 export default function LessonBlockRenderer({ blocks }: { blocks: LessonBlock[] }) {
   if (!blocks || blocks.length === 0) return null;
 
@@ -226,10 +216,7 @@ export default function LessonBlockRenderer({ blocks }: { blocks: LessonBlock[] 
               <section key={block.id} className="lesson-block">
                 <h3 className="lesson-block-heading">{SECTION_TITLES[block.type]}</h3>
                 {block.content.instructions && <p className="lesson-block-text">{block.content.instructions}</p>}
-                {block.content.starterCode && (
-                  <CodeBlock code={block.content.starterCode} language={block.content.language} title="Starter code" />
-                )}
-                <EditorShell />
+                <CodePlayground language={block.content.language} starterCode={block.content.starterCode} />
               </section>
             );
 

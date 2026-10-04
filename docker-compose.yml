@@ -64,6 +64,8 @@ services:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/devtodev?schema=public
       - REDIS_URL=redis://redis:6379
       - DEV_MIND_URL=http://dev-mind:8000
+      - SANDBOX_URL=http://sandbox:9000
+      - SANDBOX_TOKEN=${SANDBOX_TOKEN:-dev-sandbox-token}
       - FRONTEND_URL=${FRONTEND_URL}
       - API_URL=${API_URL}
       - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
@@ -85,6 +87,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - default
+      - sandbox
 
   dev-mind:
     build:
@@ -97,6 +102,29 @@ services:
     environment:
       - ENV=development
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  sandbox:
+    build:
+      context: ./apps/sandbox
+      dockerfile: Dockerfile
+    networks:
+      - sandbox
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - SANDBOX_TOKEN=${SANDBOX_TOKEN:-dev-sandbox-token}
+    command: uvicorn main:app --host 0.0.0.0 --port 9000
+
+networks:
+  sandbox:
+    internal: true
 
 volumes:
   postgres_data:
