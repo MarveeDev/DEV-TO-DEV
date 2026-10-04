@@ -1,10 +1,22 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
+import type { LessonBlock } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PublicCacheService } from '../redis/public-cache.service';
 import { ScoreService } from '../score/score.service';
+import {
+  isLessonBlockType,
+  validateLessonBlockContent,
+} from './lesson-block-content';
 
 @Injectable()
 export class RoadmapsService {
+  private readonly logger = new Logger(RoadmapsService.name);
+
   constructor(
     private prisma: PrismaService,
     private scoreService: ScoreService,
@@ -82,7 +94,10 @@ export class RoadmapsService {
         skills: {
           include: { skill: true }
         },
-        prerequisites: true
+        prerequisites: true,
+        lessonBlocks: {
+          orderBy: { order: 'asc' }
+        }
       }
     });
 
@@ -90,9 +105,57 @@ export class RoadmapsService {
       throw new NotFoundException('Roadmap node not found');
     }
 
-    await this.publicCache.set(cacheKey, node, 120);
+    const { lessonBlocks, ...rest } = node;
+    const result = {
+      ...rest,
+      lessonBlocks: this.parseLessonBlocks(node.id, lessonBlocks),
+    };
 
-    return node;
+    await this.publicCache.set(cacheKey, result, 120);
+
+    return result;
+  }
+
+  /**
+   * Validates every LessonBlock before it leaves the API. Blocks whose type or
+   * content is malformed are dropped so unchecked curriculum JSON can never
+   * reach the renderer. Every drop is logged server-side (id + type + reason,
+   * never the raw content) so curriculum defects stay discoverable while no
+   * validation detail is exposed to clients.
+   */
+  private parseLessonBlocks(nodeId: string, blocks: LessonBlock[]) {
+    const parsed: {
+      id: string;
+      type: string;
+      order: number;
+      content: unknown;
+    }[] = [];
+
+    for (const block of blocks) {
+      if (!isLessonBlockType(block.type)) {
+        this.logger.warn(
+          `Dropping malformed LessonBlock: nodeId=${nodeId} blockId=${block.id} type=${String(block.type)} reason=invalid-type`,
+        );
+        continue;
+      }
+
+      const content = validateLessonBlockContent(block.type, block.content);
+      if (content === null) {
+        this.logger.warn(
+          `Dropping malformed LessonBlock: nodeId=${nodeId} blockId=${block.id} type=${block.type} reason=invalid-content`,
+        );
+        continue;
+      }
+
+      parsed.push({
+        id: block.id,
+        type: block.type,
+        order: block.order,
+        content,
+      });
+    }
+
+    return parsed;
   }
 
   async getMyProgress(userId: string) {

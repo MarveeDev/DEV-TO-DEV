@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getRoadmapNode } from "../../../../lib/api";
+import { getRoadmapNode, getRoadmapBySlug } from "../../../../lib/api";
 import { pageMetadata, truncate } from "../../../../lib/seo";
 import RoadmapNodeClient from "./RoadmapNodeClient";
 
@@ -35,6 +35,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function RoadmapNodePage({ params }: Props) {
   const { slug, nodeId } = await params;
-  const node = await getRoadmapNode(nodeId);
-  return <RoadmapNodeClient slug={slug} nodeId={nodeId} initialNode={node} />;
+  const [node, roadmap] = await Promise.all([
+    getRoadmapNode(nodeId),
+    getRoadmapBySlug(slug),
+  ]);
+  return (
+    <RoadmapNodeClient
+      slug={slug}
+      nodeId={nodeId}
+      initialNode={node}
+      initialRoadmap={roadmap}
+    />
+  );
 }

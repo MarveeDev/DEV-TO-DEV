@@ -532,6 +532,31 @@ model RoadmapNode {
   progress        RoadmapProgress[]
   prerequisites   RoadmapNodePrerequisite[] @relation("NodePrerequisites")
   prerequisiteFor RoadmapNodePrerequisite[] @relation("PrerequisiteFor")
+  lessonBlocks    LessonBlock[]
+}
+
+enum LessonBlockType {
+  EXPLANATION
+  SYNTAX
+  EXAMPLE
+  TRY_IT
+  EXERCISE
+  QUIZ
+  KEY_TAKEAWAYS
+  NOTE
+}
+
+model LessonBlock {
+  id        String          @id @default(uuid())
+  nodeId    String
+  node      RoadmapNode     @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  type      LessonBlockType
+  content   Json
+  order     Int             @default(0)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([nodeId, order])
 }
 
 model RoadmapNodePrerequisite {
