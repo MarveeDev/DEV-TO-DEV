@@ -161,12 +161,12 @@ export default function RoadmapNodeClient({
   const sidebar = (
     <div className="learn-nav-inner">
       <div className="learn-nav-head">
-        <div style={{ fontSize: '15px', fontWeight: 800, color: '#e7ecf5', lineHeight: 1.3 }}>{roadmap.title}</div>
-        <div style={{ fontSize: '12px', fontWeight: 600, color: '#7dd3fc', marginTop: '4px' }}>
+        <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--foreground)', lineHeight: 1.3 }}>{roadmap.title}</div>
+        <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)', marginTop: '4px' }}>
           {completedCount}/{totalNodes} completed
         </div>
-        <div style={{ height: '6px', borderRadius: 999, background: '#1f2b45', marginTop: '10px', overflow: 'hidden' }}>
-          <div style={{ width: `${overallPercent}%`, height: '100%', background: '#3b82f6', transition: 'width 0.3s ease' }} />
+        <div style={{ height: '6px', borderRadius: 999, background: 'var(--border)', marginTop: '10px', overflow: 'hidden' }}>
+          <div style={{ width: `${overallPercent}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.3s ease' }} />
         </div>
       </div>
 
@@ -219,9 +219,9 @@ export default function RoadmapNodeClient({
         <div className="learn-drawer">
           <div className="learn-drawer-backdrop" onClick={() => setNavOpen(false)} />
           <aside className="learn-drawer-panel">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid #1f2b45' }}>
-              <span style={{ fontSize: '13px', fontWeight: 700, color: '#9aa7bd', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Roadmap</span>
-              <button onClick={() => setNavOpen(false)} style={{ background: 'none', border: 'none', color: '#9aa7bd', cursor: 'pointer' }} aria-label="Close">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid var(--border)' }}>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--foreground-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Roadmap</span>
+              <button onClick={() => setNavOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--foreground-muted)', cursor: 'pointer' }} aria-label="Close">
                 <X size={20} />
               </button>
             </div>
@@ -236,6 +236,7 @@ export default function RoadmapNodeClient({
 
         {/* Center */}
         <main className="learn-main">
+          <div className="learn-card">
           {/* Breadcrumb */}
           <div className="learn-breadcrumb">
             <Link href="/roadmaps" className="learn-bc-link">Roadmaps</Link>
@@ -442,6 +443,7 @@ export default function RoadmapNodeClient({
               {isCompleted ? <><CheckCircle2 size={18} /> Completed</> : <><Circle size={18} /> Mark as Complete</>}
             </button>
           </div>
+          </div>
         </main>
 
         {/* Right resources */}
@@ -478,376 +480,7 @@ export default function RoadmapNodeClient({
           )}
         </aside>
       </div>
-
-      <style jsx>{`
-        .learn-root {
-          min-height: 100vh;
-          background: var(--background);
-        }
-        .learn-mobile-bar {
-          display: none;
-        }
-        .learn-grid {
-          display: grid;
-          grid-template-columns: 280px minmax(0, 1fr) 320px;
-          gap: 0;
-          max-width: 1440px;
-          margin: 0 auto;
-        }
-        .learn-nav {
-          background: #0b1220;
-          min-height: 100vh;
-          position: sticky;
-          top: 0;
-          height: 100vh;
-          overflow-y: auto;
-          border-right: 1px solid #1f2b45;
-        }
-        .learn-nav-inner {
-          display: flex;
-          flex-direction: column;
-          height: 100%;
-        }
-        .learn-nav-head {
-          padding: 20px 20px 16px;
-          border-bottom: 1px solid #1f2b45;
-        }
-        .learn-nav-list {
-          flex: 1;
-          padding: 12px 10px 40px;
-          overflow-y: auto;
-        }
-        .learn-stage {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          background: none;
-          border: none;
-          cursor: pointer;
-          padding: 9px 10px;
-          border-radius: 8px;
-          color: #cbd5e1;
-          font-size: 13px;
-          font-weight: 700;
-          text-align: left;
-        }
-        .learn-stage:hover { background: #111a2e; }
-        .learn-stage-num {
-          min-width: 22px;
-          height: 22px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          background: #1f2b45;
-          color: #7dd3fc;
-          font-size: 11px;
-          font-weight: 700;
-          border-radius: 6px;
-        }
-        .learn-stage-name { flex: 1; }
-        .learn-stage-count { color: #6b7a95; font-size: 11px; font-weight: 600; }
-        .learn-stage-items { margin: 2px 0 8px; }
-        .learn-node {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 7px 12px 7px 26px;
-          font-size: 13px;
-          color: #9aa7bd;
-          border-radius: 8px;
-          text-decoration: none;
-        }
-        .learn-node:hover { background: #111a2e; color: #e7ecf5; }
-        .learn-node--current { background: rgba(59, 130, 246, 0.18); color: #e7ecf5; font-weight: 600; }
-
-        .learn-main {
-          padding: 24px 32px 80px;
-          min-width: 0;
-        }
-        .learn-breadcrumb {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          font-size: 13px;
-          color: var(--foreground-subtle);
-          margin-bottom: 20px;
-          flex-wrap: wrap;
-        }
-        .learn-bc-link { color: var(--primary); font-weight: 500; }
-        .learn-bc-current { color: var(--foreground-muted); font-weight: 600; }
-
-        .learn-header {
-          display: flex;
-          align-items: flex-start;
-          gap: 16px;
-          padding-bottom: 24px;
-          border-bottom: 1px solid var(--border);
-          margin-bottom: 20px;
-        }
-        .learn-header-icon {
-          width: 56px;
-          height: 56px;
-          flex-shrink: 0;
-          border-radius: 14px;
-          background: var(--primary-light);
-          color: var(--primary);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .learn-header-body { flex: 1; min-width: 0; }
-        .learn-header h1 { font-size: 22px; font-weight: 800; margin: 0 0 6px; color: var(--foreground); }
-        .learn-header p { font-size: 14px; color: var(--foreground-muted); margin: 0 0 16px; line-height: 1.6; }
-        .learn-progress-label {
-          display: flex;
-          justify-content: space-between;
-          font-size: 13px;
-          font-weight: 600;
-          color: var(--foreground);
-          margin-bottom: 6px;
-        }
-        .learn-progress-track {
-          height: 8px;
-          border-radius: 999px;
-          background: var(--border);
-          overflow: hidden;
-        }
-        .learn-progress-fill { height: 100%; background: var(--primary); transition: width 0.3s ease; }
-        .learn-view-roadmap {
-          flex-shrink: 0;
-          padding: 8px 14px;
-          border-radius: 10px;
-          border: 1px solid var(--border-strong);
-          font-size: 13px;
-          font-weight: 600;
-          color: var(--foreground);
-          text-decoration: none;
-          background: var(--surface);
-        }
-
-        .learn-tabs {
-          display: flex;
-          gap: 2px;
-          border-bottom: 1px solid var(--border);
-          margin-bottom: 24px;
-          overflow-x: auto;
-        }
-        .learn-tab {
-          display: inline-flex;
-          align-items: center;
-          gap: 7px;
-          padding: 10px 14px;
-          background: none;
-          border: none;
-          border-bottom: 2px solid transparent;
-          font-size: 14px;
-          font-weight: 600;
-          color: var(--foreground-muted);
-          cursor: pointer;
-          white-space: nowrap;
-        }
-        .learn-tab:hover { color: var(--foreground); }
-        .learn-tab--active { color: var(--primary); border-bottom-color: var(--primary); }
-
-        .learn-content { max-width: 720px; }
-        .learn-title { font-size: 26px; font-weight: 800; margin: 0 0 16px; color: var(--foreground); }
-        .learn-lesson { font-size: 15px; line-height: 1.7; color: var(--foreground-muted); margin: 0 0 20px; white-space: pre-wrap; }
-        .learn-section { margin-bottom: 24px; }
-        .learn-section h3 { font-size: 16px; font-weight: 700; margin: 0 0 12px; color: var(--foreground); }
-        .learn-topics { display: flex; flex-wrap: wrap; gap: 8px; }
-        .learn-topic-chip {
-          font-size: 13px;
-          padding: 6px 12px;
-          border-radius: 999px;
-          background: var(--surface-hover);
-          color: var(--foreground);
-          border: 1px solid var(--border);
-        }
-        .learn-key-takeaways {
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 14px;
-          padding: 20px 24px;
-        }
-        .learn-key-takeaways ul { margin: 0; padding-left: 20px; }
-        .learn-key-takeaways li { font-size: 14px; line-height: 1.7; color: var(--foreground-muted); margin-bottom: 8px; }
-
-        .learn-editor-placeholder {
-          background: #0b1220;
-          border: 1px solid #1f2b45;
-          border-radius: 12px;
-          padding: 16px;
-          margin-top: 8px;
-        }
-
-        .learn-resource-card {
-          display: flex;
-          gap: 16px;
-          padding: 20px;
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 14px;
-        }
-        .learn-resource-icon {
-          width: 44px;
-          height: 44px;
-          flex-shrink: 0;
-          border-radius: 10px;
-          background: var(--primary-light);
-          color: var(--primary);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .learn-resource-icon--video { background: var(--danger-light); color: var(--danger); }
-        .learn-resource-body { min-width: 0; }
-        .learn-resource-title { font-size: 16px; font-weight: 700; color: var(--foreground); }
-        .learn-resource-meta { font-size: 13px; color: var(--foreground-muted); margin: 2px 0 10px; }
-        .learn-resource-desc { font-size: 14px; color: var(--foreground-muted); line-height: 1.6; margin: 0 0 12px; }
-        .learn-resource-link { font-size: 14px; font-weight: 600; color: var(--primary); text-decoration: none; }
-        .learn-resource-link--video { color: var(--danger); }
-
-        .learn-outline-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 10px 16px;
-          border-radius: 10px;
-          border: 1px solid var(--border-strong);
-          background: var(--surface);
-          color: var(--foreground);
-          font-size: 14px;
-          font-weight: 600;
-          text-decoration: none;
-          margin-top: 8px;
-        }
-
-        .learn-prevnext {
-          display: flex;
-          justify-content: space-between;
-          gap: 16px;
-          margin-top: 32px;
-          padding-top: 20px;
-          border-top: 1px solid var(--border);
-        }
-        .learn-prevnext-card {
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          padding: 14px 18px;
-          border-radius: 12px;
-          border: 1px solid var(--border);
-          background: var(--surface);
-          text-decoration: none;
-          max-width: 46%;
-        }
-        .learn-prevnext-card--next { text-align: right; margin-left: auto; }
-        .learn-prevnext-dir { font-size: 12px; font-weight: 600; color: var(--foreground-subtle); }
-        .learn-prevnext-title { font-size: 14px; font-weight: 600; color: var(--primary); }
-
-        .learn-complete { margin-top: 24px; }
-
-        .learn-aside {
-          padding: 24px 20px 80px;
-          border-left: 1px solid var(--border);
-          background: var(--background);
-        }
-        .learn-aside-card {
-          background: var(--surface);
-          border: 1px solid var(--border);
-          border-radius: 14px;
-          padding: 18px;
-          margin-bottom: 16px;
-        }
-        .learn-aside-head {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          font-size: 12px;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-          color: var(--foreground-muted);
-          margin-bottom: 10px;
-        }
-        .learn-aside-free {
-          font-size: 11px;
-          font-weight: 700;
-          color: var(--success);
-          background: var(--success-light);
-          padding: 2px 8px;
-          border-radius: 999px;
-        }
-        .learn-aside-title { font-size: 14px; font-weight: 700; color: var(--foreground); margin-bottom: 4px; }
-        .learn-aside-meta { font-size: 12px; color: var(--foreground-muted); margin-bottom: 10px; }
-        .learn-aside-desc { font-size: 13px; color: var(--foreground-muted); line-height: 1.5; margin: 0 0 12px; }
-        .learn-aside-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 8px 14px;
-          border-radius: 8px;
-          background: var(--primary);
-          color: #fff;
-          font-size: 13px;
-          font-weight: 600;
-          border: none;
-          cursor: pointer;
-          text-decoration: none;
-        }
-        .learn-aside-btn--video { background: var(--danger); }
-
-        /* Tablet / Mobile */
-        @media (max-width: 1200px) {
-          .learn-grid { grid-template-columns: 260px minmax(0, 1fr); }
-          .learn-aside { display: none; }
-        }
-        @media (max-width: 900px) {
-          .learn-grid { grid-template-columns: 1fr; }
-          .learn-nav { display: none; }
-          .learn-mobile-bar {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 40;
-          }
-          .learn-mobile-menu {
-            background: none;
-            border: none;
-            color: var(--foreground);
-            cursor: pointer;
-            display: inline-flex;
-          }
-          .learn-main { padding: 20px 16px 80px; }
-        }
-        .learn-drawer { display: none; }
-        @media (max-width: 900px) {
-          .learn-drawer { display: block; }
-          .learn-drawer-backdrop {
-            position: fixed;
-            inset: 0;
-            background: rgba(11, 18, 32, 0.6);
-            z-index: 100;
-          }
-          .learn-drawer-panel {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            width: 300px;
-            max-width: 85vw;
-            background: #0b1220;
-            z-index: 101;
-            overflow-y: auto;
-          }
-        }
-      `}</style>
+      
     </div>
   );
 }

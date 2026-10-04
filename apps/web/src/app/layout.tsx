@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "./learning.css";
 import { BASE_URL, SITE_DESCRIPTION, SITE_NAME, TAGLINE } from "../lib/seo";
 
 const geistSans = Geist({
@@ -71,6 +72,7 @@ import { NavigationProvider } from "../components/Navigation/NavigationProvider"
 import { NotificationProvider } from "../components/Notifications/NotificationProvider";
 import { CurrentUserProvider } from "../components/Auth/CurrentUserProvider";
 import CookieConsent from "../components/CookieConsent";
+import StyledJsxRegistry from "./registry";
 
 const organizationJsonLd = {
   "@context": "https://schema.org",
@@ -98,37 +100,39 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c"),
-          }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c"),
-          }}
-        />
-        <CurrentUserProvider>
-          <NotificationProvider>
-            <NavigationProvider>
-              <NavigationRoot />
-              <main className="page-container">
-                {children}
-              </main>
-              <footer className="site-footer" data-nosnippet="">
-                <nav>
-                  <Link href="/privacy">Privacy Policy</Link>
-                  <Link href="/terms">Terms &amp; Conditions</Link>
-                  <Link href="/cookie-policy">Cookie Policy</Link>
-                </nav>
-                <p>© {new Date().getFullYear()} DEV-TO-DEV. All rights reserved.</p>
-              </footer>
-            </NavigationProvider>
-          </NotificationProvider>
-        </CurrentUserProvider>
-        <CookieConsent />
+        <StyledJsxRegistry>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(organizationJsonLd).replace(/</g, "\\u003c"),
+            }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(websiteJsonLd).replace(/</g, "\\u003c"),
+            }}
+          />
+          <CurrentUserProvider>
+            <NotificationProvider>
+              <NavigationProvider>
+                <NavigationRoot />
+                <main className="page-container">
+                  {children}
+                </main>
+                <footer className="site-footer" data-nosnippet="">
+                  <nav>
+                    <Link href="/privacy">Privacy Policy</Link>
+                    <Link href="/terms">Terms &amp; Conditions</Link>
+                    <Link href="/cookie-policy">Cookie Policy</Link>
+                  </nav>
+                  <p>Ac {new Date().getFullYear()} DEV-TO-DEV. All rights reserved.</p>
+                </footer>
+              </NavigationProvider>
+            </NotificationProvider>
+          </CurrentUserProvider>
+          <CookieConsent />
+        </StyledJsxRegistry>
       </body>
     </html>
   );

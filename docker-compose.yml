@@ -42,7 +42,7 @@ services:
     environment:
       - NODE_ENV=development
       - NODE_OPTIONS=--dns-result-order=ipv4first
-    command: sh -c "pnpm install --no-frozen-lockfile --config.confirmModulesPurge=false --ignore-scripts && pnpm --filter web dev"
+    command: sh -c "pnpm install --frozen-lockfile --config.confirmModulesPurge=false --ignore-scripts && pnpm --filter web dev"
     depends_on:
       - api
 
