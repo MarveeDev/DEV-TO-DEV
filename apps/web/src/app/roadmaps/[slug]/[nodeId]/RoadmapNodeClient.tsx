@@ -18,9 +18,10 @@ import {
   FlaskConical,
   Code2,
   Eye,
+  ListChecks,
 } from 'lucide-react';
 import { useCurrentUser } from '../../../../components/Auth/CurrentUserProvider';
-import LessonBlockRenderer from '../../../../components/learning/LessonBlockRenderer';
+import LessonBlockRenderer, { type LessonBlock } from '../../../../components/learning/LessonBlockRenderer';
 
 type Node = any;
 type Roadmap = any;
@@ -29,6 +30,7 @@ const TABS = [
   { id: 'learn', label: 'Learn', icon: BookOpen },
   { id: 'try', label: 'Try it', icon: Code2 },
   { id: 'practice', label: 'Practice', icon: FlaskConical },
+  { id: 'quiz', label: 'Quiz', icon: ListChecks },
   { id: 'read', label: 'Read', icon: Eye },
   { id: 'watch', label: 'Watch', icon: Play },
   { id: 'build', label: 'Build', icon: Hammer },
@@ -157,6 +159,14 @@ export default function RoadmapNodeClient({
       </div>
     );
   }
+
+  const lessonBlocks: LessonBlock[] = node.lessonBlocks || [];
+  const learningBlocks = lessonBlocks.filter((b) =>
+    ['EXPLANATION', 'SYNTAX', 'EXAMPLE', 'KEY_TAKEAWAYS', 'NOTE'].includes(b.type),
+  );
+  const tryItBlocks = lessonBlocks.filter((b) => b.type === 'TRY_IT');
+  const exerciseBlocks = lessonBlocks.filter((b) => b.type === 'EXERCISE');
+  const quizBlocks = lessonBlocks.filter((b) => b.type === 'QUIZ');
 
   const sidebar = (
     <div className="learn-nav-inner">
@@ -287,8 +297,14 @@ export default function RoadmapNodeClient({
               <div>
                 <h2 className="learn-title">{node.title}</h2>
 
-                {node.lessonBlocks && node.lessonBlocks.length > 0 ? (
-                  <LessonBlockRenderer blocks={node.lessonBlocks} />
+                {lessonBlocks.length > 0 ? (
+                  learningBlocks.length > 0 ? (
+                    <LessonBlockRenderer blocks={learningBlocks} />
+                  ) : (
+                    <p className="learn-lesson" style={{ color: 'var(--foreground-muted)' }}>
+                      No explanation content for this topic yet.
+                    </p>
+                  )
                 ) : (
                   <>
                     <p className="learn-lesson">{node.description}</p>
@@ -321,35 +337,39 @@ export default function RoadmapNodeClient({
 
             {activeTab === 'try' && (
               <div>
-                <h2 className="learn-title">Try it yourself</h2>
-                <p className="learn-lesson">
-                  An interactive coding environment is planned for a future phase. Code execution is deliberately kept out of
-                  this build for safety.
-                </p>
-                <div className="learn-editor-placeholder">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6b7a95', fontSize: '12px', fontWeight: 600, marginBottom: '8px' }}>
-                    <Code2 size={14} /> Editor (coming soon)
-                  </div>
-                  <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: '13px', color: '#9aa7bd' }}># Write code here in a future phase</div>
-                </div>
+                <h2 className="learn-title">Try it</h2>
+                {tryItBlocks.length > 0 ? (
+                  <LessonBlockRenderer blocks={tryItBlocks} />
+                ) : (
+                  <p className="learn-lesson" style={{ color: 'var(--foreground-muted)' }}>
+                    No interactive exercise for this topic yet.
+                  </p>
+                )}
               </div>
             )}
 
             {activeTab === 'practice' && (
               <div>
-                <h2 className="learn-title">Practice Exercise</h2>
-                {node.practicalExercise ? (
-                  <>
-                    <p className="learn-lesson">{node.practicalExercise}</p>
-                    <div className="learn-editor-placeholder">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6b7a95', fontSize: '12px', fontWeight: 600, marginBottom: '8px' }}>
-                        <Code2 size={14} /> Solution editor (coming soon)
-                      </div>
-                      <div style={{ fontFamily: 'ui-monospace, monospace', fontSize: '13px', color: '#9aa7bd' }}># Solve this exercise in a future phase</div>
-                    </div>
-                  </>
+                <h2 className="learn-title">Practice</h2>
+                {exerciseBlocks.length > 0 ? (
+                  <LessonBlockRenderer blocks={exerciseBlocks} />
                 ) : (
-                  <p className="learn-lesson" style={{ color: 'var(--foreground-muted)' }}>No practice exercise for this topic yet.</p>
+                  <p className="learn-lesson" style={{ color: 'var(--foreground-muted)' }}>
+                    No practice exercise for this topic yet.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'quiz' && (
+              <div>
+                <h2 className="learn-title">Quiz</h2>
+                {quizBlocks.length > 0 ? (
+                  <LessonBlockRenderer blocks={quizBlocks} />
+                ) : (
+                  <p className="learn-lesson" style={{ color: 'var(--foreground-muted)' }}>
+                    No quiz for this topic yet.
+                  </p>
                 )}
               </div>
             )}
