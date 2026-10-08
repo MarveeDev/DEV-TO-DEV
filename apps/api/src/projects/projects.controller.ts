@@ -2,6 +2,8 @@ import { Controller, Get, Post, Patch, Delete, Param, Body, Query, Req, Unauthor
 import type { Request } from 'express';
 import { ProjectsService } from './projects.service';
 import { SessionsService } from '../sessions/sessions.service';
+import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
 
 @Controller('projects')
 export class ProjectsController {
@@ -39,20 +41,16 @@ export class ProjectsController {
   }
 
   @Post()
-  async createProject(@Req() req: Request, @Body() body: any) {
+  async createProject(@Req() req: Request, @Body() data: CreateProjectDto) {
     const userId = await this.getUserIdOrThrow(req);
-    
-    if (!body.title || !body.description) {
-      throw new BadRequestException('Title and description are required');
-    }
 
-    return this.projectsService.createProject(userId, body);
+    return this.projectsService.createProject(userId, data);
   }
 
   @Patch(':id')
-  async updateProject(@Req() req: Request, @Param('id') id: string, @Body() body: any) {
+  async updateProject(@Req() req: Request, @Param('id') id: string, @Body() data: UpdateProjectDto) {
     const userId = await this.getUserIdOrThrow(req);
-    return this.projectsService.updateProject(userId, id, body);
+    return this.projectsService.updateProject(userId, id, data);
   }
 
   @Delete(':id')

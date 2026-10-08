@@ -6,3 +6,7 @@ allowBuilds:
   '@prisma/engines': true
   'prisma': true
   'unrs-resolver': true
+
+overrides:
+  proxy-addr: 2.0.8
+  multer: 2.4.0

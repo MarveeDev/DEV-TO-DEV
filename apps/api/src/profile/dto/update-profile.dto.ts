@@ -1,4 +1,9 @@
-import { IsString, IsOptional, IsArray } from 'class-validator';
+import {
+  IsArray,
+  IsOptional,
+  IsString,
+} from 'class-validator';
+import { IsSafeUrl } from '../../common/validators/is-safe-url.decorator';
 
 export class UpdateProfileDto {
   @IsString()
@@ -13,12 +18,12 @@ export class UpdateProfileDto {
   @IsOptional()
   location?: string;
 
-  @IsString()
   @IsOptional()
+  @IsSafeUrl()
   websiteUrl?: string;
 
-  @IsString()
   @IsOptional()
+  @IsSafeUrl()
   githubUrl?: string;
 
   @IsString()

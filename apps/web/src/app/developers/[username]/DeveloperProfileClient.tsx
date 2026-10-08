@@ -15,6 +15,16 @@ import { ProfileSkeleton, PostCardSkeleton } from '../../../components/skeletons
 import EmptyState from '../../../components/EmptyState';
 import { FileText, MapPin, Globe, ExternalLink } from 'lucide-react';
 
+function safeExternalUrl(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  const trimmed = url.trim();
+  const match = /^([a-z][a-z0-9+.\-]*):/i.exec(trimmed);
+  if (!match) return undefined;
+  const scheme = match[1].toLowerCase();
+  if (scheme !== 'http' && scheme !== 'https') return undefined;
+  return trimmed;
+}
+
 export default function DeveloperProfileClient({
   username,
   initialProfile,
@@ -141,11 +151,11 @@ export default function DeveloperProfileClient({
                       <span>{developer.location}</span>
                     </div>
                   )}
-                  {(developer.websiteUrl || developer.githubUrl) && (
+                  {(safeExternalUrl(developer.websiteUrl) || safeExternalUrl(developer.githubUrl)) && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                      {developer.websiteUrl && (
+                      {safeExternalUrl(developer.websiteUrl) && (
                         <a
-                          href={developer.websiteUrl}
+                          href={safeExternalUrl(developer.websiteUrl)}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}
@@ -154,9 +164,9 @@ export default function DeveloperProfileClient({
                           Website
                         </a>
                       )}
-                      {developer.githubUrl && (
+                      {safeExternalUrl(developer.githubUrl) && (
                         <a
-                          href={developer.githubUrl}
+                          href={safeExternalUrl(developer.githubUrl)}
                           target="_blank"
                           rel="noopener noreferrer"
                           style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}

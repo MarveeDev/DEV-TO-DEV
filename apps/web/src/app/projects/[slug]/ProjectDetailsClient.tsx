@@ -11,6 +11,16 @@ import SkillTag from '../../../components/SkillTag';
 import BackButton from '../../../components/Navigation/BackButton';
 import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
 
+function safeExternalUrl(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  const trimmed = url.trim();
+  const match = /^([a-z][a-z0-9+.\-]*):/i.exec(trimmed);
+  if (!match) return undefined;
+  const scheme = match[1].toLowerCase();
+  if (scheme !== 'http' && scheme !== 'https') return undefined;
+  return trimmed;
+}
+
 export default function ProjectDetailsClient({
   slug,
   initialProject,
@@ -187,15 +197,15 @@ export default function ProjectDetailsClient({
         <Card padding="md">
           <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--foreground)', marginBottom: '16px' }}>Links</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {project.githubUrl ? (
-              <a href={project.githubUrl} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--foreground)', textDecoration: 'none', fontSize: '14px', fontWeight: 500 }}>
+            {safeExternalUrl(project.githubUrl) ? (
+              <a href={safeExternalUrl(project.githubUrl)} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--foreground)', textDecoration: 'none', fontSize: '14px', fontWeight: 500 }}>
                 GitHub Repository ↗
               </a>
             ) : (
               <span style={{ fontSize: '14px', color: 'var(--foreground-muted)' }}>No GitHub link</span>
             )}
-            {project.demoUrl ? (
-              <a href={project.demoUrl} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', textDecoration: 'none', fontSize: '14px', fontWeight: 500 }}>
+            {safeExternalUrl(project.demoUrl) ? (
+              <a href={safeExternalUrl(project.demoUrl)} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', textDecoration: 'none', fontSize: '14px', fontWeight: 500 }}>
                 Live Demo ↗
               </a>
             ) : (
