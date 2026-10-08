@@ -19,6 +19,7 @@ import { CreateSmsCampaignDto } from './dto/create-sms-campaign.dto';
 import { UpdateSmsCampaignDto } from './dto/update-sms-campaign.dto';
 import { SendTestSmsDto } from './dto/send-test-sms.dto';
 import { SendCampaignDto } from './dto/send-campaign.dto';
+import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 @Controller('admin/sms-campaigns')
 @UseGuards(RolesGuard)
@@ -55,6 +56,7 @@ export class SmsCampaignsController {
 
   @Post(':id/recipients/import')
   @UseInterceptors(FileInterceptor('file'))
+  @RateLimit({ limit: 10, windowMs: 3_600_000, tier: 't3' })
   importRecipients(
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
@@ -107,11 +109,13 @@ export class SmsCampaignsController {
   }
 
   @Post(':id/test')
+  @RateLimit({ limit: 5, windowMs: 3_600_000, tier: 't5', failClosed: true })
   sendTestSms(@Param('id') id: string, @Body() data: SendTestSmsDto) {
     return this.smsCampaignsService.sendTestSms(id, data.phoneNumber);
   }
 
   @Post(':id/send')
+  @RateLimit({ limit: 1, windowMs: 300_000, tier: 't5', failClosed: true })
   sendCampaign(@Param('id') id: string, @Body() data: SendCampaignDto) {
     return this.smsCampaignsService.sendCampaign(id, data.confirmation);
   }

@@ -4,6 +4,7 @@ import { ProjectsService } from './projects.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 @Controller('projects')
 export class ProjectsController {
@@ -41,6 +42,7 @@ export class ProjectsController {
   }
 
   @Post()
+  @RateLimit({ limit: 10, windowMs: 60_000, tier: 't3' })
   async createProject(@Req() req: Request, @Body() data: CreateProjectDto) {
     const userId = await this.getUserIdOrThrow(req);
 

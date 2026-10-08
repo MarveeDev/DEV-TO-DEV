@@ -4,6 +4,7 @@ import { PostsService } from './posts.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 @Controller('posts')
 export class PostsController {
@@ -28,6 +29,7 @@ export class PostsController {
   }
 
   @Post()
+  @RateLimit({ limit: 10, windowMs: 60_000, tier: 't3' })
   async createPost(@Req() req: Request, @Body() body: CreatePostDto) {
     const userId = await this.getUserIdOrThrow(req);
     return this.postsService.createPost(userId, body);
@@ -62,18 +64,21 @@ export class PostsController {
   }
 
   @Post(':id/comments')
+  @RateLimit({ limit: 20, windowMs: 60_000, tier: 't3' })
   async createComment(@Req() req: Request, @Param('id') id: string, @Body('content') content: string) {
     const userId = await this.getUserIdOrThrow(req);
     return this.postsService.createComment(userId, id, content);
   }
 
   @Post(':id/like')
+  @RateLimit({ limit: 60, windowMs: 60_000, tier: 't3' })
   async likePost(@Req() req: Request, @Param('id') id: string) {
     const userId = await this.getUserIdOrThrow(req);
     return this.postsService.likePost(userId, id);
   }
 
   @Delete(':id/like')
+  @RateLimit({ limit: 60, windowMs: 60_000, tier: 't3' })
   async unlikePost(@Req() req: Request, @Param('id') id: string) {
     const userId = await this.getUserIdOrThrow(req);
     return this.postsService.unlikePost(userId, id);

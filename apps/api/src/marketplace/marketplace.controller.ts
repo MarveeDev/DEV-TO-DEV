@@ -5,6 +5,7 @@ import { SessionsService } from '../sessions/sessions.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
 import { CreateReportDto } from './dto/create-report.dto';
+import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 @Controller('marketplace')
 export class MarketplaceController {
@@ -38,6 +39,7 @@ export class MarketplaceController {
   }
 
   @Post()
+  @RateLimit({ limit: 10, windowMs: 60_000, tier: 't3' })
   async createListing(@Req() req: Request, @Body() data: CreateListingDto) {
     const userId = await this.getUserId(req);
     return this.marketplaceService.createListing(userId, data);
@@ -56,6 +58,7 @@ export class MarketplaceController {
   }
 
   @Post('listings/:id/report')
+  @RateLimit({ limit: 10, windowMs: 60_000, tier: 't3' })
   async reportListing(@Req() req: Request, @Param('id') id: string, @Body() data: CreateReportDto) {
     const userId = await this.getUserId(req);
     return this.marketplaceService.reportListing(userId, id, data);

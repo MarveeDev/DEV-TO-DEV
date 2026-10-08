@@ -3,6 +3,7 @@ import type { Request } from 'express';
 import { DevelopersService } from './developers.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { MatchingService } from './matching.service';
+import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 @Controller('developers')
 export class DevelopersController {
@@ -60,6 +61,7 @@ export class DevelopersController {
   }
 
   @Get('matches')
+  @RateLimit({ limit: 30, windowMs: 60_000, tier: 't2' })
   async getMatches(
     @Req() req: Request,
     @Query('page') page?: string,

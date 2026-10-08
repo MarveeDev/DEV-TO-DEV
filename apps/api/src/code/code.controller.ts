@@ -9,6 +9,7 @@ import type { Request } from 'express';
 import { CodeService } from './code.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { RunCodeDto } from './dto/run-code.dto';
+import { SkipRateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 @Controller('code')
 export class CodeController {
@@ -18,6 +19,7 @@ export class CodeController {
   ) {}
 
   @Post('run')
+  @SkipRateLimit()
   async run(@Body() dto: RunCodeDto, @Req() req: Request) {
     const cookies = req.cookies as Record<string, string | undefined>;
     const token = cookies['session_id'];

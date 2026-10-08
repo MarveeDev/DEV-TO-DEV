@@ -12,6 +12,9 @@ import { AuthService } from './auth.service';
 import { randomBytes } from 'crypto';
 import { SessionsService } from '../sessions/sessions.service';
 import { MailService } from '../mail/mail.service';
+import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
+
+const OAUTH_RATE_LIMIT = { limit: 30, windowMs: 60_000, tier: 't4', identity: 'ip', failClosed: true } as const;
 
 @Controller('auth')
 export class AuthController {
@@ -46,6 +49,7 @@ export class AuthController {
   }
 
   @Get('github')
+  @RateLimit(OAUTH_RATE_LIMIT)
   async githubAuth(@Req() req: Request, @Res() res: Response) {
     // Generate secure single-use state
     const state = randomBytes(16).toString('hex');
@@ -68,6 +72,7 @@ export class AuthController {
   }
 
   @Get('github/callback')
+  @RateLimit(OAUTH_RATE_LIMIT)
   async githubCallback(
     @Query('code') code: string,
     @Query('state') state: string,
@@ -118,6 +123,7 @@ export class AuthController {
   }
 
   @Get('google')
+  @RateLimit(OAUTH_RATE_LIMIT)
   async googleAuth(@Req() req: Request, @Res() res: Response) {
     const state = randomBytes(16).toString('hex');
     const currentToken = req.cookies['session_id'];
@@ -137,6 +143,7 @@ export class AuthController {
   }
 
   @Get('google/callback')
+  @RateLimit(OAUTH_RATE_LIMIT)
   async googleCallback(
     @Query('code') code: string,
     @Query('state') state: string,

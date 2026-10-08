@@ -7,6 +7,7 @@ import { CreateAnswerDto } from './dto/create-answer.dto';
 import { UpdateAnswerDto } from './dto/update-answer.dto';
 import { VoteDto } from './dto/vote.dto';
 import { SessionsService } from '../sessions/sessions.service';
+import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 async function getUserIdOrThrow(req: Request, sessionsService: SessionsService): Promise<string> {
   const token = req.cookies['session_id'];
@@ -50,6 +51,7 @@ export class QuestionsController {
   }
 
   @Post()
+  @RateLimit({ limit: 10, windowMs: 60_000, tier: 't3' })
   async createQuestion(@Req() req: Request, @Body() data: CreateQuestionDto) {
     const userId = await getUserIdOrThrow(req, this.sessionsService);
     return this.questionsService.createQuestion(userId, data);
@@ -68,12 +70,14 @@ export class QuestionsController {
   }
 
   @Post(':id/vote')
+  @RateLimit({ limit: 60, windowMs: 60_000, tier: 't3' })
   async voteQuestion(@Req() req: Request, @Param('id') id: string, @Body() data: VoteDto) {
     const userId = await getUserIdOrThrow(req, this.sessionsService);
     return this.questionsService.voteQuestion(userId, id, data.value);
   }
 
   @Post(':id/answers')
+  @RateLimit({ limit: 20, windowMs: 60_000, tier: 't3' })
   async createAnswer(@Req() req: Request, @Param('id') id: string, @Body() data: CreateAnswerDto) {
     const userId = await getUserIdOrThrow(req, this.sessionsService);
     return this.questionsService.createAnswer(userId, id, data.content);
@@ -113,6 +117,7 @@ export class AnswersController {
   }
 
   @Post(':id/vote')
+  @RateLimit({ limit: 60, windowMs: 60_000, tier: 't3' })
   async voteAnswer(@Req() req: Request, @Param('id') id: string, @Body() data: VoteDto) {
     const userId = await getUserIdOrThrow(req, this.sessionsService);
     return this.questionsService.voteAnswer(userId, id, data.value);

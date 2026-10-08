@@ -9,11 +9,22 @@ import {
 import { Server, Socket } from 'socket.io';
 import { SessionsService } from '../sessions/sessions.service';
 import { NotificationEvents } from './notification-events';
+import { RateLimitService } from '../common/rate-limit/rate-limit.service';
 
 const NOTIFICATION_CREATED_EVENT = 'notification.created';
 
+/** Maximum simultaneous notification sockets allowed per user. */
+const MAX_SOCKETS_PER_USER = 10;
+
+/** Connection/reconnection throttle: 30 new connections per user per minute. */
+const CONNECTION_THROTTLE = { limit: 30, windowMs: 60_000 } as const;
+
 function userRoom(userId: string): string {
   return `user:${userId}`;
+}
+
+function connectionKey(userId: string): string {
+  return `devtodev:ws:conn:u:${userId}:60`;
 }
 
 function parseSessionId(cookieHeader: string | undefined): string | undefined {
@@ -54,9 +65,13 @@ export class NotificationsGateway
   private readonly logger = new Logger(NotificationsGateway.name);
   private unsubscribe: (() => void) | null = null;
 
+  /** Tracks active socket ids per user to enforce the concurrency cap. */
+  private readonly activeSockets = new Map<string, Set<string>>();
+
   constructor(
     private readonly sessionsService: SessionsService,
     private readonly notificationEvents: NotificationEvents,
+    private readonly rateLimitService: RateLimitService,
   ) {}
 
   afterInit(): void {
@@ -73,6 +88,34 @@ export class NotificationsGateway
       return;
     }
 
+    // Reconnect/connection throttle. Fails open on Redis outage so legitimate
+    // reconnects are never blocked by an infrastructure issue.
+    const throttle = await this.rateLimitService.consume(
+      connectionKey(userId),
+      CONNECTION_THROTTLE.limit,
+      CONNECTION_THROTTLE.windowMs,
+      false,
+    );
+    if (!throttle.allowed) {
+      this.logger.warn(
+        `Rejecting notification socket: connection throttle exceeded for user ${userId}`,
+      );
+      client.disconnect(true);
+      return;
+    }
+
+    // Per-user concurrent socket cap.
+    const sockets = this.activeSockets.get(userId) ?? new Set<string>();
+    if (sockets.size >= MAX_SOCKETS_PER_USER) {
+      this.logger.warn(
+        `Rejecting notification socket: concurrency cap reached for user ${userId}`,
+      );
+      client.disconnect(true);
+      return;
+    }
+    sockets.add(client.id);
+    this.activeSockets.set(userId, sockets);
+
     // Bind the authenticated identity to the socket; never trust client-supplied ids.
     client.data.userId = userId;
     client.join(userRoom(userId));
@@ -82,6 +125,13 @@ export class NotificationsGateway
   handleDisconnect(client: Socket): void {
     const userId: string | undefined = client.data?.userId;
     if (userId) {
+      const sockets = this.activeSockets.get(userId);
+      if (sockets) {
+        sockets.delete(client.id);
+        if (sockets.size === 0) {
+          this.activeSockets.delete(userId);
+        }
+      }
       client.leave(userRoom(userId));
       this.logger.log(`Notification socket disconnected for user ${userId}`);
     }

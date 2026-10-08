@@ -1,11 +1,13 @@
 import { Controller, Get } from '@nestjs/common';
 import axios from 'axios';
+import { SkipRateLimit } from './common/rate-limit/rate-limit.decorator';
 
 @Controller()
 export class AppController {
   constructor() {}
 
   @Get('health')
+  @SkipRateLimit()
   async healthCheck() {
     let devMindStatus = 'unknown';
     try {

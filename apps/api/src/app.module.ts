@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 
 import { PrismaModule } from './prisma/prisma.module';
 import { RedisModule } from './redis/redis.module';
+import { RateLimitModule } from './common/rate-limit/rate-limit.module';
 
 import { SessionsModule } from './sessions/sessions.module';
 
@@ -32,7 +33,7 @@ import { SmsCampaignsModule } from './sms-campaigns/sms-campaigns.module';
 import { CodeModule } from './code/code.module';
 
 @Module({
-  imports: [PrismaModule, RedisModule, SessionsModule, AuthModule, ProfileModule, ConnectionsModule, DevelopersModule, NotificationsModule, PostsModule, ScoreModule, ProjectsModule, QuestionsModule, RoadmapsModule, SkillsModule, MediaModule, TrendingModule, VideosModule, MarketplaceModule, MessagesModule, AdminModule, SoundsModule, SmsModule, PhoneVerificationModule, SmsCampaignsModule, CodeModule],
+  imports: [PrismaModule, RedisModule, RateLimitModule, SessionsModule, AuthModule, ProfileModule, ConnectionsModule, DevelopersModule, NotificationsModule, PostsModule, ScoreModule, ProjectsModule, QuestionsModule, RoadmapsModule, SkillsModule, MediaModule, TrendingModule, VideosModule, MarketplaceModule, MessagesModule, AdminModule, SoundsModule, SmsModule, PhoneVerificationModule, SmsCampaignsModule, CodeModule],
   controllers: [AppController],
   providers: [AppService],
 })

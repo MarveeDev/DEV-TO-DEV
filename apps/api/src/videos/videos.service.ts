@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { PublicCacheService } from '../redis/public-cache.service';
 
 export interface VideoSearchResult {
   id: string;
@@ -11,12 +12,24 @@ export interface VideoSearchResult {
   url: string;
 }
 
+const CACHE_TTL_SECONDS = 300;
+
 @Injectable()
 export class VideosService {
   private readonly logger = new Logger(VideosService.name);
   private readonly apiKey = process.env.YOUTUBE_API_KEY;
 
+  constructor(private readonly publicCache: PublicCacheService) {}
+
   async searchVideos(query: string, maxResults = 10): Promise<VideoSearchResult[]> {
+    const normalized = query.trim().toLowerCase();
+    const cacheKey = `devtodev:public:videos:search:${normalized}`;
+
+    const cached = await this.publicCache.get<VideoSearchResult[]>(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     if (!this.apiKey) {
       this.logger.warn('YOUTUBE_API_KEY is not configured. Returning empty results.');
       // Fallback for when no API key is available during local dev
@@ -40,7 +53,7 @@ export class VideosService {
 
       const data = await response.json();
 
-      return data.items.map((item: any) => ({
+      const results = data.items.map((item: any) => ({
         id: item.id.videoId,
         title: item.snippet.title,
         description: item.snippet.description,
@@ -50,6 +63,13 @@ export class VideosService {
         provider: 'youtube',
         url: `https://www.youtube.com/watch?v=${item.id.videoId}`
       }));
+
+      // Cache only real results; never cache the empty "no key" or error paths.
+      if (results.length > 0) {
+        await this.publicCache.set(cacheKey, results, CACHE_TTL_SECONDS);
+      }
+
+      return results;
     } catch (error) {
       this.logger.error('Error fetching videos from provider', error);
       return [];

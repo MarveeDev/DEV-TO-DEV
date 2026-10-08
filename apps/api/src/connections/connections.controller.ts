@@ -2,6 +2,7 @@ import { Controller, Post, Get, Patch, Delete, Param, Req, UnauthorizedException
 import type { Request } from 'express';
 import { ConnectionsService } from './connections.service';
 import { SessionsService } from '../sessions/sessions.service';
+import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 @Controller('connections')
 export class ConnectionsController {
@@ -19,6 +20,7 @@ export class ConnectionsController {
   }
 
   @Post(':username')
+  @RateLimit({ limit: 20, windowMs: 60_000, tier: 't3' })
   async sendRequest(@Req() req: Request, @Param('username') username: string) {
     const userId = await this.getUserIdOrThrow(req);
     return this.connectionsService.sendRequest(userId, username);
