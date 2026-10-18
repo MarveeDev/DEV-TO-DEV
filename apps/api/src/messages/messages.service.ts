@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException 
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationType } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
+import { MAX_LIMIT } from '../common/pagination';
 
 @Injectable()
 export class MessagesService {
@@ -104,6 +105,7 @@ export class MessagesService {
         messages: { orderBy: { createdAt: 'desc' }, take: 1 },
       },
       orderBy: { updatedAt: 'desc' },
+      take: MAX_LIMIT,
     });
 
     return Promise.all(
@@ -149,16 +151,19 @@ export class MessagesService {
       data: { read: true },
     });
 
+    // Bound the thread to the most recent messages, returned in chronological
+    // order for display.
     const messages = await this.prisma.message.findMany({
       where: { conversationId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
+      take: MAX_LIMIT,
     });
 
     return {
       id: conversation.id,
       partner: this.partnerOf(conversation, userId),
       listing: this.serializeListing(conversation.listing),
-      messages,
+      messages: messages.slice().reverse(),
     };
   }
 

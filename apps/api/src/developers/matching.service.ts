@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { normalizePagination } from '../common/pagination';
 
 export interface DeveloperProfileData {
   id: string;
@@ -109,9 +110,11 @@ export class MatchingService {
     };
   }
 
-  async getMatches(currentUserId: string, query: { page?: number; limit?: number }) {
-    const page = query.page || 1;
-    const limit = query.limit || 20;
+  async getMatches(currentUserId: string, query: { page?: unknown; limit?: unknown }) {
+    const { page, limit, skip } = normalizePagination(
+      { page: query.page, limit: query.limit },
+      20,
+    );
 
     const currentUserProfile = await this.prisma.developerProfile.findUnique({
       where: { userId: currentUserId },
@@ -178,6 +181,13 @@ export class MatchingService {
       excludedIds.add(c.addresseeId);
     });
 
+    // NOTE (SEC-007): candidates are still fetched in full because the
+    // compatibility score is computed in-memory from shared skills, shared
+    // goals, complementary skills, and experience proximity — there is no SQL
+    // ordering that reproduces that ranking. Applying a database-level `take`
+    // here would silently drop high-scoring matches, so the workload is left
+    // for a follow-up optimization. The final response is bounded by the
+    // normalized `skip`/`limit` above.
     const candidates = await this.prisma.developerProfile.findMany({
       where: {
         userId: { notIn: Array.from(excludedIds) },
@@ -219,7 +229,6 @@ export class MatchingService {
     const relevantMatches = enriched.filter(e => e.compatibility.score > 0);
 
     const total = relevantMatches.length;
-    const skip = (page - 1) * limit;
     const paginated = relevantMatches.slice(skip, skip + limit);
 
     return {

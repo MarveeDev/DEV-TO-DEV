@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException 
 import { PrismaService } from '../prisma/prisma.service';
 import { ScoreService } from '../score/score.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { MAX_LIMIT } from '../common/pagination';
 
 @Injectable()
 export class ConnectionsService {
@@ -84,6 +85,8 @@ export class ConnectionsService {
         requester: { include: { developerProfile: true } },
         addressee: { include: { developerProfile: true } },
       },
+      orderBy: { createdAt: 'desc' },
+      take: MAX_LIMIT,
     });
   }
 
@@ -97,6 +100,8 @@ export class ConnectionsService {
         requester: { include: { developerProfile: true } },
         addressee: { include: { developerProfile: true } },
       },
+      orderBy: { createdAt: 'desc' },
+      take: MAX_LIMIT,
     });
   }
 

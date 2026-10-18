@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException, ConflictException } 
 import { PrismaService } from '../prisma/prisma.service';
 import { PublicCacheService } from '../redis/public-cache.service';
 import { ScoreService } from '../score/score.service';
+import { MAX_LIMIT, normalizePagination } from '../common/pagination';
 
 @Injectable()
 export class ProjectsService {
@@ -17,9 +18,12 @@ export class ProjectsService {
     return title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + Math.random().toString(36).substring(2, 6);
   }
 
-  async getProjects(params: { page: number; limit: number; search?: string; status?: string }) {
-    const { page, limit, search, status } = params;
-    const skip = (page - 1) * limit;
+  async getProjects(params: { page?: unknown; limit?: unknown; search?: string; status?: string }) {
+    const { search, status } = params;
+    const { page, limit, skip } = normalizePagination(
+      { page: params.page, limit: params.limit },
+      20,
+    );
 
     const cacheKey = `${this.CACHE_PREFIX}list:${page}:${limit}:${search ?? ''}:${status ?? ''}`;
     const cached = await this.publicCache.get<unknown>(cacheKey);
@@ -273,7 +277,8 @@ export class ProjectsService {
           select: { id: true, displayName: true, username: true, avatarUrl: true, bio: true }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
+      take: MAX_LIMIT,
     });
   }
 

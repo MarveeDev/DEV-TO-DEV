@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PublicCacheService } from '../redis/public-cache.service';
 import { Prisma } from '@prisma/client';
+import { normalizePagination } from '../common/pagination';
 
 @Injectable()
 export class DevelopersService {
@@ -18,13 +19,14 @@ export class DevelopersService {
       skills?: string;
       goals?: string;
       experienceLevel?: string;
-      page?: number;
-      limit?: number;
+      page?: unknown;
+      limit?: unknown;
     }
   ) {
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 20;
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = normalizePagination(
+      { page: query.page, limit: query.limit },
+      20,
+    );
 
     const searchConditions: Prisma.DeveloperProfileWhereInput[] = [];
 
@@ -131,10 +133,11 @@ export class DevelopersService {
     };
   }
 
-  async getPublicDevelopers(options: { page?: number; limit?: number } = {}) {
-    const page = Number(options.page) || 1;
-    const limit = Number(options.limit) || 100;
-    const skip = (page - 1) * limit;
+  async getPublicDevelopers(options: { page?: unknown; limit?: unknown } = {}) {
+    const { page, limit, skip } = normalizePagination(
+      { page: options.page, limit: options.limit },
+      100,
+    );
 
     const cacheKey = `devtodev:public:developers:list:${page}:${limit}`;
     const cached = await this.publicCache.get<{

@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationType } from '@prisma/client';
 import { NotificationEvents } from './notification-events';
 import { PushService } from './push/push.service';
+import { MAX_LIMIT } from '../common/pagination';
 
 export interface CreateNotificationInput {
   userId: string;
@@ -53,6 +54,7 @@ export class NotificationsService {
     return this.prisma.notification.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
+      take: MAX_LIMIT,
     });
   }
 

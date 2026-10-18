@@ -4,6 +4,7 @@ import { PublicCacheService } from '../redis/public-cache.service';
 import { CreateListingDto } from './dto/create-listing.dto';
 import { UpdateListingDto } from './dto/update-listing.dto';
 import { CreateReportDto } from './dto/create-report.dto';
+import { MAX_LIMIT } from '../common/pagination';
 
 @Injectable()
 export class MarketplaceService {
@@ -75,6 +76,7 @@ export class MarketplaceService {
     const result = await this.prisma.marketplaceListing.findMany({
       where,
       orderBy: { createdAt: 'desc' },
+      take: MAX_LIMIT,
       include: {
         seller: {
           select: {
@@ -98,6 +100,7 @@ export class MarketplaceService {
     return this.prisma.marketplaceListing.findMany({
       where: { sellerId },
       orderBy: { createdAt: 'desc' },
+      take: MAX_LIMIT,
       include: {
         seller: {
           select: {

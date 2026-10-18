@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ScoreService } from '../score/score.service';
 import { CloudinaryService } from '../media/cloudinary.service';
 import { MediaType } from '@prisma/client';
+import { MAX_LIMIT, normalizePagination } from '../common/pagination';
 
 @Injectable()
 export class PostsService {
@@ -111,10 +112,11 @@ export class PostsService {
     return completePost;
   }
 
-  async getPosts(query: { username?: string; page?: number; limit?: number; type?: string }, viewerId?: string) {
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 20;
-    const skip = (page - 1) * limit;
+  async getPosts(query: { username?: string; page?: unknown; limit?: unknown; type?: string }, viewerId?: string) {
+    const { page, limit, skip } = normalizePagination(
+      { page: query.page, limit: query.limit },
+      20,
+    );
 
     const where: any = {};
     
@@ -239,7 +241,8 @@ export class PostsService {
 
     const comments = await this.prisma.postComment.findMany({
       where: { postId },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
+      take: MAX_LIMIT,
       include: {
         author: {
           include: { developerProfile: true },
@@ -247,15 +250,18 @@ export class PostsService {
       },
     });
 
-    return comments.map((comment) => ({
-      id: comment.id,
-      content: comment.content,
-      createdAt: comment.createdAt,
-      author: {
-        id: comment.authorId,
-        profile: comment.author.developerProfile,
-      },
-    }));
+    return comments
+      .slice()
+      .reverse()
+      .map((comment) => ({
+        id: comment.id,
+        content: comment.content,
+        createdAt: comment.createdAt,
+        author: {
+          id: comment.authorId,
+          profile: comment.author.developerProfile,
+        },
+      }));
   }
 
   async createComment(userId: string, postId: string, content: string) {

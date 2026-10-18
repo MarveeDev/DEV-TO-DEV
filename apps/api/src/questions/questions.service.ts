@@ -4,6 +4,7 @@ import { PublicCacheService } from '../redis/public-cache.service';
 import { CloudinaryService } from '../media/cloudinary.service';
 import { ScoreService } from '../score/score.service';
 import { MediaType } from '@prisma/client';
+import { MAX_LIMIT, normalizePagination } from '../common/pagination';
 
 @Injectable()
 export class QuestionsService {
@@ -16,9 +17,12 @@ export class QuestionsService {
     private readonly publicCache: PublicCacheService,
   ) {}
 
-  async getQuestions(params: { page: number; limit: number; search?: string; status?: string; skill?: string; filter?: string; sort?: string }) {
-    const { page, limit, search, status, skill, filter, sort } = params;
-    const skip = (page - 1) * limit;
+  async getQuestions(params: { page?: unknown; limit?: unknown; search?: string; status?: string; skill?: string; filter?: string; sort?: string }) {
+    const { search, status, skill, filter, sort } = params;
+    const { page, limit, skip } = normalizePagination(
+      { page: params.page, limit: params.limit },
+      10,
+    );
 
     const cacheKey = `${this.CACHE_PREFIX}list:${page}:${limit}:${search ?? ''}:${status ?? ''}:${skill ?? ''}:${filter ?? ''}:${sort ?? ''}`;
     const cached = await this.publicCache.get<unknown>(cacheKey);
@@ -117,7 +121,8 @@ export class QuestionsService {
           include: {
             author: { select: { id: true, displayName: true, username: true, avatarUrl: true } }
           },
-          orderBy: { createdAt: 'asc' }
+          orderBy: { createdAt: 'desc' },
+          take: MAX_LIMIT,
         },
         _count: {
           select: { answers: true }
@@ -133,7 +138,12 @@ export class QuestionsService {
       _sum: { value: true }
     });
 
-    const answersWithScores = await Promise.all(question.answers.map(async (a) => {
+    // Answers are fetched newest-first with a bound (`take`) and re-ordered to
+    // chronological for display. The `_count.answers` field still reports the
+    // true total number of answers.
+    const orderedAnswers = [...question.answers].reverse();
+
+    const answersWithScores = await Promise.all(orderedAnswers.map(async (a) => {
       const aScore = await this.prisma.answerVote.aggregate({
         where: { answerId: a.id },
         _sum: { value: true }
