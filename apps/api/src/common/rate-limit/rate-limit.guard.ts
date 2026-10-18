@@ -18,6 +18,7 @@ import {
   RATE_LIMIT_KEY,
   SKIP_RATE_LIMIT_KEY,
 } from './rate-limit.decorator';
+import { clientIp } from '../client-ip';
 
 interface Identity {
   prefix: 'u' | 'ip';
@@ -89,7 +90,7 @@ export class RateLimitGuard implements CanActivate {
     mode: RateLimitIdentity,
   ): Promise<Identity> {
     if (mode === 'ip') {
-      return { prefix: 'ip', value: this.clientIp(req) };
+      return { prefix: 'ip', value: clientIp(req) };
     }
 
     let userId: string | null = null;
@@ -108,7 +109,7 @@ export class RateLimitGuard implements CanActivate {
     if (userId) {
       return { prefix: 'u', value: userId };
     }
-    return { prefix: 'ip', value: this.clientIp(req) };
+    return { prefix: 'ip', value: clientIp(req) };
   }
 
   /**
@@ -123,15 +124,5 @@ export class RateLimitGuard implements CanActivate {
     const windowSec = Math.round(config.windowMs / 1000);
     const tier = config.tier ?? 't1';
     return `devtodev:rl:${tier}:${identity.prefix}:${identity.value}:${method} ${routePath}:${windowSec}`;
-  }
-
-  /**
-   * Derives the client IP via Express's proxy-aware `req.ip` (which honors the
-   * `trust proxy` setting) rather than trusting a raw `X-Forwarded-For` header.
-   */
-  private clientIp(req: Request): string {
-    const ip = req.ip;
-    if (!ip) return 'unknown';
-    return ip.startsWith('::ffff:') ? ip.slice('::ffff:'.length) : ip;
   }
 }

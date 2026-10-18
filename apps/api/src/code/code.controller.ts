@@ -10,6 +10,7 @@ import { CodeService } from './code.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { RunCodeDto } from './dto/run-code.dto';
 import { SkipRateLimit } from '../common/rate-limit/rate-limit.decorator';
+import { clientIp } from '../common/client-ip';
 
 @Controller('code')
 export class CodeController {
@@ -36,20 +37,9 @@ export class CodeController {
 
     return this.codeService.run(
       userId,
-      this.clientKey(req),
+      clientIp(req),
       dto.language,
       dto.code,
     );
-  }
-
-  private clientKey(req: Request): string {
-    const fwd = req.headers['x-forwarded-for'];
-    if (typeof fwd === 'string' && fwd.length > 0) {
-      return fwd.split(',')[0].trim();
-    }
-    if (Array.isArray(fwd) && fwd.length > 0) {
-      return fwd[0];
-    }
-    return req.ip ?? 'unknown';
   }
 }
