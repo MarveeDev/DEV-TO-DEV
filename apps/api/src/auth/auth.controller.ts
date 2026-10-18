@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Logger,
   Req,
   Res,
   Query,
@@ -16,8 +17,20 @@ import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 const OAUTH_RATE_LIMIT = { limit: 30, windowMs: 60_000, tier: 't4', identity: 'ip', failClosed: true } as const;
 
+// Generic, user-safe message returned to the browser on OAuth callback failure.
+// It intentionally carries no provider, infrastructure, or exception detail.
+const OAUTH_LOGIN_ERROR = 'Authentication failed. Please try again.';
+
+// Secret-bearing keys that must never appear in server logs. Any value that
+// follows one of these keys (separated by `=` or `:`) is replaced before the
+// error is logged.
+const SENSITIVE_KEY_PATTERN =
+  /(client_secret|access_token|refresh_token|id_token|authorization|bearer|session_id|session|api_key|apikey|token|secret|code)\s*[:=]\s*[^\s,;"']+/gi;
+
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
+
   constructor(
     private readonly authService: AuthService,
     private readonly sessionsService: SessionsService,
@@ -46,6 +59,23 @@ export class AuthController {
       return `${this.frontendUrl}/onboarding`;
     }
     return `${this.frontendUrl}/dashboard`;
+  }
+
+  /**
+   * Records a server-side-only diagnostic for an OAuth callback failure.
+   * Only the error name and a scrubbed message are logged; values following
+   * secret-bearing keys (tokens, secrets, codes, session ids) are redacted and
+   * the message is truncated. The browser never sees this content.
+   */
+  private logOAuthFailure(provider: 'github' | 'google', error: unknown): void {
+    const name = error instanceof Error ? error.name : 'UnknownError';
+    const rawMessage = error instanceof Error ? error.message : String(error);
+    const sanitizedMessage = rawMessage
+      .replace(SENSITIVE_KEY_PATTERN, '$1=[REDACTED]')
+      .slice(0, 500);
+    this.logger.error(
+      `OAuth (${provider}) callback failed: ${name}: ${sanitizedMessage}`,
+    );
   }
 
   @Get('github')
@@ -117,8 +147,8 @@ export class AuthController {
       // Redirect to the correct destination based on role / new-user status
       return res.redirect(this.postLoginDestination(user, isNewUser));
     } catch (e) {
-      // Safe error redirect
-      return res.redirect(`${this.frontendUrl}/login?error=${encodeURIComponent(e.message)}`);
+      this.logOAuthFailure('github', e);
+      return res.redirect(`${this.frontendUrl}/login?error=${encodeURIComponent(OAUTH_LOGIN_ERROR)}`);
     }
   }
 
@@ -186,7 +216,8 @@ export class AuthController {
       // Redirect to the correct destination based on role / new-user status
       return res.redirect(this.postLoginDestination(user, isNewUser));
     } catch (e) {
-      return res.redirect(`${this.frontendUrl}/login?error=${encodeURIComponent(e.message)}`);
+      this.logOAuthFailure('google', e);
+      return res.redirect(`${this.frontendUrl}/login?error=${encodeURIComponent(OAUTH_LOGIN_ERROR)}`);
     }
   }
 
