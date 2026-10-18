@@ -156,6 +156,68 @@ describe('PushNotifications (e2e)', () => {
     expect(stored).toBeNull();
   });
 
+  it('rejects reassignment of an existing endpoint to a different user', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/notifications/push/subscribe')
+      .set('Cookie', [`session_id=${tokenB}`])
+      .send({
+        endpoint: subA.endpoint,
+        keys: { p256dh: 'p256dh_hijack', auth: 'auth_hijack' },
+      });
+    expect(res.status).toBe(403);
+
+    const stored = await prisma.pushSubscription.findUnique({
+      where: { endpoint: subA.endpoint },
+    });
+    expect(stored?.userId).toBe(userAId);
+    expect(stored?.p256dh).toBe('p256dh_a');
+    expect(stored?.auth).toBe('auth_a');
+  });
+
+  it('lets the owner update their own subscription keys', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/notifications/push/subscribe')
+      .set('Cookie', [`session_id=${tokenA}`])
+      .send({
+        endpoint: subB.endpoint,
+        keys: { p256dh: 'p256dh_b2', auth: 'auth_b2' },
+      });
+    expect(res.status).toBe(201);
+
+    const stored = await prisma.pushSubscription.findUnique({
+      where: { endpoint: subB.endpoint },
+    });
+    expect(stored?.userId).toBe(userAId);
+    expect(stored?.p256dh).toBe('p256dh_b2');
+    expect(stored?.auth).toBe('auth_b2');
+  });
+
+  it('grants a concurrently contested endpoint to exactly one user', async () => {
+    const endpoint = 'https://push.example.com/race';
+
+    const [resA, resB] = await Promise.all([
+      request(app.getHttpServer())
+        .post('/api/v1/notifications/push/subscribe')
+        .set('Cookie', [`session_id=${tokenA}`])
+        .send({ endpoint, keys: { p256dh: 'p256dh_a', auth: 'auth_a' } }),
+      request(app.getHttpServer())
+        .post('/api/v1/notifications/push/subscribe')
+        .set('Cookie', [`session_id=${tokenB}`])
+        .send({ endpoint, keys: { p256dh: 'p256dh_b', auth: 'auth_b' } }),
+    ]);
+
+    expect([resA.status, resB.status].sort()).toEqual([201, 403]);
+
+    const stored = await prisma.pushSubscription.findUnique({
+      where: { endpoint },
+    });
+    expect(stored).not.toBeNull();
+    const winner = resA.status === 201 ? userAId : userBId;
+    expect(stored?.userId).toBe(winner);
+
+    await prisma.pushSubscription.delete({ where: { endpoint } });
+  });
+
   it('triggers push delivery after notification persistence', async () => {
     const spy = jest.spyOn(pushService, 'sendForUser').mockResolvedValue(undefined);
 

@@ -1,4 +1,5 @@
-import { Notification } from '@prisma/client';
+import { ForbiddenException } from '@nestjs/common';
+import { Notification, Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PushService } from './push.service';
 import * as webPush from 'web-push';
@@ -27,8 +28,9 @@ describe('PushService', () => {
     pushSubscription: {
       findMany: jest.fn(),
       delete: jest.fn(),
-      upsert: jest.fn(),
       findUnique: jest.fn(),
+      create: jest.fn(),
+      updateMany: jest.fn(),
     },
   };
 
@@ -90,5 +92,80 @@ describe('PushService', () => {
     expect(prisma.pushSubscription.findMany).not.toHaveBeenCalled();
 
     process.env = saved;
+  });
+
+  describe('subscribe ownership', () => {
+    const endpoint = 'https://push.example.com/owned';
+    const input = { endpoint, p256dh: 'p_new', auth: 'a_new' };
+
+    function uniqueConstraintError() {
+      return new Prisma.PrismaClientKnownRequestError(
+        'Unique constraint failed on the field: `endpoint`',
+        {
+          code: 'P2002',
+          clientVersion: 'test',
+          meta: { target: ['endpoint'] },
+        },
+      );
+    }
+
+    it('registers a new endpoint for the caller', async () => {
+      const service = new PushService(prisma as unknown as PrismaService);
+      prisma.pushSubscription.updateMany.mockResolvedValue({ count: 0 });
+      prisma.pushSubscription.create.mockResolvedValue({ id: 's1' });
+
+      await service.subscribe('u1', input);
+
+      expect(prisma.pushSubscription.updateMany).toHaveBeenCalledWith({
+        where: { endpoint, userId: 'u1' },
+        data: { p256dh: 'p_new', auth: 'a_new' },
+      });
+      expect(prisma.pushSubscription.create).toHaveBeenCalledWith({
+        data: { userId: 'u1', endpoint, p256dh: 'p_new', auth: 'a_new' },
+      });
+    });
+
+    it('updates keys when the caller already owns the endpoint', async () => {
+      const service = new PushService(prisma as unknown as PrismaService);
+      prisma.pushSubscription.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.subscribe('u1', input);
+
+      expect(prisma.pushSubscription.create).not.toHaveBeenCalled();
+    });
+
+    it('throws 403 when another user owns the endpoint', async () => {
+      const service = new PushService(prisma as unknown as PrismaService);
+      prisma.pushSubscription.updateMany.mockResolvedValue({ count: 0 });
+      prisma.pushSubscription.create.mockRejectedValue(uniqueConstraintError());
+
+      await expect(service.subscribe('u2', input)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      // The only write attempted is scoped to the caller, never the owner.
+      expect(prisma.pushSubscription.updateMany).toHaveBeenNthCalledWith(2, {
+        where: { endpoint, userId: 'u2' },
+        data: { p256dh: 'p_new', auth: 'a_new' },
+      });
+    });
+
+    it('recovers when a concurrent request from the same user wins the insert race', async () => {
+      const service = new PushService(prisma as unknown as PrismaService);
+      prisma.pushSubscription.updateMany
+        .mockResolvedValueOnce({ count: 0 })
+        .mockResolvedValueOnce({ count: 1 });
+      prisma.pushSubscription.create.mockRejectedValue(uniqueConstraintError());
+
+      await expect(service.subscribe('u1', input)).resolves.toBeUndefined();
+    });
+
+    it('rethrows non-unique-constraint errors', async () => {
+      const service = new PushService(prisma as unknown as PrismaService);
+      prisma.pushSubscription.updateMany.mockResolvedValue({ count: 0 });
+      const boom = new Error('boom');
+      prisma.pushSubscription.create.mockRejectedValue(boom);
+
+      await expect(service.subscribe('u1', input)).rejects.toBe(boom);
+    });
   });
 });

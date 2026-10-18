@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Notification } from '@prisma/client';
+import { Injectable, Logger, ForbiddenException } from '@nestjs/common';
+import { Notification, Prisma } from '@prisma/client';
 import * as webPush from 'web-push';
 import { PrismaService } from '../../prisma/prisma.service';
 
@@ -51,18 +51,59 @@ export class PushService {
     return process.env.VAPID_PUBLIC_KEY ?? null;
   }
 
-  /** Creates or updates a subscription for the given user (deduplicated by endpoint). */
-  async subscribe(userId: string, input: PushSubscriptionInput) {
-    return this.prisma.pushSubscription.upsert({
-      where: { endpoint: input.endpoint },
-      update: { userId, p256dh: input.p256dh, auth: input.auth },
-      create: {
-        userId,
-        endpoint: input.endpoint,
-        p256dh: input.p256dh,
-        auth: input.auth,
-      },
+  /**
+   * Registers or updates a push subscription for the given user.
+   *
+   * The `userId` is always derived from the authenticated server-side session
+   * (see the controller); it is never taken from the request body. Ownership is
+   * enforced by only ever updating rows the caller already owns and only ever
+   * creating rows that do not yet exist. An endpoint that belongs to a different
+   * user is never reassigned.
+   */
+  async subscribe(userId: string, input: PushSubscriptionInput): Promise<void> {
+    // Fast path: the caller already owns this endpoint, so just refresh the keys.
+    const owned = await this.prisma.pushSubscription.updateMany({
+      where: { endpoint: input.endpoint, userId },
+      data: { p256dh: input.p256dh, auth: input.auth },
     });
+    if (owned.count > 0) {
+      return;
+    }
+
+    // The endpoint is either unregistered or owned by someone else. Only an
+    // insert can claim a fresh endpoint; the unique index on `endpoint` is the
+    // arbiter that makes concurrent competing claims race-safe.
+    try {
+      await this.prisma.pushSubscription.create({
+        data: {
+          userId,
+          endpoint: input.endpoint,
+          p256dh: input.p256dh,
+          auth: input.auth,
+        },
+      });
+    } catch (error) {
+      if (
+        !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+        error.code !== 'P2002'
+      ) {
+        throw error;
+      }
+
+      // The endpoint already exists. A concurrent request from the same user may
+      // have won the insert race; refresh keys in that case. Otherwise the
+      // endpoint belongs to another user and must not be reassigned.
+      const claimed = await this.prisma.pushSubscription.updateMany({
+        where: { endpoint: input.endpoint, userId },
+        data: { p256dh: input.p256dh, auth: input.auth },
+      });
+      if (claimed.count > 0) {
+        return;
+      }
+      throw new ForbiddenException(
+        'This push subscription endpoint belongs to another user',
+      );
+    }
   }
 
   /**
