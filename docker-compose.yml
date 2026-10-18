@@ -90,17 +90,18 @@ services:
     networks:
       - default
       - sandbox
+      - devmind
 
   dev-mind:
     build:
       context: ./apps/dev-mind
       dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
     volumes:
       - ./apps/dev-mind:/app
     environment:
       - ENV=development
+    networks:
+      - devmind
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   sandbox:
@@ -124,6 +125,8 @@ services:
 
 networks:
   sandbox:
+    internal: true
+  devmind:
     internal: true
 
 volumes:
