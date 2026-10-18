@@ -28,7 +28,7 @@ export class PhoneVerificationController {
   }
 
   @Post('send-otp')
-  @RateLimit({ limit: 10, windowMs: 3_600_000, tier: 't4', identity: 'ip' })
+  @RateLimit({ limit: 10, windowMs: 3_600_000, tier: 't4', identity: 'ip', failClosed: true })
   async sendOtp(@Req() req: Request, @Body() body: SendOtpDto) {
     const userId = await this.getUserIdOrThrow(req);
     return this.phoneVerificationService.sendOtp(userId, body.phoneNumber);
