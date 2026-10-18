@@ -3,7 +3,6 @@ import type { Redis } from 'ioredis';
 import { RedisService } from '../redis/redis.service';
 
 const SANDBOX_URL = process.env.SANDBOX_URL || 'http://sandbox:9000';
-const SANDBOX_TOKEN = process.env.SANDBOX_TOKEN || '';
 
 const USER_MIN_LIMIT = Number(process.env.CODE_USER_MIN_LIMIT ?? 30);
 const USER_DAY_LIMIT = Number(process.env.CODE_USER_DAY_LIMIT ?? 300);
@@ -100,12 +99,22 @@ export class CodeService {
   }
 
   private async execute(language: string, code: string) {
+    // Fail closed: never issue an unauthenticated request to the sandbox.
+    const token = process.env.SANDBOX_TOKEN;
+    if (!token || !token.trim()) {
+      this.logger.error('Sandbox token is not configured; refusing to run code');
+      throw new HttpException(
+        'Code execution is temporarily unavailable.',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
+
     try {
       const res = await fetch(`${SANDBOX_URL}/run`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(SANDBOX_TOKEN ? { 'x-sandbox-token': SANDBOX_TOKEN } : {}),
+          'x-sandbox-token': token,
         },
         body: JSON.stringify({ language, code }),
         signal: AbortSignal.timeout(SANDBOX_TIMEOUT_MS),

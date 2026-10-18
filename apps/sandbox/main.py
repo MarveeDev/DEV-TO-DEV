@@ -6,6 +6,7 @@ deployed on an isolated network. It is the only component that ever runs
 learner-submitted code (see runner.py).
 """
 
+import hmac
 import os
 import threading
 
@@ -32,13 +33,25 @@ def health() -> dict:
 
 @app.post("/run")
 async def run(request: Request) -> JSONResponse:
-    if SANDBOX_TOKEN:
-        token = request.headers.get("x-sandbox-token", "")
-        if token != SANDBOX_TOKEN:
-            return JSONResponse(
-                status_code=401,
-                content={"success": False, "output": "", "error": "Unauthorized"},
-            )
+    # Fail closed: never execute learner code when the token is not configured.
+    # Only whitespace is stripped to detect a blank token; a valid token is
+    # compared verbatim so it always agrees with the API's configured value.
+    if not SANDBOX_TOKEN.strip():
+        return JSONResponse(
+            status_code=503,
+            content={
+                "success": False,
+                "output": "",
+                "error": "Sandbox authentication is not configured",
+            },
+        )
+
+    token = request.headers.get("x-sandbox-token", "")
+    if not hmac.compare_digest(token, SANDBOX_TOKEN):
+        return JSONResponse(
+            status_code=401,
+            content={"success": False, "output": "", "error": "Unauthorized"},
+        )
 
     try:
         body = await request.json()

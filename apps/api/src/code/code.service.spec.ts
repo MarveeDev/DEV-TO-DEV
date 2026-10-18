@@ -25,6 +25,7 @@ describe('CodeService', () => {
   let fetchMock: jest.Mock;
 
   beforeEach(() => {
+    process.env.SANDBOX_TOKEN = 'sandbox-test-token';
     incr = jest.fn().mockResolvedValue(1);
     expire = jest.fn().mockResolvedValue(1);
 
@@ -41,10 +42,34 @@ describe('CodeService', () => {
     service = new CodeService(redis);
   });
 
+  afterAll(() => {
+    delete process.env.SANDBOX_TOKEN;
+  });
+
   it('executes code when under all limits', async () => {
     const result = await service.run('u1', '1.2.3.4', 'python', 'print(1)');
     expect(result).toEqual({ success: true, output: 'hi\n', error: null });
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends the sandbox token header', async () => {
+    await service.run('u1', '1.2.3.4', 'python', 'print(1)');
+    const [, init] = fetchMock.mock.calls[0];
+    expect(init.headers).toMatchObject({
+      'x-sandbox-token': 'sandbox-test-token',
+    });
+  });
+
+  it('does not call the sandbox when the token is missing', async () => {
+    delete process.env.SANDBOX_TOKEN;
+    await expectStatus(service.run('u1', '1.2.3.4', 'python', 'print(1)'), 503);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('does not call the sandbox when the token is blank', async () => {
+    process.env.SANDBOX_TOKEN = '   ';
+    await expectStatus(service.run('u1', '1.2.3.4', 'python', 'print(1)'), 503);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it('rejects (fail-closed) when Redis is unavailable', async () => {
