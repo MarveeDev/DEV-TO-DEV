@@ -11,6 +11,12 @@ COPY . .
 
 RUN pnpm install --frozen-lockfile
 RUN pnpm --filter web build
+RUN chown -R node:node /app/apps/web/.next
+
+# Run as the unprivileged `node` user provided by the base image. `.next` is
+# owned by `node` so Next.js can write its incremental cache at runtime.
+ENV HOME=/home/node
+USER node
 
 EXPOSE 3000
 CMD ["pnpm", "--filter", "web", "start"]
