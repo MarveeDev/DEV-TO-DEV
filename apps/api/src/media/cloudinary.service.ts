@@ -4,20 +4,23 @@ import * as streamifier from 'streamifier';
 
 @Injectable()
 export class CloudinaryService {
-  uploadFile(file: Express.Multer.File, folder: string = 'dev2dev'): Promise<UploadApiResponse> {
+  uploadFile(
+    file: Express.Multer.File,
+    resourceType: 'image' | 'video',
+    folder: string = 'dev2dev',
+  ): Promise<UploadApiResponse> {
     return new Promise<UploadApiResponse>((resolve, reject) => {
-      const isVideo = file.mimetype.startsWith('video/');
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder,
-          resource_type: isVideo ? 'video' : 'image',
+          resource_type: resourceType,
         },
         (error: UploadApiErrorResponse, result: UploadApiResponse) => {
           if (error) return reject(error);
           resolve(result);
         },
       );
-      
+
       streamifier.createReadStream(file.buffer).pipe(uploadStream);
     });
   }
