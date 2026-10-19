@@ -48,11 +48,20 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: `${BASE_URL}/opengraph-image.png`,
+        width: 1200,
+        height: 630,
+        alt: `${SITE_NAME} — ${TAGLINE}`,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: `${SITE_NAME} — ${TAGLINE}`,
     description: SITE_DESCRIPTION,
+    images: [`${BASE_URL}/twitter-image.png`],
   },
   robots: {
     index: true,
