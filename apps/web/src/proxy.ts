@@ -16,6 +16,7 @@ const NOINDEX_PREFIXES = [
   '/admin',
   '/code',
   '/support',
+  '/activate',
 ];
 
 // Routes that require a session. `/feed` is intentionally excluded so the feed

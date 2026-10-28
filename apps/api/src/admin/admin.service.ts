@@ -1,7 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionsService } from '../sessions/sessions.service';
-import { Prisma, UserRole, UserStatus, MarketplaceListingReportStatus, ViolationStatus } from '@prisma/client';
+import { MailService } from '../mail/mail.service';
+import { Prisma, UserRole, UserStatus, AdminInvite, MarketplaceListingReportStatus, ViolationStatus } from '@prisma/client';
+import { randomBytes, createHash } from 'crypto';
 import { CreateViolationDto } from './dto/create-violation.dto';
 import { STAFF_ROLES, hasPermission, canAssignRole, ADMIN_ROLE_LOCK_KEY } from './permissions';
 
@@ -13,7 +15,32 @@ export class AdminService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly sessionsService: SessionsService,
+    private readonly mailService: MailService,
   ) {}
+
+  private generateActivationToken(): { token: string; tokenHash: string } {
+    const token = randomBytes(32).toString('base64url');
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+    return { token, tokenHash };
+  }
+
+  private activationUrl(token: string): string {
+    const base = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
+    return `${base}/activate/${token}`;
+  }
+
+  private serializeInvite(invite: AdminInvite) {
+    return {
+      id: invite.id,
+      email: invite.email,
+      name: invite.name,
+      role: invite.role,
+      status: invite.status,
+      createdAt: invite.createdAt,
+      acceptedAt: invite.acceptedAt,
+      expiresAt: invite.expiresAt,
+    };
+  }
 
   private async audit(
     actorId: string,
@@ -287,11 +314,20 @@ export class AdminService {
     return { items, meta: this.meta(total, page, limit) };
   }
 
-  async inviteStaff(actorId: string, email: string, role: UserRole) {
+  async inviteStaff(actorId: string, email: string, name: string | undefined, role: UserRole) {
     const normalized = email.trim().toLowerCase();
+    const fullName = (name ?? '').trim();
     if (!normalized) throw new BadRequestException('Email is required');
     if (!STAFF_ROLES.includes(role)) {
       throw new BadRequestException('Invalid staff role');
+    }
+
+    const actor = await this.prisma.user.findUnique({
+      where: { id: actorId },
+      select: { role: true },
+    });
+    if (!actor || !canAssignRole(actor.role, role)) {
+      throw new ForbiddenException('You cannot assign this role');
     }
 
     const existingUser = await this.prisma.user.findFirst({
@@ -307,26 +343,93 @@ export class AdminService {
       throw new BadRequestException('Invite already accepted');
     }
 
+    const { token, tokenHash } = this.generateActivationToken();
     const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
+
     const invite = existing
       ? await this.prisma.adminInvite.update({
           where: { id: existing.id },
-          data: { role, status: 'PENDING', invitedById: actorId, acceptedAt: null, expiresAt },
+          data: {
+            role,
+            name: fullName || null,
+            status: 'PENDING',
+            tokenHash,
+            invitedById: actorId,
+            acceptedAt: null,
+            expiresAt,
+          },
         })
       : await this.prisma.adminInvite.create({
-          data: { email: normalized, role, invitedById: actorId, expiresAt },
+          data: {
+            email: normalized,
+            name: fullName || null,
+            role,
+            tokenHash,
+            invitedById: actorId,
+            expiresAt,
+          },
         });
 
-    await this.audit(actorId, 'STAFF_INVITED', 'AdminInvite', invite.id, { email: normalized, role });
-    return invite;
+    const emailSent = await this.mailService.sendStaffInvitation({
+      to: normalized,
+      name: fullName || null,
+      role,
+      activateUrl: this.activationUrl(token),
+    });
+
+    await this.audit(actorId, 'STAFF_INVITED', 'AdminInvite', invite.id, {
+      email: normalized,
+      role,
+      emailSent,
+    });
+    return { invite: this.serializeInvite(invite), emailSent };
   }
 
   async listInvites() {
     const items = await this.prisma.adminInvite.findMany({
       orderBy: { createdAt: 'desc' },
-      include: { invitedBy: { select: { id: true, email: true } } },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        acceptedAt: true,
+        expiresAt: true,
+        invitedBy: { select: { id: true, email: true } },
+      },
     });
     return { items };
+  }
+
+  async resendInvite(actorId: string, id: string) {
+    const invite = await this.prisma.adminInvite.findUnique({ where: { id } });
+    if (!invite) throw new NotFoundException('Invite not found');
+    if (invite.status !== 'PENDING') {
+      throw new BadRequestException('Only pending invites can be resent');
+    }
+
+    const { token, tokenHash } = this.generateActivationToken();
+    const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
+
+    await this.prisma.adminInvite.update({
+      where: { id },
+      data: { tokenHash, expiresAt },
+    });
+
+    const emailSent = await this.mailService.sendStaffInvitation({
+      to: invite.email,
+      name: invite.name,
+      role: invite.role,
+      activateUrl: this.activationUrl(token),
+    });
+
+    await this.audit(actorId, 'STAFF_INVITE_RESENT', 'AdminInvite', id, {
+      email: invite.email,
+      emailSent,
+    });
+    return { id, email: invite.email, emailSent };
   }
 
   async revokeInvite(actorId: string, id: string) {
@@ -335,7 +438,7 @@ export class AdminService {
 
     const result = await this.prisma.adminInvite.updateMany({
       where: { id, status: 'PENDING' },
-      data: { status: 'REVOKED' },
+      data: { status: 'REVOKED', tokenHash: null },
     });
     if (result.count === 0) {
       throw new BadRequestException('Only pending invites can be revoked');

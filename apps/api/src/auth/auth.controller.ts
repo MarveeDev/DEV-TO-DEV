@@ -5,7 +5,12 @@ import {
   Req,
   Res,
   Query,
+  Param,
+  Body,
+  HttpCode,
+  HttpStatus,
   UnauthorizedException,
+  ForbiddenException,
   Post,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
@@ -14,6 +19,8 @@ import { randomBytes } from 'crypto';
 import { SessionsService } from '../sessions/sessions.service';
 import { MailService } from '../mail/mail.service';
 import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
+import { LoginDto } from './dto/login.dto';
+import { ActivateDto } from './dto/activate.dto';
 
 const OAUTH_RATE_LIMIT = { limit: 30, windowMs: 60_000, tier: 't4', identity: 'ip', failClosed: true } as const;
 
@@ -45,6 +52,16 @@ export class AuthController {
     return process.env.FRONTEND_URL || 'http://localhost:3000';
   }
 
+  private setSessionCookie(res: Response, token: string): void {
+    res.cookie('session_id', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 14 * 24 * 60 * 60 * 1000,
+    });
+  }
+
   /**
    * Decide where to send a user immediately after a successful OAuth sign-in.
    * Uses the authenticated user's server-backed role from the database (never a
@@ -52,7 +69,7 @@ export class AuthController {
    * go through onboarding; everyone else goes to their normal dashboard.
    */
   private postLoginDestination(user: { role?: string } | null, isNewUser: boolean): string {
-    if (user && (user.role === 'ADMIN' || user.role === 'MODERATOR')) {
+    if (user && user.role && user.role !== 'USER') {
       return `${this.frontendUrl}/admin`;
     }
     if (isNewUser) {
@@ -241,6 +258,40 @@ export class AuthController {
 
     const user = await this.authService.getUser(userId);
     return user;
+  }
+
+  @Post('login')
+  @HttpCode(HttpStatus.OK)
+  @RateLimit({ limit: 10, windowMs: 60_000, tier: 't4', identity: 'ip', failClosed: true })
+  async login(@Body() body: LoginDto, @Res() res: Response) {
+    const user = await this.authService.loginWithPassword(body.email, body.password);
+    if (!user) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    if (user.status !== 'ACTIVE') {
+      throw new ForbiddenException('This account is restricted');
+    }
+
+    const token = await this.sessionsService.createSession(user.id);
+    this.setSessionCookie(res, token);
+    return res.json({ user: await this.authService.getUser(user.id) });
+  }
+
+  @Get('activate/:token')
+  @RateLimit({ limit: 30, windowMs: 60_000, tier: 't3', identity: 'ip' })
+  getActivationInfo(@Param('token') token: string) {
+    return this.authService.getInvitationInfo(token);
+  }
+
+  @Post('activate')
+  @HttpCode(HttpStatus.OK)
+  @RateLimit({ limit: 10, windowMs: 60_000, tier: 't4', identity: 'ip', failClosed: true })
+  async activate(@Body() body: ActivateDto, @Res() res: Response) {
+    const { user } = await this.authService.activateInvite(body.token, body.password);
+
+    const token = await this.sessionsService.createSession(user.id);
+    this.setSessionCookie(res, token);
+    return res.json({ user: await this.authService.getUser(user.id) });
   }
 
   @Post('logout')

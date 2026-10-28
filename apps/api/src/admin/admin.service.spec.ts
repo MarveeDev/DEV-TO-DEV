@@ -1,6 +1,7 @@
 import { AdminService } from './admin.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionsService } from '../sessions/sessions.service';
+import { MailService } from '../mail/mail.service';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 
 describe('AdminService staff management', () => {
@@ -23,6 +24,7 @@ describe('AdminService staff management', () => {
     adminAuditLog: { create: jest.fn() },
   };
   const sessionsService = { revokeAllForUser: jest.fn().mockResolvedValue(undefined) };
+  const mailService = { sendStaffInvitation: jest.fn().mockResolvedValue(true) };
 
   let service: AdminService;
 
@@ -38,6 +40,7 @@ describe('AdminService staff management', () => {
     service = new AdminService(
       prisma as unknown as PrismaService,
       sessionsService as unknown as SessionsService,
+      mailService as unknown as MailService,
     );
   });
 
@@ -141,33 +144,104 @@ describe('AdminService staff management', () => {
   });
 
   describe('inviteStaff', () => {
+    function actorIs(role: string) {
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue({ id: 'a1', role });
+    }
+
+    beforeEach(() => {
+      actorIs('SUPER_ADMIN');
+      prisma.user.findFirst.mockResolvedValue(null);
+      prisma.adminInvite.findUnique.mockResolvedValue(null);
+    });
+
     it('rejects non-staff roles', async () => {
-      await expect(service.inviteStaff('a1', 'new@example.com', 'USER' as never)).rejects.toThrow(BadRequestException);
+      await expect(service.inviteStaff('a1', 'new@example.com', undefined, 'USER' as never)).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects assigning a role the actor cannot assign', async () => {
+      actorIs('ADMIN');
+      await expect(service.inviteStaff('a1', 'new@example.com', undefined, 'SUPER_ADMIN')).rejects.toThrow(ForbiddenException);
     });
 
     it('rejects an email that already belongs to a user (case-insensitive)', async () => {
       prisma.user.findFirst.mockResolvedValue({ id: 'u1' });
-      await expect(service.inviteStaff('a1', 'New@Example.com', 'MODERATOR')).rejects.toThrow(BadRequestException);
+      await expect(service.inviteStaff('a1', 'New@Example.com', undefined, 'MODERATOR')).rejects.toThrow(BadRequestException);
     });
 
-    it('creates a pending invite with an expiry and audits it', async () => {
-      prisma.user.findFirst.mockResolvedValue(null);
-      prisma.adminInvite.findUnique.mockResolvedValue(null);
-      prisma.adminInvite.create.mockResolvedValue({ id: 'inv1', email: 'new@example.com', role: 'MODERATOR' });
+    it('creates a pending invite, stores a token hash, and sends an email', async () => {
+      prisma.adminInvite.create.mockResolvedValue({
+        id: 'inv1', email: 'new@example.com', name: 'Jane Doe', role: 'MODERATOR', status: 'PENDING',
+        tokenHash: 'hash', invitedById: 'a1', createdAt: new Date(), acceptedAt: null, expiresAt: new Date(),
+      });
 
-      await service.inviteStaff('a1', 'New@Example.com ', 'MODERATOR');
+      await service.inviteStaff('a1', 'New@Example.com ', 'Jane Doe', 'MODERATOR');
 
       expect(prisma.adminInvite.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({
             email: 'new@example.com',
+            name: 'Jane Doe',
             role: 'MODERATOR',
+            tokenHash: expect.any(String),
             expiresAt: expect.any(Date),
           }),
         }),
       );
+      expect(mailService.sendStaffInvitation).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'new@example.com', name: 'Jane Doe', role: 'MODERATOR' }),
+      );
       expect(prisma.adminAuditLog.create).toHaveBeenCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ action: 'STAFF_INVITED' }) }),
+      );
+    });
+
+    it('returns the serialized invite without exposing the token hash', async () => {
+      prisma.adminInvite.create.mockResolvedValue({
+        id: 'inv1', email: 'new@example.com', name: null, role: 'MODERATOR', status: 'PENDING',
+        tokenHash: 'secret-hash', invitedById: 'a1', createdAt: new Date(), acceptedAt: null, expiresAt: new Date(),
+      });
+
+      const result = await service.inviteStaff('a1', 'new@example.com', undefined, 'MODERATOR');
+
+      expect(result).toHaveProperty('invite');
+      expect(result).toHaveProperty('emailSent');
+      expect(JSON.stringify(result)).not.toContain('secret-hash');
+    });
+  });
+
+  describe('resendInvite', () => {
+    it('rejects resending a non-pending invite', async () => {
+      prisma.adminInvite.findUnique.mockResolvedValue({ id: 'inv1', email: 'a@example.com', status: 'ACCEPTED' });
+      await expect(service.resendInvite('a1', 'inv1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('regenerates the token hash and resends the email', async () => {
+      prisma.adminInvite.findUnique.mockResolvedValue({
+        id: 'inv1', email: 'a@example.com', name: 'A', role: 'MODERATOR', status: 'PENDING',
+        tokenHash: 'old', invitedById: 'a1', createdAt: new Date(), acceptedAt: null, expiresAt: new Date(),
+      });
+      prisma.adminInvite.update.mockResolvedValue({});
+
+      await service.resendInvite('a1', 'inv1');
+
+      expect(prisma.adminInvite.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ tokenHash: expect.any(String) }) }),
+      );
+      expect(mailService.sendStaffInvitation).toHaveBeenCalledWith(
+        expect.objectContaining({ to: 'a@example.com' }),
+      );
+      expect(prisma.adminAuditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ action: 'STAFF_INVITE_RESENT' }) }),
+      );
+    });
+  });
+
+  describe('listInvites', () => {
+    it('selects safe fields and never returns the token hash', async () => {
+      prisma.adminInvite.findMany.mockResolvedValue([]);
+      await service.listInvites();
+      expect(prisma.adminInvite.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ select: expect.not.objectContaining({ tokenHash: expect.anything() }) }),
       );
     });
   });
@@ -182,6 +256,17 @@ describe('AdminService staff management', () => {
       prisma.adminInvite.findUnique.mockResolvedValue({ id: 'inv1', email: 'a@example.com', status: 'ACCEPTED' });
       prisma.adminInvite.updateMany.mockResolvedValue({ count: 0 });
       await expect(service.revokeInvite('a1', 'inv1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('clears the token hash when revoking a pending invite', async () => {
+      prisma.adminInvite.findUnique.mockResolvedValue({ id: 'inv1', email: 'a@example.com', status: 'PENDING' });
+      prisma.adminInvite.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.revokeInvite('a1', 'inv1');
+
+      expect(prisma.adminInvite.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({ data: { status: 'REVOKED', tokenHash: null } }),
+      );
     });
   });
 });

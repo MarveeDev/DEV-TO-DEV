@@ -137,13 +137,19 @@ export class AdminController {
   @Post('staff/invites')
   @Permissions('staff.manage')
   inviteStaff(@Req() req: AuthenticatedAdminRequest, @Body() data: InviteStaffDto) {
-    return this.adminService.inviteStaff(this.actorId(req), data.email, data.role);
+    return this.adminService.inviteStaff(this.actorId(req), data.email, data.name, data.role);
   }
 
   @Get('staff/invites')
   @Permissions('staff.manage')
   listInvites() {
     return this.adminService.listInvites();
+  }
+
+  @Post('staff/invites/:id/resend')
+  @Permissions('staff.manage')
+  resendInvite(@Req() req: AuthenticatedAdminRequest, @Param('id') id: string) {
+    return this.adminService.resendInvite(this.actorId(req), id);
   }
 
   @Delete('staff/invites/:id')

@@ -1,6 +1,9 @@
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
+import { Prisma } from '@prisma/client';
+import { createHash } from 'crypto';
+import { hashPassword, verifyPassword, DUMMY_PASSWORD_HASH } from './password.util';
 import axios from 'axios';
 
 @Injectable()
@@ -332,7 +335,134 @@ export class AuthService {
       ? null
       : await this.getOAuthProfile(userId);
 
-    return { ...user, pendingProfile };
+    // Never expose the password hash on any user-returning endpoint.
+    const { passwordHash: _passwordHash, ...safeUser } = user;
+    void _passwordHash;
+
+    return { ...safeUser, pendingProfile };
+  }
+
+  /**
+   * Authenticates an email/password sign-in. Returns the user on success or
+   * null for an unknown email or incorrect password (indistinguishable to the
+   * caller to prevent account enumeration).
+   */
+  async loginWithPassword(email: string, password: string) {
+    const normalized = email.trim().toLowerCase();
+    if (!normalized) return null;
+
+    const user = await this.prisma.user.findFirst({
+      where: { email: { equals: normalized, mode: 'insensitive' } },
+    });
+
+    if (!user || !user.passwordHash) {
+      // Run the same KDF cost as a valid login so timing does not reveal
+      // whether the email exists or has a password set.
+      await verifyPassword(password, DUMMY_PASSWORD_HASH);
+      return null;
+    }
+
+    const valid = await verifyPassword(password, user.passwordHash);
+    if (!valid) return null;
+
+    return user;
+  }
+
+  /**
+   * Looks up the details of a pending invitation from its activation token so
+   * the activation page can pre-fill the recipient's name, email, and role.
+   * The token itself is the secret, so returning these fields is safe; an
+   * invalid, revoked, or expired token yields a generic 401.
+   */
+  async getInvitationInfo(token: string) {
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    const invite = await this.prisma.adminInvite.findFirst({
+      where: { tokenHash },
+      select: { id: true, email: true, name: true, role: true, status: true, expiresAt: true },
+    });
+    if (
+      !invite ||
+      invite.status !== 'PENDING' ||
+      !invite.expiresAt ||
+      invite.expiresAt.getTime() <= Date.now()
+    ) {
+      throw new UnauthorizedException('Invalid or expired invitation');
+    }
+
+    return { name: invite.name, email: invite.email, role: invite.role };
+  }
+
+  /**
+   * Redeems a single-use staff invitation token, creates the password-protected
+   * account with the invited role, and marks the invitation accepted atomically.
+   * The token lookup and the accepted transition happen inside one transaction
+   * keyed on the token hash, so a token cannot be redeemed twice even under
+   * concurrent requests.
+   */
+  async activateInvite(token: string, password: string) {
+    const tokenHash = createHash('sha256').update(token).digest('hex');
+
+    const invite = await this.prisma.adminInvite.findFirst({
+      where: { tokenHash },
+    });
+    if (
+      !invite ||
+      invite.status !== 'PENDING' ||
+      !invite.expiresAt ||
+      invite.expiresAt.getTime() <= Date.now()
+    ) {
+      throw new UnauthorizedException('Invalid or expired invitation');
+    }
+
+    const existingUser = await this.prisma.user.findFirst({
+      where: { email: { equals: invite.email, mode: 'insensitive' } },
+      select: { id: true },
+    });
+    if (existingUser) {
+      throw new BadRequestException('An account already exists for this email');
+    }
+
+    const passwordHash = await hashPassword(password);
+
+    try {
+      const user = await this.prisma.$transaction(async (tx) => {
+        const claimed = await tx.adminInvite.updateMany({
+          where: { id: invite.id, status: 'PENDING', tokenHash },
+          data: { status: 'ACCEPTED', acceptedAt: new Date(), tokenHash: null },
+        });
+        if (claimed.count !== 1) {
+          throw new UnauthorizedException('Invalid or expired invitation');
+        }
+
+        const created = await tx.user.create({
+          data: {
+            email: invite.email,
+            role: invite.role,
+            passwordHash,
+          },
+        });
+
+        await tx.adminAuditLog.create({
+          data: {
+            actorId: created.id,
+            action: 'STAFF_ACCOUNT_ACTIVATED',
+            entityType: 'User',
+            entityId: created.id,
+            metadata: { inviteId: invite.id, role: invite.role },
+          },
+        });
+
+        return created;
+      });
+
+      return { user, isNewUser: true };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new BadRequestException('An account already exists for this email');
+      }
+      throw error;
+    }
   }
 
   /**
@@ -359,7 +489,7 @@ export class AuthService {
           status: 'PENDING',
           OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
         },
-        data: { status: 'ACCEPTED', acceptedAt: new Date() },
+        data: { status: 'ACCEPTED', acceptedAt: new Date(), tokenHash: null },
       });
       if (claimed.count !== 1) return;
 

@@ -1,4 +1,5 @@
 import Card from "../../components/Card";
+import LoginForm from "./LoginForm";
 
 export default async function LoginPage({
   searchParams,
@@ -31,6 +32,14 @@ export default async function LoginPage({
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <LoginForm />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '4px 0' }}>
+              <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+              <span style={{ fontSize: '12px', color: 'var(--foreground-subtle)' }}>or continue with</span>
+              <span style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+            </div>
+
             <a 
               href="/api/v1/auth/github"
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '12px', background: '#24292e', color: '#fff', borderRadius: 'var(--radius-md)', textDecoration: 'none', fontWeight: 600, fontSize: '14px', transition: 'opacity 0.2s' }}

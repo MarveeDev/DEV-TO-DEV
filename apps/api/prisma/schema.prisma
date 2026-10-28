@@ -22,6 +22,7 @@ model User {
 
   phoneNumber     String?
   phoneVerifiedAt DateTime?
+  passwordHash    String?
 
   authIdentities      AuthIdentity[]
   sessions            Session[]
@@ -840,8 +841,10 @@ model AdminAuditLog {
 model AdminInvite {
   id          String            @id @default(uuid())
   email       String            @unique
+  name        String?
   role        UserRole
   status      AdminInviteStatus @default(PENDING)
+  tokenHash   String?           @unique
   invitedById String
   invitedBy   User              @relation(fields: [invitedById], references: [id], onDelete: Cascade)
   createdAt   DateTime          @default(now())

@@ -10,6 +10,23 @@ export interface SignInNotificationInput {
   timestamp: Date;
 }
 
+export interface StaffInvitationInput {
+  to: string;
+  name?: string | null;
+  role: string;
+  activateUrl: string;
+}
+
+const ROLE_LABEL: Record<string, string> = {
+  SUPER_ADMIN: 'Super Admin',
+  ADMIN: 'System Administrator',
+  PLATFORM_ADMIN: 'Platform Admin',
+  MARKETING_MANAGER: 'Marketing Manager',
+  SUPPORT: 'Support',
+  MODERATOR: 'Moderator',
+  ANALYTICS_VIEWER: 'Analytics Viewer',
+};
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -62,6 +79,111 @@ export class MailService {
         `Failed to send sign-in notification email: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
+  }
+
+  /**
+   * Sends a staff invitation email. Returns true only when the provider
+   * accepted the message, so callers can surface a delivery failure to the
+   * administrator instead of claiming the invitation was sent. Never throws.
+   */
+  async sendStaffInvitation(input: StaffInvitationInput): Promise<boolean> {
+    if (!this.resend) {
+      this.logger.warn('RESEND_API_KEY is not configured; skipping staff invitation email.');
+      return false;
+    }
+    if (!this.from) {
+      this.logger.warn('MAIL_FROM is not configured; skipping staff invitation email.');
+      return false;
+    }
+
+    const roleLabel = ROLE_LABEL[input.role] ?? input.role.replace(/_/g, ' ').toLowerCase();
+    const greeting = input.name ? `Hello ${input.name},` : 'Hello,';
+    const subject = 'You have been invited to the DEV-TO-DEV team';
+
+    try {
+      const { data, error } = await this.resend.emails.send({
+        from: this.from,
+        to: [input.to],
+        subject,
+        html: this.buildInvitationHtml(greeting, input.to, roleLabel, input.activateUrl),
+        text: this.buildInvitationText(greeting, input.to, roleLabel, input.activateUrl),
+      });
+
+      if (error) {
+        this.logger.error(`Failed to send staff invitation email: ${error.message}`);
+        return false;
+      }
+
+      this.logger.log(`Staff invitation email sent (Resend id ${data?.id ?? 'n/a'})`);
+      return true;
+    } catch (err) {
+      this.logger.error(
+        `Failed to send staff invitation email: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return false;
+    }
+  }
+
+  private buildInvitationText(
+    greeting: string,
+    email: string,
+    roleLabel: string,
+    activateUrl: string,
+  ): string {
+    return [
+      greeting,
+      '',
+      `You have been invited to join DEV-TO-DEV as ${roleLabel}.`,
+      '',
+      `Sign in with: ${email}`,
+      '',
+      `To accept this invitation, set your account password within 7 days:`,
+      activateUrl,
+      '',
+      'This link is single-use and expires in 7 days. If you did not expect this invitation, you can safely ignore this email or contact your platform administrator.',
+    ].join('\n');
+  }
+
+  private buildInvitationHtml(
+    greeting: string,
+    email: string,
+    roleLabel: string,
+    activateUrl: string,
+  ): string {
+    return `
+      <div style="margin:0;padding:0;background-color:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;padding:32px 16px;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#ffffff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+                <tr>
+                  <td style="padding:32px 32px 24px;">
+                    <div style="font-size:20px;font-weight:800;color:#2563eb;letter-spacing:0.5px;">DEV-TO-DEV</div>
+                    <h1 style="font-size:22px;font-weight:800;color:#0f172a;margin:24px 0 12px;line-height:1.3;">You're invited to the DEV-TO-DEV team</h1>
+                    <p style="font-size:15px;line-height:1.6;color:#334155;margin:0 0 16px;">${greeting} You have been invited to join as <strong>${roleLabel}</strong>. Sign in with <strong>${email}</strong>.</p>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0 24px;">
+                      <tr>
+                        <td align="center" style="background-color:#2563eb;border-radius:8px;">
+                          <a href="${activateUrl}" style="display:inline-block;padding:14px 28px;color:#ffffff;font-size:15px;font-weight:700;text-decoration:none;">Activate Account</a>
+                        </td>
+                      </tr>
+                    </table>
+                    <p style="font-size:13px;line-height:1.7;color:#64748b;margin:0;">
+                      This link is single-use and expires in 7 days. If you did not expect this invitation, you can safely ignore this email or contact your platform administrator.
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:20px 32px;border-top:1px solid #e2e8f0;background-color:#f8fafc;">
+                    <p style="font-size:12px;color:#94a3b8;margin:0;">You are receiving this email because an administrator invited you to DEV-TO-DEV.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>
+    `;
   }
 
   private buildText(input: SignInNotificationInput, providerName: string): string {
