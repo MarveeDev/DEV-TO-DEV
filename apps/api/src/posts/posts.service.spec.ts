@@ -53,6 +53,38 @@ describe('PostsService pagination', () => {
         expect.objectContaining({ skip: 0, take: 20 }),
       );
     });
+
+    it('filters to video posts and preserves attachment urls when type=video', async () => {
+      const videoAttachment = {
+        id: 'att1',
+        url: 'https://res.cloudinary.com/demo/video/upload/v1/dev2dev/x.mp4',
+        type: 'VIDEO',
+      };
+      const post = {
+        id: 'p1',
+        title: 'T',
+        content: 'C',
+        createdAt: new Date('2024-01-01'),
+        authorId: 'a1',
+        author: { developerProfile: { username: 'u', displayName: 'U' } },
+        skills: [],
+        attachments: [videoAttachment],
+        backgroundSound: null,
+        _count: { likes: 0 },
+      };
+      prisma.post.count.mockResolvedValue(1);
+      prisma.post.findMany.mockResolvedValue([post]);
+      prisma.postLike.findMany.mockResolvedValue([]);
+
+      const result = await service.getPosts({ type: 'video', page: 1, limit: 20 });
+
+      expect(prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { attachments: { some: { type: 'VIDEO' } } },
+        }),
+      );
+      expect(result.data[0].attachments).toEqual([videoAttachment]);
+    });
   });
 
   describe('getComments', () => {

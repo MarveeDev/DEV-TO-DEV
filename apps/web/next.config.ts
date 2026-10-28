@@ -22,7 +22,7 @@ const CONTENT_SECURITY_POLICY = [
   "img-src 'self' data: blob: https://res.cloudinary.com https://lh3.googleusercontent.com https://avatars.githubusercontent.com https://i.ytimg.com",
   "font-src 'self'",
   "connect-src 'self' ws: wss:",
-  "media-src 'self'",
+  "media-src 'self' https://res.cloudinary.com",
   "frame-src 'self'",
   "object-src 'none'",
   "base-uri 'self'",
