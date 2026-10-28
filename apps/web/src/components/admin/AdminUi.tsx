@@ -86,12 +86,16 @@ const TONES: Record<string, { bg: string; color: string }> = {
   RESOLVED: { bg: 'rgba(52, 211, 153, 0.14)', color: '#6ee7b7' },
   DISMISSED: { bg: 'rgba(148, 163, 184, 0.14)', color: '#cbd5e1' },
   OPEN: { bg: 'rgba(251, 191, 36, 0.14)', color: '#fcd34d' },
+  IN_PROGRESS: { bg: 'rgba(59, 130, 246, 0.14)', color: '#93c5fd' },
+  CLOSED: { bg: 'rgba(148, 163, 184, 0.14)', color: '#cbd5e1' },
   ACTIVE: { bg: 'rgba(52, 211, 153, 0.14)', color: '#6ee7b7' },
   RESTRICTED: { bg: 'rgba(251, 191, 36, 0.14)', color: '#fcd34d' },
   SUSPENDED: { bg: 'rgba(248, 113, 113, 0.14)', color: '#fca5a5' },
   LOW: { bg: 'rgba(148, 163, 184, 0.14)', color: '#cbd5e1' },
+  NORMAL: { bg: 'rgba(59, 130, 246, 0.14)', color: '#93c5fd' },
   MEDIUM: { bg: 'rgba(59, 130, 246, 0.14)', color: '#93c5fd' },
   HIGH: { bg: 'rgba(251, 191, 36, 0.14)', color: '#fcd34d' },
+  URGENT: { bg: 'rgba(248, 113, 113, 0.14)', color: '#fca5a5' },
   CRITICAL: { bg: 'rgba(248, 113, 113, 0.14)', color: '#fca5a5' },
   USER: { bg: 'rgba(148, 163, 184, 0.14)', color: '#cbd5e1' },
   MODERATOR: { bg: 'rgba(59, 130, 246, 0.14)', color: '#93c5fd' },
@@ -100,8 +104,9 @@ const TONES: Record<string, { bg: string; color: string }> = {
   SERVICE: { bg: 'rgba(52, 211, 153, 0.14)', color: '#6ee7b7' },
 };
 
-export function Badge({ value }: { value: string }) {
+export function Badge({ value, label }: { value: string; label?: string }) {
   const tone = TONES[value] ?? { bg: 'rgba(148, 163, 184, 0.14)', color: '#cbd5e1' };
+  const display = label ?? value;
   return (
     <span
       style={{
@@ -120,7 +125,7 @@ export function Badge({ value }: { value: string }) {
       }}
     >
       <span style={{ width: 6, height: 6, borderRadius: '50%', background: tone.color, flexShrink: 0 }} />
-      {value}
+      {display}
     </span>
   );
 }

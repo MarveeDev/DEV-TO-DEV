@@ -10,7 +10,9 @@ import type { Request } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { SessionsService } from '../sessions/sessions.service';
 import { ROLES_KEY } from './roles.decorator';
+import { PERMISSIONS_KEY } from './permissions.decorator';
 import { UserRole } from '@prisma/client';
+import { hasPermission, roleCovers } from './permissions';
 
 export interface AuthenticatedAdminRequest extends Request {
   userId?: string;
@@ -26,12 +28,16 @@ export class RolesGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const required = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
+    const requiredRoles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
       context.getHandler(),
       context.getClass(),
     ]);
+    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(
+      PERMISSIONS_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
-    if (!required || required.length === 0) {
+    if ((!requiredRoles || requiredRoles.length === 0) && (!requiredPermissions || requiredPermissions.length === 0)) {
       return true;
     }
 
@@ -52,8 +58,20 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('Account is restricted');
     }
 
-    if (!required.includes(user.role)) {
-      throw new ForbiddenException('Insufficient permissions');
+    if (requiredPermissions && requiredPermissions.length > 0) {
+      const allowed = requiredPermissions.every((permission) =>
+        hasPermission(user.role, permission as never),
+      );
+      if (!allowed) {
+        throw new ForbiddenException('Insufficient permissions');
+      }
+    }
+
+    if (requiredRoles && requiredRoles.length > 0) {
+      const allowed = requiredRoles.some((role) => roleCovers(user.role, role));
+      if (!allowed) {
+        throw new ForbiddenException('Insufficient permissions');
+      }
     }
 
     req.userId = userId;

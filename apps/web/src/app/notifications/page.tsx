@@ -8,7 +8,7 @@ import BackButton from '../../components/Navigation/BackButton';
 import { useNotifications } from '../../components/Notifications/NotificationProvider';
 import PushNotificationToggle from '../../components/Notifications/PushNotificationToggle';
 import type { AppNotification } from '../../lib/notifications/types';
-import { Bell, MessageSquare, UserPlus, UserCheck } from 'lucide-react';
+import { Bell, MessageSquare, UserPlus, UserCheck, LifeBuoy } from 'lucide-react';
 import { NotificationListSkeleton } from '../../components/skeletons';
 import EmptyState from '../../components/EmptyState';
 
@@ -18,6 +18,7 @@ const TYPE_ICON = {
   CONNECTION_REJECTED: UserCheck,
   MESSAGE: MessageSquare,
   SYSTEM: Bell,
+  SUPPORT: LifeBuoy,
 } as const;
 
 const TYPE_LABEL: Record<string, string> = {
@@ -26,6 +27,7 @@ const TYPE_LABEL: Record<string, string> = {
   CONNECTION_REJECTED: 'Connection update',
   MESSAGE: 'New message',
   SYSTEM: 'System',
+  SUPPORT: 'Support',
 };
 
 function formatTime(iso?: string) {

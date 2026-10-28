@@ -1,13 +1,19 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma, UserRole, MarketplaceListingReportStatus, ViolationStatus } from '@prisma/client';
+import { SessionsService } from '../sessions/sessions.service';
+import { Prisma, UserRole, UserStatus, MarketplaceListingReportStatus, ViolationStatus } from '@prisma/client';
 import { CreateViolationDto } from './dto/create-violation.dto';
+import { STAFF_ROLES, hasPermission, canAssignRole, ADMIN_ROLE_LOCK_KEY } from './permissions';
 
 const DEFAULT_LIMIT = 20;
+const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly sessionsService: SessionsService,
+  ) {}
 
   private async audit(
     actorId: string,
@@ -38,24 +44,29 @@ export class AdminService {
   }
 
   // ---- Overview ----
-  async getOverview() {
-    const [
-      totalUsers,
-      totalListings,
-      totalPosts,
-      totalQuestions,
-      totalProjects,
-      pendingReports,
-      recentUsers,
-      recentListings,
-      recentReports,
-    ] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.marketplaceListing.count(),
-      this.prisma.post.count(),
-      this.prisma.question.count(),
-      this.prisma.project.count(),
-      this.prisma.marketplaceListingReport.count({ where: { status: 'PENDING' } }),
+  async getOverview(role?: UserRole) {
+    const canSeeUserDetails = hasPermission(role ?? 'USER', 'users.view');
+
+    const [totalUsers, totalListings, totalPosts, totalQuestions, totalProjects, pendingReports] =
+      await Promise.all([
+        this.prisma.user.count(),
+        this.prisma.marketplaceListing.count(),
+        this.prisma.post.count(),
+        this.prisma.question.count(),
+        this.prisma.project.count(),
+        this.prisma.marketplaceListingReport.count({ where: { status: 'PENDING' } }),
+      ]);
+
+    if (!canSeeUserDetails) {
+      return {
+        stats: { totalUsers, totalListings, totalPosts, totalQuestions, totalProjects, pendingReports },
+        recentUsers: [],
+        recentListings: [],
+        recentReports: [],
+      };
+    }
+
+    const [recentUsers, recentListings, recentReports] = await Promise.all([
       this.prisma.user.findMany({
         take: 5,
         orderBy: { createdAt: 'desc' },
@@ -177,23 +188,223 @@ export class AdminService {
   }
 
   async changeUserRole(actorId: string, userId: string, role: UserRole) {
-    const target = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!target) throw new NotFoundException('User not found');
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${ADMIN_ROLE_LOCK_KEY}::int, 0)`;
 
-    if (target.role === 'ADMIN' && role !== 'ADMIN') {
-      const adminCount = await this.prisma.user.count({ where: { role: 'ADMIN' } });
-      if (adminCount <= 1) {
-        throw new BadRequestException('Cannot remove the last admin');
+      const actor = await tx.user.findUnique({
+        where: { id: actorId },
+        select: { role: true },
+      });
+      if (!actor) throw new ForbiddenException('Actor not found');
+
+      const target = await tx.user.findUnique({ where: { id: userId } });
+      if (!target) throw new NotFoundException('User not found');
+
+      if (target.id === actorId) {
+        throw new BadRequestException('You cannot change your own role');
       }
+
+      if (!canAssignRole(actor.role, role)) {
+        throw new ForbiddenException('Insufficient permissions');
+      }
+      if (!canAssignRole(actor.role, target.role)) {
+        throw new ForbiddenException('Insufficient permissions');
+      }
+
+      if (target.role === 'SUPER_ADMIN' && role !== 'SUPER_ADMIN') {
+        const superCount = await tx.user.count({
+          where: { role: 'SUPER_ADMIN', status: 'ACTIVE' },
+        });
+        if (superCount <= 1) {
+          throw new BadRequestException('Cannot remove the last Super Admin');
+        }
+      }
+
+      if (target.role === 'ADMIN' && role !== 'ADMIN' && role !== 'SUPER_ADMIN') {
+        const adminCount = await tx.user.count({
+          where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] }, status: 'ACTIVE' },
+        });
+        if (adminCount <= 1) {
+          throw new BadRequestException('Cannot remove the last admin');
+        }
+      }
+
+      const updated = await tx.user.update({
+        where: { id: userId },
+        data: { role },
+        select: { id: true, email: true, role: true, status: true },
+      });
+
+      await tx.adminAuditLog.create({
+        data: {
+          actorId,
+          action: 'USER_ROLE_CHANGED',
+          entityType: 'User',
+          entityId: userId,
+          metadata: { from: target.role, to: role } as Prisma.InputJsonValue,
+        },
+      });
+
+      return updated;
+    });
+  }
+
+  // ---- Staff management ----
+
+  async listStaff(query: { page?: string; limit?: string; search?: string; role?: string }) {
+    const { page, limit, skip } = this.paginate(query);
+    const where: Prisma.UserWhereInput = { role: { not: 'USER' } };
+
+    if (query.role) {
+      where.role = query.role as UserRole;
+    }
+    if (query.search) {
+      where.OR = [
+        { email: { contains: query.search, mode: 'insensitive' } },
+        { developerProfile: { is: { displayName: { contains: query.search, mode: 'insensitive' } } } },
+        { developerProfile: { is: { username: { contains: query.search, mode: 'insensitive' } } } },
+      ];
     }
 
-    const updated = await this.prisma.user.update({
-      where: { id: userId },
-      data: { role },
-      select: { id: true, email: true, role: true, status: true },
+    const [total, items] = await Promise.all([
+      this.prisma.user.count({ where }),
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          status: true,
+          createdAt: true,
+          developerProfile: { select: { username: true, displayName: true, avatarUrl: true } },
+        },
+      }),
+    ]);
+
+    return { items, meta: this.meta(total, page, limit) };
+  }
+
+  async inviteStaff(actorId: string, email: string, role: UserRole) {
+    const normalized = email.trim().toLowerCase();
+    if (!normalized) throw new BadRequestException('Email is required');
+    if (!STAFF_ROLES.includes(role)) {
+      throw new BadRequestException('Invalid staff role');
+    }
+
+    const existingUser = await this.prisma.user.findFirst({
+      where: { email: { equals: normalized, mode: 'insensitive' } },
+      select: { id: true },
+    });
+    if (existingUser) {
+      throw new BadRequestException('This email already belongs to an account; assign a role directly instead');
+    }
+
+    const existing = await this.prisma.adminInvite.findUnique({ where: { email: normalized } });
+    if (existing && existing.status === 'ACCEPTED') {
+      throw new BadRequestException('Invite already accepted');
+    }
+
+    const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
+    const invite = existing
+      ? await this.prisma.adminInvite.update({
+          where: { id: existing.id },
+          data: { role, status: 'PENDING', invitedById: actorId, acceptedAt: null, expiresAt },
+        })
+      : await this.prisma.adminInvite.create({
+          data: { email: normalized, role, invitedById: actorId, expiresAt },
+        });
+
+    await this.audit(actorId, 'STAFF_INVITED', 'AdminInvite', invite.id, { email: normalized, role });
+    return invite;
+  }
+
+  async listInvites() {
+    const items = await this.prisma.adminInvite.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: { invitedBy: { select: { id: true, email: true } } },
+    });
+    return { items };
+  }
+
+  async revokeInvite(actorId: string, id: string) {
+    const invite = await this.prisma.adminInvite.findUnique({ where: { id } });
+    if (!invite) throw new NotFoundException('Invite not found');
+
+    const result = await this.prisma.adminInvite.updateMany({
+      where: { id, status: 'PENDING' },
+      data: { status: 'REVOKED' },
+    });
+    if (result.count === 0) {
+      throw new BadRequestException('Only pending invites can be revoked');
+    }
+
+    await this.audit(actorId, 'STAFF_INVITE_REVOKED', 'AdminInvite', id, { email: invite.email });
+    return { id, email: invite.email, status: 'REVOKED' };
+  }
+
+  async setStaffStatus(actorId: string, userId: string, status: UserStatus) {
+    const updated = await this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${ADMIN_ROLE_LOCK_KEY}::int, 0)`;
+
+      const actor = await tx.user.findUnique({
+        where: { id: actorId },
+        select: { role: true },
+      });
+      if (!actor) throw new ForbiddenException('Actor not found');
+
+      const target = await tx.user.findUnique({ where: { id: userId } });
+      if (!target) throw new NotFoundException('User not found');
+
+      if (target.id === actorId) {
+        throw new BadRequestException('You cannot change your own account status');
+      }
+
+      if (!canAssignRole(actor.role, target.role)) {
+        throw new ForbiddenException('Insufficient permissions');
+      }
+
+      if (target.role === 'SUPER_ADMIN' && status !== 'ACTIVE') {
+        const superCount = await tx.user.count({
+          where: { role: 'SUPER_ADMIN', status: 'ACTIVE' },
+        });
+        if (superCount <= 1) {
+          throw new BadRequestException('Cannot deactivate the last Super Admin');
+        }
+      }
+
+      const result = await tx.user.update({
+        where: { id: userId },
+        data: { status },
+        select: { id: true, email: true, role: true, status: true },
+      });
+
+      if (status !== 'ACTIVE' && target.email) {
+        await tx.adminInvite.updateMany({
+          where: { email: target.email.trim().toLowerCase(), status: 'PENDING' },
+          data: { status: 'REVOKED' },
+        });
+      }
+
+      await tx.adminAuditLog.create({
+        data: {
+          actorId,
+          action: status === 'ACTIVE' ? 'STAFF_REACTIVATED' : 'STAFF_DEACTIVATED',
+          entityType: 'User',
+          entityId: userId,
+          metadata: { status } as Prisma.InputJsonValue,
+        },
+      });
+
+      return result;
     });
 
-    await this.audit(actorId, 'USER_ROLE_CHANGED', 'User', userId, { from: target.role, to: role });
+    if (status !== 'ACTIVE') {
+      await this.sessionsService.revokeAllForUser(userId).catch(() => undefined);
+    }
+
     return updated;
   }
 

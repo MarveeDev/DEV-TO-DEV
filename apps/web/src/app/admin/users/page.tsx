@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { Badge, Table, Td, Pagination, EmptyState, SearchInput, SelectInput, PageHeader, TableSkeleton } from '../../../components/admin/AdminUi';
 import Avatar from '../../../components/Avatar';
 import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
+import { canAssignRole, type AdminRole } from '../../../lib/admin-permissions';
+
+const ALL_ROLES = ['USER', 'MODERATOR', 'ANALYTICS_VIEWER', 'SUPPORT', 'MARKETING_MANAGER', 'PLATFORM_ADMIN', 'ADMIN', 'SUPER_ADMIN'];
 
 function formatDate(v: string) {
   if (!v) return '—';
@@ -61,9 +64,7 @@ export default function AdminUsersPage() {
           onChange={setRole}
           options={[
             { value: '', label: 'All roles' },
-            { value: 'USER', label: 'USER' },
-            { value: 'MODERATOR', label: 'MODERATOR' },
-            { value: 'ADMIN', label: 'ADMIN' },
+            ...ALL_ROLES.map((r) => ({ value: r, label: r })),
           ]}
         />
       </div>
@@ -96,9 +97,9 @@ export default function AdminUsersPage() {
                       onChange={(e) => changeRole(u.id, e.target.value)}
                       style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--foreground)', fontSize: '13px' }}
                     >
-                      <option value="USER">USER</option>
-                      <option value="MODERATOR">MODERATOR</option>
-                      <option value="ADMIN">ADMIN</option>
+                      {ALL_ROLES.filter((r) => r === u.role || canAssignRole(user?.role, r as AdminRole)).map((r) => (
+                        <option key={r} value={r}>{r}</option>
+                      ))}
                     </select>
                   ) : (
                     <Badge value={u.role} />

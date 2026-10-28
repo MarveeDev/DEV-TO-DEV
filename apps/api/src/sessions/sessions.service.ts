@@ -88,4 +88,21 @@ export class SessionsService {
       // Ignore if it doesn't exist in DB
     }
   }
+
+  /**
+   * Revokes every active session for a user (Redis + Postgres). Used when an
+   * account is suspended so existing cookies immediately stop validating.
+   */
+  async revokeAllForUser(userId: string): Promise<void> {
+    const redis = this.redisService.getClient();
+    const sessions = await this.prisma.session.findMany({
+      where: { userId },
+      select: { token: true },
+    });
+
+    if (sessions.length > 0) {
+      await redis.del(...sessions.map((s) => `session:${s.token}`));
+      await this.prisma.session.deleteMany({ where: { userId } });
+    }
+  }
 }

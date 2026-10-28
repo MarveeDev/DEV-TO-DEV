@@ -15,6 +15,7 @@ import {
   LogOut,
   Map,
   Clapperboard,
+  LifeBuoy,
 } from 'lucide-react';
 
 interface DesktopSidebarProps {
@@ -34,6 +35,7 @@ export default function DesktopSidebar({ currentPath, onLogout, unreadCount = 0 
     { name: 'Questions', path: '/questions', icon: CircleHelp },
     { name: 'Messages', path: '/messages', icon: MessageSquare },
     { name: 'Notifications', path: '/notifications', icon: Bell, badge: unreadCount },
+    { name: 'Support', path: '/support', icon: LifeBuoy },
     { name: 'Profile', path: '/profile', icon: User },
   ];
 

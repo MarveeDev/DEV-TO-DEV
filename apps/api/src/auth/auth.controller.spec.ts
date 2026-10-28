@@ -13,6 +13,7 @@ describe('AuthController OAuth error handling', () => {
     consumeOAuthState: jest.fn(),
     processGitHubCallback: jest.fn(),
     processGoogleCallback: jest.fn(),
+    applyPendingStaffInvite: jest.fn().mockResolvedValue(undefined),
   };
   const sessionsService = { createSession: jest.fn(), validateSession: jest.fn() };
   const mailService = { sendSignInNotification: jest.fn() };

@@ -6,9 +6,11 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useCurrentUser } from '../Auth/CurrentUserProvider';
 import Avatar from '../Avatar';
 import AdminNotifications from './AdminNotifications';
+import { hasPermission, isStaffRole, type AdminPermission } from '../../lib/admin-permissions';
 import {
   LayoutDashboard,
   Users,
+  UserCog,
   Store,
   Flag,
   FileText,
@@ -20,30 +22,38 @@ import {
   X,
   ChevronRight,
   MessageSquareText,
+  LifeBuoy,
 } from 'lucide-react';
 
 interface NavItem {
   name: string;
   href: string;
   icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
-  adminOnly?: boolean;
+  permission?: AdminPermission;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Users', href: '/admin/users', icon: Users },
-  { name: 'Content', href: '/admin/content', icon: FileText },
-  { name: 'Marketplace', href: '/admin/marketplace', icon: Store },
-  { name: 'Reports', href: '/admin/reports', icon: Flag },
-  { name: 'Moderation', href: '/admin/violations', icon: ShieldAlert },
-  { name: 'SMS Campaigns', href: '/admin/sms-campaigns', icon: MessageSquareText, adminOnly: true },
-  { name: 'Audit Logs', href: '/admin/audit-logs', icon: ScrollText, adminOnly: true },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
+  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, permission: 'overview.view' },
+  { name: 'Users', href: '/admin/users', icon: Users, permission: 'users.view' },
+  { name: 'Staff', href: '/admin/staff', icon: UserCog, permission: 'users.manage' },
+  { name: 'Content', href: '/admin/content', icon: FileText, permission: 'content.moderate' },
+  { name: 'Marketplace', href: '/admin/marketplace', icon: Store, permission: 'marketplace.moderate' },
+  { name: 'Reports', href: '/admin/reports', icon: Flag, permission: 'marketplace.moderate' },
+  { name: 'Moderation', href: '/admin/violations', icon: ShieldAlert, permission: 'violations.moderate' },
+  { name: 'Support', href: '/admin/support', icon: LifeBuoy, permission: 'support.manage' },
+  { name: 'SMS Campaigns', href: '/admin/sms-campaigns', icon: MessageSquareText, permission: 'marketing.manage' },
+  { name: 'Audit Logs', href: '/admin/audit-logs', icon: ScrollText, permission: 'audit.view' },
+  { name: 'Settings', href: '/admin/settings', icon: Settings, permission: 'overview.view' },
 ];
 
 const ROLE_LABEL: Record<string, string> = {
+  SUPER_ADMIN: 'Super Admin',
   ADMIN: 'System Administrator',
+  PLATFORM_ADMIN: 'Platform Admin',
+  MARKETING_MANAGER: 'Marketing Manager',
+  SUPPORT: 'Support',
   MODERATOR: 'Moderator',
+  ANALYTICS_VIEWER: 'Analytics Viewer',
 };
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
@@ -78,7 +88,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   if (!me) return null;
 
-  if (me.role !== 'ADMIN' && me.role !== 'MODERATOR') {
+  if (!isStaffRole(me.role)) {
     return (
       <div className="admin-root" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', background: 'var(--background)' }}>
         <div style={{ fontSize: '48px', fontWeight: 800, color: 'var(--foreground)' }}>403</div>
@@ -92,8 +102,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     );
   }
 
-  const isAdmin = me.role === 'ADMIN';
-  const visibleItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin);
+  const visibleItems = NAV_ITEMS.filter((item) => !item.permission || hasPermission(me.role, item.permission));
   const current = NAV_ITEMS.find((item) => pathname === item.href || pathname.startsWith(item.href + '/'));
 
   const displayName = me.developerProfile?.displayName || me.email || 'Administrator';

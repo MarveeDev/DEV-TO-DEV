@@ -123,6 +123,10 @@ export class AuthController {
       const { user, isNewUser } = await this.authService.processGitHubCallback(code, intent);
       if (!user) throw new Error('Authentication failed');
 
+      await this.authService.applyPendingStaffInvite(user.id, user.email).catch((e) => {
+        this.logger.error(`Staff invite application failed: ${e instanceof Error ? e.message : String(e)}`);
+      });
+
       // Create session
       const token = await this.sessionsService.createSession(user.id);
 
@@ -192,6 +196,10 @@ export class AuthController {
     try {
       const { user, isNewUser } = await this.authService.processGoogleCallback(code, intent);
       if (!user) throw new Error('Authentication failed');
+
+      await this.authService.applyPendingStaffInvite(user.id, user.email).catch((e) => {
+        this.logger.error(`Staff invite application failed: ${e instanceof Error ? e.message : String(e)}`);
+      });
 
       const token = await this.sessionsService.createSession(user.id);
 

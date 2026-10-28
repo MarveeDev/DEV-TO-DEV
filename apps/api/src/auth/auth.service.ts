@@ -334,4 +334,50 @@ export class AuthService {
 
     return { ...user, pendingProfile };
   }
+
+  /**
+   * Applies a pending staff invitation for the given verified email during
+   * sign-in. Only promotes plain USER accounts; never downgrades an existing
+   * role. Acceptance is atomic: the invite is claimed only while still
+   * PENDING and unexpired, and the role is granted only while the user is
+   * still USER.
+   */
+  async applyPendingStaffInvite(userId: string, email?: string | null): Promise<void> {
+    if (!email) return;
+    const normalized = email.trim().toLowerCase();
+
+    const invite = await this.prisma.adminInvite.findUnique({
+      where: { email: normalized },
+    });
+    if (!invite || invite.status !== 'PENDING') return;
+    if (invite.expiresAt && invite.expiresAt.getTime() <= Date.now()) return;
+
+    await this.prisma.$transaction(async (tx) => {
+      const claimed = await tx.adminInvite.updateMany({
+        where: {
+          id: invite.id,
+          status: 'PENDING',
+          OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+        },
+        data: { status: 'ACCEPTED', acceptedAt: new Date() },
+      });
+      if (claimed.count !== 1) return;
+
+      const granted = await tx.user.updateMany({
+        where: { id: userId, role: 'USER' },
+        data: { role: invite.role },
+      });
+      if (granted.count !== 1) return;
+
+      await tx.adminAuditLog.create({
+        data: {
+          actorId: userId,
+          action: 'STAFF_INVITE_ACCEPTED',
+          entityType: 'AdminInvite',
+          entityId: invite.id,
+          metadata: { email: normalized, role: invite.role },
+        },
+      });
+    });
+  }
 }

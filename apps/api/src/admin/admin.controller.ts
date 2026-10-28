@@ -1,12 +1,15 @@
-import { Controller, Get, Post, Patch, Body, Param, Req, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Req, Query, UseGuards } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { RolesGuard } from './roles.guard';
 import type { AuthenticatedAdminRequest } from './roles.guard';
 import { Roles } from './roles.decorator';
+import { Permissions } from './permissions.decorator';
 import { ChangeRoleDto } from './dto/change-role.dto';
 import { UpdateReportStatusDto } from './dto/update-report-status.dto';
 import { CreateViolationDto } from './dto/create-violation.dto';
 import { UpdateViolationStatusDto } from './dto/update-violation-status.dto';
+import { InviteStaffDto } from './dto/invite-staff.dto';
+import { ChangeStatusDto } from './dto/change-status.dto';
 
 @Controller('admin')
 @UseGuards(RolesGuard)
@@ -18,9 +21,9 @@ export class AdminController {
   }
 
   @Get('overview')
-  @Roles('ADMIN', 'MODERATOR')
-  getOverview() {
-    return this.adminService.getOverview();
+  @Permissions('overview.view')
+  getOverview(@Req() req: AuthenticatedAdminRequest) {
+    return this.adminService.getOverview(req.role);
   }
 
   @Get('users')
@@ -41,7 +44,7 @@ export class AdminController {
   }
 
   @Patch('users/:id/role')
-  @Roles('ADMIN')
+  @Permissions('users.manage')
   changeUserRole(@Req() req: AuthenticatedAdminRequest, @Param('id') id: string, @Body() data: ChangeRoleDto) {
     return this.adminService.changeUserRole(this.actorId(req), id, data.role);
   }
@@ -118,5 +121,40 @@ export class AdminController {
   @Roles('ADMIN')
   getAuditLogs(@Query('page') page?: string, @Query('limit') limit?: string, @Query('action') action?: string) {
     return this.adminService.getAuditLogs({ page, limit, action });
+  }
+
+  @Get('staff')
+  @Permissions('users.view')
+  getStaff(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('role') role?: string,
+  ) {
+    return this.adminService.listStaff({ page, limit, search, role });
+  }
+
+  @Post('staff/invites')
+  @Permissions('staff.manage')
+  inviteStaff(@Req() req: AuthenticatedAdminRequest, @Body() data: InviteStaffDto) {
+    return this.adminService.inviteStaff(this.actorId(req), data.email, data.role);
+  }
+
+  @Get('staff/invites')
+  @Permissions('staff.manage')
+  listInvites() {
+    return this.adminService.listInvites();
+  }
+
+  @Delete('staff/invites/:id')
+  @Permissions('staff.manage')
+  revokeInvite(@Req() req: AuthenticatedAdminRequest, @Param('id') id: string) {
+    return this.adminService.revokeInvite(this.actorId(req), id);
+  }
+
+  @Patch('staff/users/:id/status')
+  @Permissions('users.manage')
+  setStaffStatus(@Req() req: AuthenticatedAdminRequest, @Param('id') id: string, @Body() data: ChangeStatusDto) {
+    return this.adminService.setStaffStatus(this.actorId(req), id, data.status);
   }
 }

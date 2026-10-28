@@ -15,6 +15,7 @@ const NOINDEX_PREFIXES = [
   '/profile',
   '/admin',
   '/code',
+  '/support',
 ];
 
 // Routes that require a session. `/feed` is intentionally excluded so the feed
@@ -30,6 +31,7 @@ const AUTH_REQUIRED_PREFIXES = [
   '/onboarding',
   '/profile',
   '/admin',
+  '/support',
 ];
 
 function isNoIndexRoute(path: string): boolean {

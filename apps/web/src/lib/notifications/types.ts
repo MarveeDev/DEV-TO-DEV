@@ -3,7 +3,8 @@ export type NotificationType =
   | 'CONNECTION_ACCEPTED'
   | 'CONNECTION_REJECTED'
   | 'MESSAGE'
-  | 'SYSTEM';
+  | 'SYSTEM'
+  | 'SUPPORT';
 
 export interface AppNotification {
   id: string;
