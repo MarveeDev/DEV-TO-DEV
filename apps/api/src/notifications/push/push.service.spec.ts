@@ -16,6 +16,7 @@ function notification(overrides: Partial<Notification> = {}): Notification {
     type: 'SYSTEM',
     title: 'Test',
     message: 'Message',
+    metadata: null,
     read: false,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -92,6 +93,56 @@ describe('PushService', () => {
     expect(prisma.pushSubscription.findMany).not.toHaveBeenCalled();
 
     process.env = saved;
+  });
+
+  describe('destination resolution', () => {
+    function lastPayload(): { data: { url: string } } {
+      const calls = (webPush.sendNotification as jest.Mock).mock.calls;
+      return JSON.parse(calls[calls.length - 1][1]);
+    }
+
+    function withOneSubscription() {
+      prisma.pushSubscription.findMany.mockResolvedValue([
+        { id: 'sub1', userId: 'u1', endpoint: 'https://push.example/1', p256dh: 'p', auth: 'a' },
+      ]);
+      (webPush.sendNotification as jest.Mock).mockResolvedValue({ statusCode: 201, body: '', headers: {} });
+    }
+
+    it('deep-links SUPPORT notifications to the ticket id', async () => {
+      const service = new PushService(prisma as unknown as PrismaService);
+      withOneSubscription();
+
+      await service.sendForUser('u1', notification({ type: 'SUPPORT', metadata: { ticketId: 'ticket-123' } }));
+
+      expect(lastPayload().data.url).toBe('/support/ticket-123');
+    });
+
+    it('falls back to /support when the SUPPORT ticket id is missing', async () => {
+      const service = new PushService(prisma as unknown as PrismaService);
+      withOneSubscription();
+
+      await service.sendForUser('u1', notification({ type: 'SUPPORT', metadata: null }));
+
+      expect(lastPayload().data.url).toBe('/support');
+    });
+
+    it('falls back to /support when the SUPPORT ticket id is malformed', async () => {
+      const service = new PushService(prisma as unknown as PrismaService);
+      withOneSubscription();
+
+      await service.sendForUser('u1', notification({ type: 'SUPPORT', metadata: { ticketId: 42 } }));
+
+      expect(lastPayload().data.url).toBe('/support');
+    });
+
+    it('keeps existing static routes for other types', async () => {
+      const service = new PushService(prisma as unknown as PrismaService);
+      withOneSubscription();
+
+      await service.sendForUser('u1', notification({ type: 'MESSAGE' }));
+
+      expect(lastPayload().data.url).toBe('/messages');
+    });
   });
 
   describe('subscribe ownership', () => {

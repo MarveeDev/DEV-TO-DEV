@@ -254,7 +254,11 @@ describe('SupportService', () => {
       await service.addStaffMessage('staff1', 't1', { body: 'we fixed it' });
 
       expect(notifications.create).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'u1', type: 'SUPPORT' }),
+        expect.objectContaining({
+          userId: 'u1',
+          type: 'SUPPORT',
+          metadata: { ticketId: 't1' },
+        }),
       );
       expect(prisma.adminAuditLog.create).not.toHaveBeenCalled();
     });

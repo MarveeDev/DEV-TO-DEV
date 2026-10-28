@@ -12,6 +12,7 @@ export interface AppNotification {
   type: NotificationType;
   title: string | null;
   message: string;
+  metadata?: { ticketId?: string } | null;
   read: boolean;
   createdAt: string;
   updatedAt: string;

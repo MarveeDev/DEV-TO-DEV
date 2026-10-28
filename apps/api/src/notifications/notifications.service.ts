@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { NotificationType } from '@prisma/client';
+import { NotificationType, Prisma } from '@prisma/client';
 import { NotificationEvents } from './notification-events';
 import { PushService } from './push/push.service';
 import { MAX_LIMIT } from '../common/pagination';
@@ -10,6 +10,7 @@ export interface CreateNotificationInput {
   type: NotificationType;
   title?: string;
   message: string;
+  metadata?: Record<string, unknown>;
 }
 
 @Injectable()
@@ -34,6 +35,9 @@ export class NotificationsService {
         type: input.type,
         title: input.title ?? null,
         message: input.message,
+        metadata: input.metadata
+          ? (input.metadata as Prisma.InputJsonValue)
+          : undefined,
       },
     });
 

@@ -143,7 +143,7 @@ export class PushService {
       body: notification.message,
       tag: notification.id,
       data: {
-        url: NOTIFICATION_ROUTES[notification.type] ?? '/notifications',
+        url: this.resolveDestination(notification),
         type: notification.type,
         notificationId: notification.id,
       },
@@ -152,6 +152,23 @@ export class PushService {
     await Promise.all(
       subscriptions.map((sub) => this.sendToSubscription(sub, payload)),
     );
+  }
+
+  /**
+   * Resolves the in-app destination for a notification. SUPPORT notifications
+   * carry a ticketId in metadata and deep-link to that ticket; every other type
+   * uses its static route. Falls back to a safe route (never a fabricated or
+   * malformed one) when the ticket id is missing.
+   */
+  private resolveDestination(notification: Notification): string {
+    if (notification.type === 'SUPPORT') {
+      const ticketId = (notification.metadata as { ticketId?: unknown } | null)?.ticketId;
+      if (typeof ticketId === 'string' && ticketId.length > 0) {
+        return `/support/${ticketId}`;
+      }
+      return '/support';
+    }
+    return NOTIFICATION_ROUTES[notification.type] ?? '/notifications';
   }
 
   private async sendToSubscription(

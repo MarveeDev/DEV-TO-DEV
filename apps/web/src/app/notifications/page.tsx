@@ -169,6 +169,19 @@ export default function NotificationsPage() {
                       {notification.type === 'MESSAGE' && (
                         <Button onClick={() => router.push('/messages')} variant="outline" size="sm">View Messages</Button>
                       )}
+                      {notification.type === 'SUPPORT' && (
+                        <Button
+                          onClick={() => {
+                            const ticketId = notification.metadata?.ticketId;
+                            markAsRead(notification.id);
+                            router.push(ticketId ? `/support/${ticketId}` : '/support');
+                          }}
+                          variant="outline"
+                          size="sm"
+                        >
+                          View Ticket
+                        </Button>
+                      )}
                       {!notification.read && (
                         <Button onClick={() => markAsRead(notification.id)} variant="ghost" size="sm">Mark as read</Button>
                       )}

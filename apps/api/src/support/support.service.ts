@@ -283,6 +283,7 @@ export class SupportService {
           type: NotificationType.SUPPORT,
           title: 'Support reply',
           message: 'A support agent replied to your ticket.',
+          metadata: { ticketId: id },
         })
         .catch(() => undefined);
     }
