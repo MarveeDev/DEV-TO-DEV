@@ -46,7 +46,6 @@ function formatDate(v?: string | null) {
 export default function AdminStaffPage() {
   const { user: me } = useCurrentUser();
   const canManageStaff = hasPermission(me?.role, 'staff.manage');
-  const canManageUsers = hasPermission(me?.role, 'users.manage');
 
   const [staff, setStaff] = useState<StaffItem[]>([]);
   const [meta, setMeta] = useState<{ page?: number; totalPages?: number }>({ page: 1, totalPages: 1 });
@@ -360,7 +359,7 @@ export default function AdminStaffPage() {
                 </Td>
                 <Td>{u.email}</Td>
                 <Td>
-                  {canManageUsers ? (
+                  {canManageStaff ? (
                     <select
                       value={u.role}
                       onChange={(e) => changeRole(u.id, e.target.value)}
@@ -377,7 +376,7 @@ export default function AdminStaffPage() {
                 <Td><Badge value={u.status} /></Td>
                 <Td>{formatDate(u.createdAt)}</Td>
                 <Td>
-                  {canManageUsers && u.id !== me?.id && (
+                  {canManageStaff && u.id !== me?.id && (
                     <div style={{ display: 'flex', gap: '8px' }}>
                       {u.status === 'ACTIVE' ? (
                         <button onClick={() => changeStatus(u.id, 'SUSPENDED')} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}>Deactivate</button>

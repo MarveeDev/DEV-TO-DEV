@@ -35,7 +35,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, permission: 'overview.view' },
   { name: 'Users', href: '/admin/users', icon: Users, permission: 'users.view' },
-  { name: 'Staff', href: '/admin/staff', icon: UserCog, permission: 'users.manage' },
+  { name: 'Staff', href: '/admin/staff', icon: UserCog, permission: 'staff.manage' },
   { name: 'Content', href: '/admin/content', icon: FileText, permission: 'content.moderate' },
   { name: 'Marketplace', href: '/admin/marketplace', icon: Store, permission: 'marketplace.moderate' },
   { name: 'Reports', href: '/admin/reports', icon: Flag, permission: 'marketplace.moderate' },

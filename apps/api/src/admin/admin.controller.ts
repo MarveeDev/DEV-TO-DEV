@@ -124,7 +124,7 @@ export class AdminController {
   }
 
   @Get('staff')
-  @Permissions('users.view')
+  @Permissions('staff.manage')
   getStaff(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -135,7 +135,7 @@ export class AdminController {
   }
 
   @Get('staff/find-by-email')
-  @Permissions('users.manage')
+  @Permissions('staff.manage')
   async findStaffByEmail(@Query('email') email?: string) {
     const user = await this.adminService.findUserByEmail(email ?? '');
     if (!user) throw new NotFoundException('No account found for this email');
@@ -167,7 +167,7 @@ export class AdminController {
   }
 
   @Patch('staff/users/:id/status')
-  @Permissions('users.manage')
+  @Permissions('staff.manage')
   setStaffStatus(@Req() req: AuthenticatedAdminRequest, @Param('id') id: string, @Body() data: ChangeStatusDto) {
     return this.adminService.setStaffStatus(this.actorId(req), id, data.status);
   }

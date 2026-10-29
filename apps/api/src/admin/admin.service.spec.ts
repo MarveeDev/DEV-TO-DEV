@@ -83,6 +83,16 @@ describe('AdminService staff management', () => {
       await expect(service.changeUserRole('a1', 'u1', 'MODERATOR')).rejects.toThrow(ForbiddenException);
     });
 
+    it('rejects PLATFORM_ADMIN modifying a SUPER_ADMIN account', async () => {
+      mockUsers({ id: 'a1', role: 'PLATFORM_ADMIN' }, { id: 'u1', role: 'SUPER_ADMIN' });
+      await expect(service.changeUserRole('a1', 'u1', 'MODERATOR')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('rejects PLATFORM_ADMIN escalating its own role', async () => {
+      mockUsers({ id: 'a1', role: 'PLATFORM_ADMIN' }, { id: 'a1', role: 'PLATFORM_ADMIN' });
+      await expect(service.changeUserRole('a1', 'a1', 'SUPER_ADMIN')).rejects.toThrow(BadRequestException);
+    });
+
     it('prevents removing the last active Super Admin', async () => {
       mockUsers({ id: 'a1', role: 'SUPER_ADMIN' }, { id: 'u1', role: 'SUPER_ADMIN' });
       prisma.user.count.mockResolvedValue(1);
@@ -107,6 +117,11 @@ describe('AdminService staff management', () => {
   describe('setStaffStatus authorization', () => {
     it('rejects PLATFORM_ADMIN suspending a higher-privilege ADMIN', async () => {
       mockUsers({ id: 'a1', role: 'PLATFORM_ADMIN' }, { id: 'u1', role: 'ADMIN' });
+      await expect(service.setStaffStatus('a1', 'u1', 'SUSPENDED')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('rejects PLATFORM_ADMIN suspending a SUPER_ADMIN account', async () => {
+      mockUsers({ id: 'a1', role: 'PLATFORM_ADMIN' }, { id: 'u1', role: 'SUPER_ADMIN' });
       await expect(service.setStaffStatus('a1', 'u1', 'SUSPENDED')).rejects.toThrow(ForbiddenException);
     });
 
