@@ -1,4 +1,4 @@
-import { hasPermission, roleCovers, canAssignRole, STAFF_ROLES } from './permissions';
+import { hasPermission, roleCovers, canAssignRole, STAFF_ROLES, staffWorkspacePath } from './permissions';
 
 describe('admin permissions matrix', () => {
   it('grants SUPER_ADMIN every permission including staff management', () => {
@@ -21,9 +21,13 @@ describe('admin permissions matrix', () => {
     expect(hasPermission('USER', 'overview.view')).toBe(false);
   });
 
-  it('does not advertise marketing to MARKETING_MANAGER while SMS is ADMIN-only', () => {
-    expect(hasPermission('MARKETING_MANAGER', 'marketing.manage')).toBe(false);
+  it('grants marketing to MARKETING_MANAGER and ADMIN without broadening privileges', () => {
+    expect(hasPermission('MARKETING_MANAGER', 'marketing.manage')).toBe(true);
     expect(hasPermission('ADMIN', 'marketing.manage')).toBe(true);
+    expect(hasPermission('MARKETING_MANAGER', 'users.manage')).toBe(false);
+    expect(hasPermission('MARKETING_MANAGER', 'staff.manage')).toBe(false);
+    expect(hasPermission('MARKETING_MANAGER', 'support.manage')).toBe(false);
+    expect(hasPermission('MARKETING_MANAGER', 'audit.view')).toBe(false);
   });
 
   it('scopes SUPPORT to support.manage only (no unrelated admin access)', () => {
@@ -69,5 +73,15 @@ describe('admin permissions matrix', () => {
         'ANALYTICS_VIEWER',
       ]),
     );
+  });
+
+  it('maps each staff role to its default workspace', () => {
+    expect(staffWorkspacePath('SUPER_ADMIN')).toBe('/admin');
+    expect(staffWorkspacePath('ADMIN')).toBe('/admin');
+    expect(staffWorkspacePath('PLATFORM_ADMIN')).toBe('/admin');
+    expect(staffWorkspacePath('MARKETING_MANAGER')).toBe('/admin/sms-campaigns');
+    expect(staffWorkspacePath('SUPPORT')).toBe('/admin/support');
+    expect(staffWorkspacePath('MODERATOR')).toBe('/admin/violations');
+    expect(staffWorkspacePath('ANALYTICS_VIEWER')).toBe('/admin');
   });
 });

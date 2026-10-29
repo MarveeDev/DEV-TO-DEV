@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
+import { staffWorkspacePath } from '../../lib/admin-permissions';
 
 export default function LoginForm() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function LoginForm() {
       }
 
       const user = await refreshUser();
-      const dest = user && user.role && user.role !== 'USER' ? '/admin' : '/dashboard';
+      const dest = user && user.role && user.role !== 'USER' ? staffWorkspacePath(user.role) : '/dashboard';
       router.push(dest);
       router.refresh();
     } catch {

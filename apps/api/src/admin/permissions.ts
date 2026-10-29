@@ -52,7 +52,7 @@ export const PERMISSIONS: Record<UserRole, AdminPermission[]> = {
   USER: [],
   ANALYTICS_VIEWER: ['overview.view', 'analytics.view'],
   SUPPORT: ['overview.view', 'analytics.view', 'support.manage'],
-  MARKETING_MANAGER: ['overview.view', 'analytics.view'],
+  MARKETING_MANAGER: ['overview.view', 'analytics.view', 'marketing.manage'],
   MODERATOR: ['overview.view', 'users.view', 'content.moderate', 'marketplace.moderate', 'violations.moderate'],
   PLATFORM_ADMIN: [
     'overview.view',
@@ -124,4 +124,22 @@ export function canAssignRole(actor: UserRole, role: UserRole): boolean {
 
 /** Postgres advisory-lock key used to serialize administrative role changes. */
 export const ADMIN_ROLE_LOCK_KEY = 727405;
+
+/**
+ * Default landing path inside the admin workspace for each staff role. Kept in
+ * one place so post-login redirects (backend) and client navigation (frontend)
+ * stay consistent. Non-staff roles are not handled here.
+ */
+export function staffWorkspacePath(role: string): string {
+  switch (role) {
+    case 'SUPPORT':
+      return '/admin/support';
+    case 'MARKETING_MANAGER':
+      return '/admin/sms-campaigns';
+    case 'MODERATOR':
+      return '/admin/violations';
+    default:
+      return '/admin';
+  }
+}
 

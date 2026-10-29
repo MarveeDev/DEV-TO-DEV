@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { RolesGuard } from '../admin/roles.guard';
-import { Roles } from '../admin/roles.decorator';
+import { Permissions } from '../admin/permissions.decorator';
 import { SmsCampaignsService } from './sms-campaigns.service';
 import { CreateSmsCampaignDto } from './dto/create-sms-campaign.dto';
 import { UpdateSmsCampaignDto } from './dto/update-sms-campaign.dto';
@@ -23,7 +23,7 @@ import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 
 @Controller('admin/sms-campaigns')
 @UseGuards(RolesGuard)
-@Roles('ADMIN')
+@Permissions('marketing.manage')
 export class SmsCampaignsController {
   constructor(private readonly smsCampaignsService: SmsCampaignsService) {}
 

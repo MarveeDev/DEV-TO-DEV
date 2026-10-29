@@ -6,6 +6,7 @@ import { Users, Store, Flag, FileText, HelpCircle, FolderKanban, ArrowUpRight, B
 import { StatCard, Badge, Table, Td, EmptyState, TableSkeleton } from '../../components/admin/AdminUi';
 import Avatar from '../../components/Avatar';
 import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
+import { hasPermission } from '../../lib/admin-permissions';
 import { formatPrice } from '../../lib/currency';
 
 function formatDate(v: string) {
@@ -121,6 +122,8 @@ export default function AdminOverviewPage() {
 
   const { stats, recentUsers, recentListings, recentReports } = data;
   const firstName = (user?.developerProfile?.displayName || user?.email || 'Admin').split(' ')[0];
+  const canModerate = hasPermission(user?.role, 'marketplace.moderate');
+  const canSeeUsers = hasPermission(user?.role, 'users.view');
 
   return (
     <div>
@@ -153,25 +156,27 @@ export default function AdminOverviewPage() {
               {now.toLocaleString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
             </span>
           )}
-          <Link
-            href="/admin/reports"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '9px 16px',
-              borderRadius: 10,
-              background: 'var(--primary)',
-              color: '#ffffff',
-              fontSize: '13px',
-              fontWeight: 700,
-              textDecoration: 'none',
-              transition: 'background 0.12s ease',
-            }}
-          >
-            Review Reports
-            <ArrowUpRight size={16} />
-          </Link>
+          {canModerate && (
+            <Link
+              href="/admin/reports"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 16px',
+                borderRadius: 10,
+                background: 'var(--primary)',
+                color: '#ffffff',
+                fontSize: '13px',
+                fontWeight: 700,
+                textDecoration: 'none',
+                transition: 'background 0.12s ease',
+              }}
+            >
+              Review Reports
+              <ArrowUpRight size={16} />
+            </Link>
+          )}
         </div>
       </div>
 
@@ -190,9 +195,11 @@ export default function AdminOverviewPage() {
         <section>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', gap: '12px' }}>
             <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--foreground)', margin: 0 }}>Recent Users</h2>
-            <Link href="/admin/users" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}>
-              View all
-            </Link>
+            {canSeeUsers && (
+              <Link href="/admin/users" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}>
+                View all
+              </Link>
+            )}
           </div>
           <Table headers={['User', 'Role', 'Status', 'Joined']}>
             {recentUsers.length === 0 ? (
@@ -270,9 +277,11 @@ export default function AdminOverviewPage() {
         <section>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', gap: '12px' }}>
             <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--foreground)', margin: 0 }}>Recent Reports</h2>
-            <Link href="/admin/reports" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}>
-              View all
-            </Link>
+            {canModerate && (
+              <Link href="/admin/reports" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}>
+                View all
+              </Link>
+            )}
           </div>
           <Table headers={['Reason', 'Subject', 'Reported By', 'Status', 'Date']}>
             {recentReports.length === 0 ? (
@@ -301,9 +310,11 @@ export default function AdminOverviewPage() {
         <section>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', gap: '12px' }}>
             <h2 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--foreground)', margin: 0 }}>Recent Listings</h2>
-            <Link href="/admin/marketplace" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}>
-              View all
-            </Link>
+            {canModerate && (
+              <Link href="/admin/marketplace" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}>
+                View all
+              </Link>
+            )}
           </div>
           <Table headers={['Title', 'Seller', 'Price', 'Created']}>
             {recentListings.length === 0 ? (

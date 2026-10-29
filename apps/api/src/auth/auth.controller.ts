@@ -19,6 +19,7 @@ import { randomBytes } from 'crypto';
 import { SessionsService } from '../sessions/sessions.service';
 import { MailService } from '../mail/mail.service';
 import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
+import { staffWorkspacePath } from '../admin/permissions';
 import { LoginDto } from './dto/login.dto';
 import { ActivateDto } from './dto/activate.dto';
 
@@ -70,7 +71,7 @@ export class AuthController {
    */
   private postLoginDestination(user: { role?: string } | null, isNewUser: boolean): string {
     if (user && user.role && user.role !== 'USER') {
-      return `${this.frontendUrl}/admin`;
+      return `${this.frontendUrl}${staffWorkspacePath(user.role)}`;
     }
     if (isNewUser) {
       return `${this.frontendUrl}/onboarding`;

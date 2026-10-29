@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useCurrentUser } from '../Auth/CurrentUserProvider';
 import Avatar from '../Avatar';
 import AdminNotifications from './AdminNotifications';
-import { hasPermission, isStaffRole, type AdminPermission } from '../../lib/admin-permissions';
+import { hasPermission, isStaffRole, staffWorkspacePath, type AdminPermission } from '../../lib/admin-permissions';
 import {
   LayoutDashboard,
   Users,
@@ -102,8 +102,32 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     );
   }
 
+  // Enforce per-page authorization server-side of the shell: a staff role that
+  // manually navigates to a route it is not permitted to view is denied rather
+  // than shown an empty/broken page. Match the most specific nav item (longest
+  // href) so that `/admin/users` resolves to "Users" rather than the broad
+  // "Dashboard" (`/admin`) prefix.
+  const current = NAV_ITEMS.reduce<NavItem | undefined>((best, item) => {
+    const matches = pathname === item.href || pathname.startsWith(item.href + '/');
+    if (!matches) return best;
+    if (!best) return item;
+    return item.href.length > best.href.length ? item : best;
+  }, undefined);
+  if (current && current.permission && !hasPermission(me.role, current.permission)) {
+    return (
+      <div className="admin-root" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', textAlign: 'center', background: 'var(--background)' }}>
+        <div style={{ fontSize: '48px', fontWeight: 800, color: 'var(--foreground)' }}>403</div>
+        <p style={{ color: 'var(--foreground-muted)', margin: '8px 0 24px' }}>
+          You do not have permission to view this page.
+        </p>
+        <Link href={staffWorkspacePath(me.role)} style={{ color: 'var(--primary)', textDecoration: 'underline' }}>
+          Go to your workspace
+        </Link>
+      </div>
+    );
+  }
+
   const visibleItems = NAV_ITEMS.filter((item) => !item.permission || hasPermission(me.role, item.permission));
-  const current = NAV_ITEMS.find((item) => pathname === item.href || pathname.startsWith(item.href + '/'));
 
   const displayName = me.developerProfile?.displayName || me.email || 'Administrator';
   const roleLabel = ROLE_LABEL[me.role] || me.role || 'Admin';

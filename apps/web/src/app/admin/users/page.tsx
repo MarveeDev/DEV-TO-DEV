@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Badge, Table, Td, Pagination, EmptyState, SearchInput, SelectInput, PageHeader, TableSkeleton } from '../../../components/admin/AdminUi';
 import Avatar from '../../../components/Avatar';
 import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
-import { canAssignRole, type AdminRole } from '../../../lib/admin-permissions';
+import { hasPermission, canAssignRole, type AdminRole } from '../../../lib/admin-permissions';
 
 const ALL_ROLES = ['USER', 'MODERATOR', 'ANALYTICS_VIEWER', 'SUPPORT', 'MARKETING_MANAGER', 'PLATFORM_ADMIN', 'ADMIN', 'SUPER_ADMIN'];
 
@@ -20,7 +20,7 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [role, setRole] = useState('');
-  const isAdmin = user?.role === 'ADMIN';
+  const isAdmin = hasPermission(user?.role, 'users.manage');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

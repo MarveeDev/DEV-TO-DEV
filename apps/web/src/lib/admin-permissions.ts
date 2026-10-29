@@ -46,7 +46,7 @@ const PERMISSIONS: Record<AdminRole, AdminPermission[]> = {
   USER: [],
   ANALYTICS_VIEWER: ['overview.view', 'analytics.view'],
   SUPPORT: ['overview.view', 'analytics.view', 'support.manage'],
-  MARKETING_MANAGER: ['overview.view', 'analytics.view'],
+  MARKETING_MANAGER: ['overview.view', 'analytics.view', 'marketing.manage'],
   MODERATOR: ['overview.view', 'users.view', 'content.moderate', 'marketplace.moderate', 'violations.moderate'],
   PLATFORM_ADMIN: [
     'overview.view',
@@ -101,4 +101,22 @@ export function canAssignRole(actor: string | undefined, role: AdminRole): boole
   if (!actor) return false;
   if (actor === 'SUPER_ADMIN') return true;
   return ((ROLE_RANK as Record<string, number>)[actor] ?? 0) > ((ROLE_RANK as Record<string, number>)[role] ?? 0);
+}
+
+/**
+ * Default landing path inside the admin workspace for each staff role. Mirrors
+ * the backend `staffWorkspacePath` so login redirects and client navigation
+ * stay consistent.
+ */
+export function staffWorkspacePath(role: string | undefined): string {
+  switch (role) {
+    case 'SUPPORT':
+      return '/admin/support';
+    case 'MARKETING_MANAGER':
+      return '/admin/sms-campaigns';
+    case 'MODERATOR':
+      return '/admin/violations';
+    default:
+      return '/admin';
+  }
 }
