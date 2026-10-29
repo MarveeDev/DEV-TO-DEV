@@ -143,6 +143,39 @@ describe('AdminService staff management', () => {
     });
   });
 
+  describe('findUserByEmail', () => {
+    it('returns safe identification fields for an existing account', async () => {
+      prisma.user.findFirst.mockResolvedValue({
+        id: 'u1',
+        email: 'staff@example.com',
+        role: 'USER',
+        status: 'ACTIVE',
+        developerProfile: { displayName: 'Staff', username: 'staff', avatarUrl: null },
+      });
+
+      const result = await service.findUserByEmail('Staff@Example.com ');
+
+      expect(prisma.user.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { email: { equals: 'staff@example.com', mode: 'insensitive' } },
+          select: expect.objectContaining({ id: true, email: true, role: true, status: true }),
+        }),
+      );
+      expect(result).toMatchObject({ id: 'u1', email: 'staff@example.com', role: 'USER', status: 'ACTIVE' });
+      expect(result).not.toHaveProperty('passwordHash');
+    });
+
+    it('returns null for an unknown email', async () => {
+      prisma.user.findFirst.mockResolvedValue(null);
+      await expect(service.findUserByEmail('nobody@example.com')).resolves.toBeNull();
+    });
+
+    it('returns null for an empty email without querying', async () => {
+      await expect(service.findUserByEmail('   ')).resolves.toBeNull();
+      expect(prisma.user.findFirst).not.toHaveBeenCalled();
+    });
+  });
+
   describe('inviteStaff', () => {
     function actorIs(role: string) {
       (prisma.user.findUnique as jest.Mock).mockResolvedValue({ id: 'a1', role });

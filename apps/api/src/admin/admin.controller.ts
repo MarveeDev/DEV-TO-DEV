@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Req, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Req, Query, UseGuards, NotFoundException } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { RolesGuard } from './roles.guard';
 import type { AuthenticatedAdminRequest } from './roles.guard';
@@ -132,6 +132,14 @@ export class AdminController {
     @Query('role') role?: string,
   ) {
     return this.adminService.listStaff({ page, limit, search, role });
+  }
+
+  @Get('staff/find-by-email')
+  @Permissions('users.manage')
+  async findStaffByEmail(@Query('email') email?: string) {
+    const user = await this.adminService.findUserByEmail(email ?? '');
+    if (!user) throw new NotFoundException('No account found for this email');
+    return { user };
   }
 
   @Post('staff/invites')

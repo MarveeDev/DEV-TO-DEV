@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Badge, Table, Td, Pagination, EmptyState, SearchInput, SelectInput, PageHeader, TableSkeleton } from '../../../components/admin/AdminUi';
 import Avatar from '../../../components/Avatar';
 import { useCurrentUser } from '../../../components/Auth/CurrentUserProvider';
@@ -28,6 +28,16 @@ interface InviteItem {
   expiresAt?: string | null;
 }
 
+type LookupState = 'idle' | 'checking' | 'found' | 'not-found' | 'error';
+
+interface ExistingUser {
+  id: string;
+  email: string | null;
+  role: string;
+  status: string;
+  developerProfile?: { displayName?: string | null; username?: string | null; avatarUrl?: string | null } | null;
+}
+
 function formatDate(v?: string | null) {
   if (!v) return '—';
   return new Date(v).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
@@ -53,6 +63,10 @@ export default function AdminStaffPage() {
   const [inviteRole, setInviteRole] = useState<AdminRole>('MODERATOR');
   const [inviteError, setInviteError] = useState('');
   const [inviteBusy, setInviteBusy] = useState(false);
+
+  const [lookupState, setLookupState] = useState<LookupState>('idle');
+  const [existingUser, setExistingUser] = useState<ExistingUser | null>(null);
+  const lookupTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [feedback, setFeedback] = useState<{ kind: 'success' | 'error' | 'warning'; text: string } | null>(null);
 
@@ -108,7 +122,79 @@ export default function AdminStaffPage() {
     setInviteEmail('');
     setInviteRole('MODERATOR');
     setInviteError('');
+    setLookupState('idle');
+    setExistingUser(null);
+    if (lookupTimer.current) clearTimeout(lookupTimer.current);
     setShowModal(true);
+  };
+
+  const doLookup = async (email: string) => {
+    setLookupState('checking');
+    try {
+      const res = await fetch(`/api/v1/admin/staff/find-by-email?email=${encodeURIComponent(email)}`);
+      if (res.status === 404) {
+        setExistingUser(null);
+        setLookupState('not-found');
+        return;
+      }
+      if (!res.ok) {
+        setExistingUser(null);
+        setLookupState('error');
+        return;
+      }
+      const data = await res.json();
+      setExistingUser(data.user ?? null);
+      setLookupState(data.user ? 'found' : 'not-found');
+    } catch {
+      setExistingUser(null);
+      setLookupState('error');
+    }
+  };
+
+  const onEmailChange = (v: string) => {
+    setInviteEmail(v);
+    setExistingUser(null);
+    if (lookupTimer.current) clearTimeout(lookupTimer.current);
+    const email = v.trim();
+    if (!email) {
+      setLookupState('idle');
+      return;
+    }
+    setLookupState('checking');
+    lookupTimer.current = setTimeout(() => doLookup(email), 400);
+  };
+
+  const assignRole = async (userId: string, role: string, email: string | null) => {
+    setInviteBusy(true);
+    setInviteError('');
+    try {
+      const res = await fetch(`/api/v1/admin/users/${userId}/role`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setShowModal(false);
+        loadStaff();
+        setFeedback({ kind: 'success', text: `Assigned ${role} to ${email || 'the account'}.` });
+      } else {
+        setInviteError(data.message || 'Failed to assign role');
+      }
+    } catch {
+      setInviteError('Failed to assign role');
+    } finally {
+      setInviteBusy(false);
+    }
+  };
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (lookupState === 'found' && existingUser) {
+      assignRole(existingUser.id, inviteRole, existingUser.email);
+    } else {
+      invite(e);
+    }
   };
 
   const invite = async (e: React.FormEvent) => {
@@ -314,7 +400,7 @@ export default function AdminStaffPage() {
           <div style={{ position: 'relative', width: '100%', maxWidth: '460px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '24px', boxShadow: 'var(--shadow-lg)' }}>
             <h2 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--foreground)', margin: '0 0 4px' }}>Add Staff</h2>
             <p style={{ fontSize: '13px', color: 'var(--foreground-muted)', margin: '0 0 20px' }}>
-              The staff member will receive an email with an activation link to set their own password.
+              Enter the email to look up the account. Existing accounts can be assigned a role directly; new accounts receive an activation email.
             </p>
 
             {inviteError && (
@@ -323,19 +409,21 @@ export default function AdminStaffPage() {
               </div>
             )}
 
-            <form onSubmit={invite} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label htmlFor="invite-name" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--foreground)' }}>Full name</label>
-                <input
-                  id="invite-name"
-                  type="text"
-                  value={inviteName}
-                  onChange={(e) => setInviteName(e.target.value)}
-                  maxLength={120}
-                  placeholder="e.g. Jane Doe"
-                  style={{ padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--foreground)', fontSize: '14px', outline: 'none' }}
-                />
-              </div>
+            <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {lookupState !== 'found' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label htmlFor="invite-name" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--foreground)' }}>Full name</label>
+                  <input
+                    id="invite-name"
+                    type="text"
+                    value={inviteName}
+                    onChange={(e) => setInviteName(e.target.value)}
+                    maxLength={120}
+                    placeholder="e.g. Jane Doe"
+                    style={{ padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--foreground)', fontSize: '14px', outline: 'none' }}
+                  />
+                </div>
+              )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label htmlFor="invite-email" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--foreground)' }}>Email address *</label>
@@ -343,12 +431,46 @@ export default function AdminStaffPage() {
                   id="invite-email"
                   type="email"
                   value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
+                  onChange={(e) => onEmailChange(e.target.value)}
                   placeholder="email@example.com"
                   required
                   style={{ padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--background)', color: 'var(--foreground)', fontSize: '14px', outline: 'none' }}
                 />
               </div>
+
+              {lookupState === 'found' && existingUser && (
+                <div style={{ background: 'var(--surface-muted)', border: '1px solid var(--border)', borderRadius: 10, padding: '12px 14px' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--foreground-subtle)', marginBottom: '8px' }}>
+                    Existing account found
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                    <Avatar src={existingUser.developerProfile?.avatarUrl} name={existingUser.developerProfile?.displayName || existingUser.email || ''} size={34} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--foreground)' }}>
+                        {existingUser.developerProfile?.displayName || existingUser.email || '—'}
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--foreground-muted)' }}>{existingUser.email}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <Badge value={existingUser.role} />
+                    <Badge value={existingUser.status} />
+                  </div>
+                  <p style={{ fontSize: '12px', color: 'var(--foreground-muted)', margin: '8px 0 0' }}>
+                    Assign a new staff role to this account. No invitation or password reset is required.
+                  </p>
+                </div>
+              )}
+
+              {lookupState === 'checking' && (
+                <p style={{ fontSize: '13px', color: 'var(--foreground-muted)', margin: 0 }}>Checking account…</p>
+              )}
+              {lookupState === 'error' && (
+                <p style={{ fontSize: '13px', color: 'var(--danger)', margin: 0 }}>Unable to look up this email. You can still send an invitation.</p>
+              )}
+              {lookupState === 'not-found' && (
+                <p style={{ fontSize: '13px', color: 'var(--foreground-muted)', margin: 0 }}>No existing account found — an invitation will be sent.</p>
+              )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label htmlFor="invite-role" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--foreground)' }}>Role</label>
@@ -364,7 +486,7 @@ export default function AdminStaffPage() {
                   Cancel
                 </button>
                 <button type="submit" disabled={inviteBusy} style={{ padding: '10px 18px', borderRadius: 10, background: 'var(--primary)', color: '#fff', fontWeight: 600, fontSize: '14px', border: 'none', cursor: 'pointer', opacity: inviteBusy ? 0.7 : 1 }}>
-                  {inviteBusy ? 'Sending...' : 'Send Invitation'}
+                  {inviteBusy ? (lookupState === 'found' ? 'Assigning...' : 'Sending...') : (lookupState === 'found' ? 'Assign Staff Role' : 'Send Invitation')}
                 </button>
               </div>
             </form>

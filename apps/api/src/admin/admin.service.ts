@@ -314,6 +314,22 @@ export class AdminService {
     return { items, meta: this.meta(total, page, limit) };
   }
 
+  async findUserByEmail(email: string) {
+    const normalized = email.trim().toLowerCase();
+    if (!normalized) return null;
+
+    return this.prisma.user.findFirst({
+      where: { email: { equals: normalized, mode: 'insensitive' } },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        status: true,
+        developerProfile: { select: { displayName: true, username: true, avatarUrl: true } },
+      },
+    });
+  }
+
   async inviteStaff(actorId: string, email: string, name: string | undefined, role: UserRole) {
     const normalized = email.trim().toLowerCase();
     const fullName = (name ?? '').trim();
