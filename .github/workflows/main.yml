@@ -46,3 +46,76 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ci_devtodev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ci_devtodev"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+
+    # Test-only credentials. Every e2e suite provisions a disposable
+    # `devtodev_gate_*` database (hostname must be localhost/127.0.0.1) and the
+    # shared test-db helper / inline guards refuse any non-local host, so a
+    # production DATABASE_URL can never be used by test cleanup.
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ci_devtodev?schema=public
+      REDIS_URL: redis://localhost:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.13.1
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter api exec prisma generate
+
+      # Migrations are applied inside each suite's disposable-DB provisioning
+      # (apps/api/test/test-db.ts) via `prisma migrate deploy`, so there is no
+      # separate migration step here.
+
+      - name: API unit tests
+        run: pnpm --filter api test
+
+      - name: API e2e tests
+        # --runInBand serializes the suites. Parallel Jest workers contend over
+        # the shared Redis and the per-suite disposable-DB provisioning (DROP/
+        # CREATE + `prisma migrate deploy`), which makes individual suites flaky
+        # under load. Serial execution is slower but deterministic.
+        run: pnpm --filter api exec jest --config test/jest-e2e.json --runInBand --forceExit
+
+      - name: Build API and web
+        run: pnpm build
