@@ -7,6 +7,8 @@ import Button from '../../components/Button';
 import BackButton from '../../components/Navigation/BackButton';
 import { useNotifications } from '../../components/Notifications/NotificationProvider';
 import PushNotificationToggle from '../../components/Notifications/PushNotificationToggle';
+import { useCurrentUser } from '../../components/Auth/CurrentUserProvider';
+import { hasPermission } from '../../lib/admin-permissions';
 import type { AppNotification } from '../../lib/notifications/types';
 import { Bell, MessageSquare, UserPlus, UserCheck, LifeBuoy } from 'lucide-react';
 import { NotificationListSkeleton } from '../../components/skeletons';
@@ -49,6 +51,7 @@ function formatTime(iso?: string) {
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const { user } = useCurrentUser();
   const { notifications: liveNotifications, markRead } = useNotifications();
 
   const [history, setHistory] = useState<AppNotification[]>([]);
@@ -173,8 +176,10 @@ export default function NotificationsPage() {
                         <Button
                           onClick={() => {
                             const ticketId = notification.metadata?.ticketId;
+                            const isStaff = hasPermission(user?.role, 'support.manage');
+                            const base = isStaff ? '/admin/support' : '/support';
                             markAsRead(notification.id);
-                            router.push(ticketId ? `/support/${ticketId}` : '/support');
+                            router.push(ticketId ? `${base}/${ticketId}` : base);
                           }}
                           variant="outline"
                           size="sm"

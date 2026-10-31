@@ -102,6 +102,7 @@ export class SupportService {
           type: NotificationType.SUPPORT,
           title: 'New ticket reply',
           message: 'A developer replied to an assigned support ticket.',
+          metadata: { ticketId: id },
         })
         .catch(() => undefined);
     }
@@ -270,6 +271,10 @@ export class SupportService {
       await tx.supportTicket.update({ where: { id }, data: { updatedAt: new Date() } });
       if (kind === SupportMessageKind.NOTE) {
         await this.audit(tx, actorId, 'SUPPORT_TICKET_NOTE_CREATED', 'SupportTicket', id, {
+          messageId: created.id,
+        });
+      } else {
+        await this.audit(tx, actorId, 'SUPPORT_TICKET_REPLY_CREATED', 'SupportTicket', id, {
           messageId: created.id,
         });
       }

@@ -133,7 +133,11 @@ describe('SupportService', () => {
 
       expect(prisma.supportTicket.findFirst).toHaveBeenCalledWith({ where: { id: 't1', reporterId: 'u1' } });
       expect(notifications.create).toHaveBeenCalledWith(
-        expect.objectContaining({ userId: 'a1', type: 'SUPPORT' }),
+        expect.objectContaining({
+          userId: 'a1',
+          type: 'SUPPORT',
+          metadata: { ticketId: 't1' },
+        }),
       );
     });
 
@@ -242,13 +246,14 @@ describe('SupportService', () => {
       expect(notifications.create).not.toHaveBeenCalled();
     });
 
-    it('notifies the reporter on a public reply', async () => {
+    it('notifies the reporter on a public reply and audits it without the body', async () => {
       prisma.supportTicket.findUnique.mockResolvedValue({ id: 't1', reporterId: 'u1', assigneeId: 'a1' });
       prisma.supportTicketMessage.create.mockResolvedValue({
         id: 'm1', body: 'we fixed it', kind: 'REPLY', createdAt: new Date(), authorId: 'staff1',
         author: { role: 'SUPPORT', developerProfile: { displayName: 'Agent' } },
       });
       prisma.supportTicket.update.mockResolvedValue({});
+      prisma.adminAuditLog.create.mockResolvedValue({});
       notifications.create.mockResolvedValue(undefined);
 
       await service.addStaffMessage('staff1', 't1', { body: 'we fixed it' });
@@ -260,7 +265,17 @@ describe('SupportService', () => {
           metadata: { ticketId: 't1' },
         }),
       );
-      expect(prisma.adminAuditLog.create).not.toHaveBeenCalled();
+      expect(prisma.adminAuditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            action: 'SUPPORT_TICKET_REPLY_CREATED',
+            actorId: 'staff1',
+            metadata: { messageId: 'm1' },
+          }),
+        }),
+      );
+      // The audit metadata must never contain the reply body.
+      expect(JSON.stringify(prisma.adminAuditLog.create.mock.calls)).not.toContain('we fixed it');
     });
   });
 });
