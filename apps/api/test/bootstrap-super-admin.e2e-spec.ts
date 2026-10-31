@@ -11,10 +11,14 @@ jest.setTimeout(180_000);
 
 function localDbUrl(): string {
   const envPath = path.resolve(__dirname, '..', 'prisma', '.env');
-  const content = fs.readFileSync(envPath, 'utf8');
-  const m = content.match(/^\s*DATABASE_URL\s*=\s*"?([^"\n]+)"?\s*$/m);
-  if (!m) throw new Error('DATABASE_URL not found in apps/api/prisma/.env');
-  return m[1].trim();
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, 'utf8');
+    const m = content.match(/^\s*DATABASE_URL\s*=\s*"?([^"\n]+)"?\s*$/m);
+    if (m) return m[1].trim();
+  }
+  const env = process.env.DATABASE_URL;
+  if (!env) throw new Error('DATABASE_URL not found (no prisma/.env and DATABASE_URL env unset)');
+  return env;
 }
 
 function withDb(url: string, db: string): string {

@@ -16,16 +16,27 @@ jest.setTimeout(180_000);
 
 function localDbUrl(): string {
   const envPath = path.resolve(__dirname, '..', 'prisma', '.env');
-  const content = fs.readFileSync(envPath, 'utf8');
-  const m = content.match(/^\s*DATABASE_URL\s*=\s*"?([^"\n]+)"?\s*$/m);
-  if (!m) throw new Error('DATABASE_URL not found in apps/api/prisma/.env');
-  return m[1].trim();
+  if (fs.existsSync(envPath)) {
+    const content = fs.readFileSync(envPath, 'utf8');
+    const m = content.match(/^\s*DATABASE_URL\s*=\s*"?([^"\n]+)"?\s*$/m);
+    if (m) return m[1].trim();
+  }
+  const env = process.env.DATABASE_URL;
+  if (!env) throw new Error('DATABASE_URL not found (no prisma/.env and DATABASE_URL env unset)');
+  return env;
 }
 
 function withDb(url: string, db: string): string {
   const u = new URL(url);
   u.pathname = `/${db}`;
   return u.toString();
+}
+
+function assertLocalTestDb(raw: string): void {
+  const u = new URL(raw);
+  if (u.hostname !== 'localhost' && u.hostname !== '127.0.0.1') {
+    throw new Error('Refusing destructive test setup: database host is not local');
+  }
 }
 
 describe('Admin Phase 1 — PostgreSQL integration (disposable DB)', () => {
@@ -38,6 +49,7 @@ describe('Admin Phase 1 — PostgreSQL integration (disposable DB)', () => {
     const baseUrl = localDbUrl();
     testUrl = withDb(baseUrl, TEST_DB);
     const maintenanceUrl = withDb(baseUrl, 'postgres');
+    assertLocalTestDb(testUrl);
 
     const mgmt = new Client({ connectionString: maintenanceUrl });
     await mgmt.connect();

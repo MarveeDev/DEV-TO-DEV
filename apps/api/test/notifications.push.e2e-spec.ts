@@ -4,11 +4,15 @@ const request = require('supertest');
 import { AppModule } from './../src/app.module';
 const cookieParser = require('cookie-parser');
 import { PrismaService } from '../src/prisma/prisma.service';
+import { provisionTestDb } from './test-db';
+
+jest.setTimeout(180_000);
 import { RedisService } from '../src/redis/redis.service';
 import { NotificationsService } from '../src/notifications/notifications.service';
 import { PushService } from '../src/notifications/push/push.service';
 
 describe('PushNotifications (e2e)', () => {
+  let teardown: () => Promise<void>;
   let app: INestApplication;
   let prisma: PrismaService;
   let pushService: PushService;
@@ -35,6 +39,7 @@ describe('PushNotifications (e2e)', () => {
   };
 
   beforeAll(async () => {
+    teardown = await provisionTestDb('notifications.push');
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -77,6 +82,7 @@ describe('PushNotifications (e2e)', () => {
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { id: { in: [userAId, userBId] } } });
     await app.close();
+    if (teardown) await teardown();
   });
 
   it('rejects unauthenticated subscription creation', async () => {

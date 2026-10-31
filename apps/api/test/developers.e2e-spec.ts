@@ -4,8 +4,12 @@ const request = require('supertest');
 import { AppModule } from './../src/app.module';
 const cookieParser = require('cookie-parser');
 import { PrismaService } from '../src/prisma/prisma.service';
+import { provisionTestDb } from './test-db';
+
+jest.setTimeout(180_000);
 
 describe('DevelopersController (e2e)', () => {
+  let teardown: () => Promise<void>;
   let app: INestApplication;
   let prisma: PrismaService;
   
@@ -17,6 +21,7 @@ describe('DevelopersController (e2e)', () => {
   let mlGoalId: string;
 
   beforeAll(async () => {
+    teardown = await provisionTestDb('developers');
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -84,6 +89,7 @@ describe('DevelopersController (e2e)', () => {
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { developerProfile: { username: { in: ['current_discover', devAUsername, devBUsername] } } } });
     await app.close();
+    if (teardown) await teardown();
   });
 
   it('Test developer search by name/username', async () => {

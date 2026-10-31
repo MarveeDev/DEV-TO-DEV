@@ -5,10 +5,14 @@ import { io, Socket } from 'socket.io-client';
 import { AppModule } from './../src/app.module';
 const cookieParser = require('cookie-parser');
 import { PrismaService } from '../src/prisma/prisma.service';
+import { provisionTestDb } from './test-db';
+
+jest.setTimeout(180_000);
 import { RedisService } from '../src/redis/redis.service';
 import { NotificationsService } from '../src/notifications/notifications.service';
 
 describe('NotificationsGateway (e2e)', () => {
+  let teardown: () => Promise<void>;
   let app: INestApplication;
   let prisma: PrismaService;
   let notificationsService: NotificationsService;
@@ -70,6 +74,7 @@ describe('NotificationsGateway (e2e)', () => {
   }
 
   beforeAll(async () => {
+    teardown = await provisionTestDb('notifications.gateway');
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -119,6 +124,7 @@ describe('NotificationsGateway (e2e)', () => {
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { id: { in: [userAId, userBId] } } });
     await app.close();
+    if (teardown) await teardown();
   });
 
   it('accepts an authenticated connection', async () => {

@@ -3,11 +3,15 @@ import { INestApplication } from '@nestjs/common';
 const request = require('supertest');
 import { AppModule } from './../src/app.module';
 const cookieParser = require('cookie-parser');
+import { provisionTestDb } from './test-db';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
+  let teardown: () => Promise<void>;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
+    teardown = await provisionTestDb('auth');
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -18,8 +22,9 @@ describe('AuthController (e2e)', () => {
     await app.init();
   });
 
-  afterEach(async () => {
-    await app.close();
+  afterAll(async () => {
+    if (app) await app.close();
+    if (teardown) await teardown();
   });
 
   it('/api/v1/auth/me (GET) - Unauthenticated', () => {
@@ -41,7 +46,7 @@ describe('AuthController (e2e)', () => {
       .expect(302)
       .expect('Location', /accounts\.google\.com\/o\/oauth2/);
   });
-  
+
   it('/api/v1/auth/github/callback (GET) - Missing code/state', () => {
     return request(app.getHttpServer())
       .get('/api/v1/auth/github/callback')

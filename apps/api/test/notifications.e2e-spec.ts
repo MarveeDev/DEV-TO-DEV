@@ -4,11 +4,15 @@ const request = require('supertest');
 import { AppModule } from './../src/app.module';
 const cookieParser = require('cookie-parser');
 import { PrismaService } from '../src/prisma/prisma.service';
+import { provisionTestDb } from './test-db';
+
+jest.setTimeout(180_000);
 import { RedisService } from '../src/redis/redis.service';
 import { NotificationsService } from '../src/notifications/notifications.service';
 import { NotificationEvents } from '../src/notifications/notification-events';
 
 describe('NotificationsController (e2e)', () => {
+  let teardown: () => Promise<void>;
   let app: INestApplication;
   let prisma: PrismaService;
   
@@ -20,6 +24,7 @@ describe('NotificationsController (e2e)', () => {
   let usernameB = 'user_b_notif';
 
   beforeAll(async () => {
+    teardown = await provisionTestDb('notifications');
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -61,6 +66,7 @@ describe('NotificationsController (e2e)', () => {
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { id: { in: [userAId, userBId] } } });
     await app.close();
+    if (teardown) await teardown();
   });
 
   let notifId: string;

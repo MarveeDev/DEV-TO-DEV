@@ -4,19 +4,25 @@ const request = require('supertest');
 import { AppModule } from './../src/app.module';
 const cookieParser = require('cookie-parser');
 import { PrismaService } from '../src/prisma/prisma.service';
+import { provisionTestDb } from './test-db';
+
+jest.setTimeout(180_000);
 
 describe('ConnectionsController (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let teardown: () => Promise<void>;
   
   let userAId: string;
   let userBId: string;
-  let tokenA = 'token_a_123';
-  let tokenB = 'token_b_456';
+  let tokenA = `conn_token_a_${Date.now()}`;
+  let tokenB = `conn_token_b_${Date.now()}`;
   let usernameA = 'user_a_conn';
   let usernameB = 'user_b_conn';
 
   beforeAll(async () => {
+    teardown = await provisionTestDb('connections');
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -75,6 +81,7 @@ describe('ConnectionsController (e2e)', () => {
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { id: { in: [userAId, userBId] } } });
     await app.close();
+    if (teardown) await teardown();
   });
 
   let connectionId: string;

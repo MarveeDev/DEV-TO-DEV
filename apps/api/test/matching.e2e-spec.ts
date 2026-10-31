@@ -4,8 +4,12 @@ const request = require('supertest');
 const cookieParser = require('cookie-parser');
 import { AppModule } from '../src/app.module';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { provisionTestDb } from './test-db';
+
+jest.setTimeout(180_000);
 
 describe('Matching (e2e)', () => {
+  let teardown: () => Promise<void>;
   let app: INestApplication;
   let prisma: PrismaService;
 
@@ -16,6 +20,7 @@ describe('Matching (e2e)', () => {
   let targetUser2Id: string;
   
   beforeAll(async () => {
+    teardown = await provisionTestDb('matching');
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -106,6 +111,7 @@ describe('Matching (e2e)', () => {
     await prisma.skill.deleteMany({ where: { name: { startsWith: 'MATCH_SKILL' } } });
     await prisma.learningGoal.deleteMany({ where: { name: { startsWith: 'MATCH_GOAL' } } });
     await app.close();
+    if (teardown) await teardown();
   });
 
   it('1. Rejects unauthenticated requests to matches', async () => {

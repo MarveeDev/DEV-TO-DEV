@@ -4,19 +4,24 @@ const request = require('supertest');
 import { AppModule } from './../src/app.module';
 const cookieParser = require('cookie-parser');
 import { PrismaService } from '../src/prisma/prisma.service';
+import { provisionTestDb } from './test-db';
+
+jest.setTimeout(180_000);
 
 describe('PostsController (e2e)', () => {
+  let teardown: () => Promise<void>;
   let app: INestApplication;
   let prisma: PrismaService;
   
   let userAId: string;
   let userBId: string;
-  let tokenA = 'post_token_a_123';
-  let tokenB = 'post_token_b_456';
+  let tokenA = `post_token_a_${Date.now()}`;
+  let tokenB = `post_token_b_${Date.now()}`;
   let usernameA = 'post_user_a';
   let usernameB = 'post_user_b';
 
   beforeAll(async () => {
+    teardown = await provisionTestDb('posts');
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -52,6 +57,7 @@ describe('PostsController (e2e)', () => {
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { id: { in: [userAId, userBId] } } });
     await app.close();
+    if (teardown) await teardown();
   });
 
   let postIdA: string;
@@ -60,7 +66,7 @@ describe('PostsController (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post(`/api/v1/posts`)
       .set('Cookie', [`session_id=${tokenA}`])
-      .send({ content: 'Hello world from A!' });
+      .send({ title: 'Hello post', content: 'Hello world from A!', skills: ['JavaScript'] });
     expect(res.status).toBe(201);
     expect(res.body.content).toBe('Hello world from A!');
     postIdA = res.body.id;
@@ -70,7 +76,7 @@ describe('PostsController (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post(`/api/v1/posts`)
       .set('Cookie', [`session_id=${tokenA}`])
-      .send({ content: '   ' });
+      .send({ title: 'Empty post', content: '   ', skills: ['JavaScript'] });
     expect(res.status).toBe(400);
   });
 
