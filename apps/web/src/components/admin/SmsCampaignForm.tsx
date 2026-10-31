@@ -126,7 +126,7 @@ export default function SmsCampaignForm({
       </div>
 
       <div style={{ padding: '12px 16px', borderRadius: 10, background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)', color: 'var(--foreground-muted)', fontSize: '13px', lineHeight: 1.6 }}>
-        Note: This phase only creates and manages campaign drafts. Actual sending to recipients will be added in a later phase.
+        Save the draft, then add recipients and send it from the campaign page.
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

@@ -7,14 +7,19 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { RolesGuard } from '../admin/roles.guard';
+import type { AuthenticatedAdminRequest } from '../admin/roles.guard';
 import { Permissions } from '../admin/permissions.decorator';
-import { SmsCampaignsService } from './sms-campaigns.service';
+import {
+  SmsCampaignsService,
+  MAX_CSV_FILE_SIZE,
+} from './sms-campaigns.service';
 import { CreateSmsCampaignDto } from './dto/create-sms-campaign.dto';
 import { UpdateSmsCampaignDto } from './dto/update-sms-campaign.dto';
 import { SendTestSmsDto } from './dto/send-test-sms.dto';
@@ -27,6 +32,10 @@ import { RateLimit } from '../common/rate-limit/rate-limit.decorator';
 export class SmsCampaignsController {
   constructor(private readonly smsCampaignsService: SmsCampaignsService) {}
 
+  private actorId(req: AuthenticatedAdminRequest): string {
+    return req.userId as string;
+  }
+
   @Get()
   getCampaigns(@Query('page') page?: string, @Query('limit') limit?: string) {
     return this.smsCampaignsService.getCampaigns({ page, limit });
@@ -38,30 +47,33 @@ export class SmsCampaignsController {
   }
 
   @Post()
-  createCampaign(@Body() data: CreateSmsCampaignDto) {
-    return this.smsCampaignsService.createCampaign(data);
+  createCampaign(@Req() req: AuthenticatedAdminRequest, @Body() data: CreateSmsCampaignDto) {
+    return this.smsCampaignsService.createCampaign(this.actorId(req), data);
   }
 
   @Patch(':id')
-  updateCampaign(@Param('id') id: string, @Body() data: UpdateSmsCampaignDto) {
-    return this.smsCampaignsService.updateCampaign(id, data);
+  updateCampaign(@Req() req: AuthenticatedAdminRequest, @Param('id') id: string, @Body() data: UpdateSmsCampaignDto) {
+    return this.smsCampaignsService.updateCampaign(this.actorId(req), id, data);
   }
 
   @Delete(':id')
-  deleteCampaign(@Param('id') id: string) {
-    return this.smsCampaignsService.deleteCampaign(id);
+  deleteCampaign(@Req() req: AuthenticatedAdminRequest, @Param('id') id: string) {
+    return this.smsCampaignsService.deleteCampaign(this.actorId(req), id);
   }
 
   // ---- Recipients ----
 
   @Post(':id/recipients/import')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_CSV_FILE_SIZE } }),
+  )
   @RateLimit({ limit: 10, windowMs: 3_600_000, tier: 't3' })
   importRecipients(
+    @Req() req: AuthenticatedAdminRequest,
     @Param('id') id: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.smsCampaignsService.importRecipients(id, file);
+    return this.smsCampaignsService.importRecipients(this.actorId(req), id, file);
   }
 
   @Get(':id/recipients')
@@ -94,13 +106,13 @@ export class SmsCampaignsController {
   // ---- Sending lifecycle ----
 
   @Post(':id/ready')
-  markReady(@Param('id') id: string) {
-    return this.smsCampaignsService.markReady(id);
+  markReady(@Req() req: AuthenticatedAdminRequest, @Param('id') id: string) {
+    return this.smsCampaignsService.markReady(this.actorId(req), id);
   }
 
   @Post(':id/cancel')
-  cancelCampaign(@Param('id') id: string) {
-    return this.smsCampaignsService.cancelCampaign(id);
+  cancelCampaign(@Req() req: AuthenticatedAdminRequest, @Param('id') id: string) {
+    return this.smsCampaignsService.cancelCampaign(this.actorId(req), id);
   }
 
   @Get(':id/send-preview')
@@ -116,7 +128,7 @@ export class SmsCampaignsController {
 
   @Post(':id/send')
   @RateLimit({ limit: 1, windowMs: 300_000, tier: 't5', failClosed: true })
-  sendCampaign(@Param('id') id: string, @Body() data: SendCampaignDto) {
-    return this.smsCampaignsService.sendCampaign(id, data.confirmation);
+  sendCampaign(@Req() req: AuthenticatedAdminRequest, @Param('id') id: string, @Body() data: SendCampaignDto) {
+    return this.smsCampaignsService.sendCampaign(this.actorId(req), id, data.confirmation);
   }
 }

@@ -67,6 +67,24 @@ export class SmsCampaignsService {
     private readonly smsService: SmsService,
   ) {}
 
+  private async audit(
+    actorId: string,
+    action: string,
+    entityType: string,
+    entityId?: string,
+    metadata?: Record<string, unknown>,
+  ): Promise<void> {
+    await this.prisma.adminAuditLog.create({
+      data: {
+        actorId,
+        action,
+        entityType,
+        entityId: entityId ?? null,
+        metadata: metadata ? (metadata as Prisma.InputJsonValue) : undefined,
+      },
+    });
+  }
+
   async getCampaigns(query: { page?: string; limit?: string }) {
     const page = Math.max(1, Number(query.page) || 1);
     const limit = Math.min(
@@ -101,43 +119,53 @@ export class SmsCampaignsService {
     return campaign;
   }
 
-  async createCampaign(data: CreateSmsCampaignDto) {
-    return this.prisma.smsCampaign.create({
+  async createCampaign(actorId: string, data: CreateSmsCampaignDto) {
+    const campaign = await this.prisma.smsCampaign.create({
       data: {
         name: data.name.trim(),
         message: data.message.trim(),
       },
     });
+
+    await this.audit(actorId, 'SMS_CAMPAIGN_CREATED', 'SmsCampaign', campaign.id, {
+      name: campaign.name,
+    });
+    return campaign;
   }
 
-  async updateCampaign(id: string, data: UpdateSmsCampaignDto) {
+  async updateCampaign(actorId: string, id: string, data: UpdateSmsCampaignDto) {
     const existing = await this.prisma.smsCampaign.findUnique({
       where: { id },
     });
     if (!existing) throw new NotFoundException('Campaign not found');
 
-    return this.prisma.smsCampaign.update({
+    const updated = await this.prisma.smsCampaign.update({
       where: { id },
       data: {
         name: data.name?.trim() ?? undefined,
         message: data.message?.trim() ?? undefined,
       },
     });
+
+    await this.audit(actorId, 'SMS_CAMPAIGN_UPDATED', 'SmsCampaign', id);
+    return updated;
   }
 
-  async deleteCampaign(id: string) {
+  async deleteCampaign(actorId: string, id: string) {
     const existing = await this.prisma.smsCampaign.findUnique({
       where: { id },
     });
     if (!existing) throw new NotFoundException('Campaign not found');
 
     await this.prisma.smsCampaign.delete({ where: { id } });
+    await this.audit(actorId, 'SMS_CAMPAIGN_DELETED', 'SmsCampaign', id);
     return { success: true };
   }
 
   // ---- Recipients ----
 
   async importRecipients(
+    actorId: string,
     campaignId: string,
     file: Express.Multer.File | undefined,
   ): Promise<ImportRecipientsResult> {
@@ -217,16 +245,20 @@ export class SmsCampaignsService {
         await this.syncRecipientCount(tx, campaignId);
       });
 
-      return {
+      const result = {
         total,
         valid,
         invalid,
         duplicates,
         added: newRecipients.length,
       };
+      await this.audit(actorId, 'SMS_RECIPIENTS_IMPORTED', 'SmsCampaign', campaignId, result);
+      return result;
     }
 
-    return { total, valid, invalid, duplicates, added: 0 };
+    const result = { total, valid, invalid, duplicates, added: 0 };
+    await this.audit(actorId, 'SMS_RECIPIENTS_IMPORTED', 'SmsCampaign', campaignId, result);
+    return result;
   }
 
   async getRecipients(
@@ -320,7 +352,7 @@ export class SmsCampaignsService {
 
   // ---- Sending lifecycle ----
 
-  async markReady(campaignId: string) {
+  async markReady(actorId: string, campaignId: string) {
     const campaign = await this.prisma.smsCampaign.findUnique({
       where: { id: campaignId },
     });
@@ -339,13 +371,15 @@ export class SmsCampaignsService {
       throw new BadRequestException('Campaign has no pending recipients');
     }
 
-    return this.prisma.smsCampaign.update({
+    const updated = await this.prisma.smsCampaign.update({
       where: { id: campaignId },
       data: { status: 'READY' },
     });
+    await this.audit(actorId, 'SMS_CAMPAIGN_READY', 'SmsCampaign', campaignId);
+    return updated;
   }
 
-  async cancelCampaign(campaignId: string) {
+  async cancelCampaign(actorId: string, campaignId: string) {
     const campaign = await this.prisma.smsCampaign.findUnique({
       where: { id: campaignId },
     });
@@ -356,10 +390,12 @@ export class SmsCampaignsService {
       );
     }
 
-    return this.prisma.smsCampaign.update({
+    const updated = await this.prisma.smsCampaign.update({
       where: { id: campaignId },
       data: { status: 'CANCELLED' },
     });
+    await this.audit(actorId, 'SMS_CAMPAIGN_CANCELLED', 'SmsCampaign', campaignId);
+    return updated;
   }
 
   async getSendPreview(campaignId: string) {
@@ -406,6 +442,7 @@ export class SmsCampaignsService {
   }
 
   async sendCampaign(
+    actorId: string,
     campaignId: string,
     confirmation: string,
   ): Promise<SendCampaignResult> {
@@ -464,6 +501,11 @@ export class SmsCampaignsService {
       );
     }
 
+    await this.audit(actorId, 'SMS_CAMPAIGN_SEND_INITIATED', 'SmsCampaign', campaignId, {
+      pendingCount,
+      estimatedUnits,
+    });
+
     try {
       const result = await this.processPendingRecipients(
         campaignId,
@@ -474,6 +516,7 @@ export class SmsCampaignsService {
         where: { id: campaignId },
         data: { status: 'COMPLETED' },
       });
+      await this.audit(actorId, 'SMS_CAMPAIGN_SEND_COMPLETED', 'SmsCampaign', campaignId, result);
       return { status: 'COMPLETED', ...result };
     } catch (e) {
       // System-level failure — leave the campaign in a clear FAILED state.
@@ -481,6 +524,9 @@ export class SmsCampaignsService {
       await this.prisma.smsCampaign
         .update({ where: { id: campaignId }, data: { status: 'FAILED' } })
         .catch(() => undefined);
+      await this.audit(actorId, 'SMS_CAMPAIGN_SEND_FAILED', 'SmsCampaign', campaignId, {
+        error: this.safeError(e),
+      }).catch(() => undefined);
       throw e;
     }
   }

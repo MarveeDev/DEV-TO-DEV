@@ -49,6 +49,7 @@ describe('SmsCampaignsService', () => {
   const prisma = {
     smsCampaign,
     smsCampaignRecipient,
+    adminAuditLog: { create: jest.fn() },
     $transaction: jest.fn(async (fn: (t: unknown) => Promise<unknown>) => fn(tx)),
   } as unknown as PrismaService;
   const smsService = {
@@ -61,15 +62,20 @@ describe('SmsCampaignsService', () => {
   });
 
   describe('campaign CRUD', () => {
-    it('creates a campaign with trimmed name/message', async () => {
+    it('creates a campaign with trimmed name/message and audits it', async () => {
       smsCampaign.create.mockResolvedValue({ id: 'c1', name: 'Welcome', message: 'Hi' });
       const service = makeService(prisma, smsService);
 
-      await service.createCampaign({ name: '  Welcome  ', message: '  Hi  ' });
+      await service.createCampaign('a1', { name: '  Welcome  ', message: '  Hi  ' });
 
       expect(smsCampaign.create).toHaveBeenCalledWith({
         data: { name: 'Welcome', message: 'Hi' },
       });
+      expect(prisma.adminAuditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ action: 'SMS_CAMPAIGN_CREATED', actorId: 'a1' }),
+        }),
+      );
     });
   });
 
@@ -84,7 +90,7 @@ describe('SmsCampaignsService', () => {
 
     it('imports valid international numbers', async () => {
       const service = makeService(prisma, smsService);
-      const result = await service.importRecipients(
+      const result = await service.importRecipients('a1', 
         'c1',
         makeFile('phone\n+14155552671\n+233244000000'),
       );
@@ -95,7 +101,7 @@ describe('SmsCampaignsService', () => {
 
     it('rejects invalid numbers', async () => {
       const service = makeService(prisma, smsService);
-      const result = await service.importRecipients(
+      const result = await service.importRecipients('a1', 
         'c1',
         makeFile('phone\n+12345\nabc'),
       );
@@ -116,7 +122,7 @@ describe('SmsCampaignsService', () => {
       smsCampaign.update.mockResolvedValue({ id: 'c1', status: 'READY' });
       const service = makeService(prisma, smsService);
 
-      await service.markReady('c1');
+      await service.markReady('a1', 'c1');
 
       expect(smsCampaign.update).toHaveBeenCalledWith({
         where: { id: 'c1' },
@@ -133,7 +139,7 @@ describe('SmsCampaignsService', () => {
       smsCampaignRecipient.count.mockResolvedValue(0);
       const service = makeService(prisma, smsService);
 
-      await expect(service.markReady('c1')).rejects.toBeInstanceOf(
+      await expect(service.markReady('a1', 'c1')).rejects.toBeInstanceOf(
         BadRequestException,
       );
     });
@@ -143,7 +149,7 @@ describe('SmsCampaignsService', () => {
       smsCampaign.update.mockResolvedValue({ id: 'c1', status: 'CANCELLED' });
       const service = makeService(prisma, smsService);
 
-      await service.cancelCampaign('c1');
+      await service.cancelCampaign('a1', 'c1');
 
       expect(smsCampaign.update).toHaveBeenCalledWith({
         where: { id: 'c1' },
@@ -188,7 +194,7 @@ describe('SmsCampaignsService', () => {
       setupSendableCampaign();
       const service = makeService(prisma, smsService);
 
-      await expect(service.sendCampaign('c1', 'WRONG')).rejects.toBeInstanceOf(
+      await expect(service.sendCampaign('a1', 'c1', 'WRONG')).rejects.toBeInstanceOf(
         BadRequestException,
       );
       expect(smsService.sendSms).not.toHaveBeenCalled();
@@ -200,7 +206,7 @@ describe('SmsCampaignsService', () => {
       const service = makeService(prisma, smsService);
 
       await expect(
-        service.sendCampaign('c1', SEND_CONFIRMATION),
+        service.sendCampaign('a1', 'c1', SEND_CONFIRMATION),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
@@ -211,7 +217,7 @@ describe('SmsCampaignsService', () => {
       const service = makeService(prisma, smsService);
 
       await expect(
-        service.sendCampaign('c1', SEND_CONFIRMATION),
+        service.sendCampaign('a1', 'c1', SEND_CONFIRMATION),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(smsService.sendSms).not.toHaveBeenCalled();
     });
@@ -222,7 +228,7 @@ describe('SmsCampaignsService', () => {
       const service = makeService(prisma, smsService);
 
       await expect(
-        service.sendCampaign('c1', SEND_CONFIRMATION),
+        service.sendCampaign('a1', 'c1', SEND_CONFIRMATION),
       ).rejects.toBeInstanceOf(ServiceUnavailableException);
     });
 
@@ -240,7 +246,7 @@ describe('SmsCampaignsService', () => {
       const service = makeService(prisma, smsService);
 
       await expect(
-        service.sendCampaign('c1', SEND_CONFIRMATION),
+        service.sendCampaign('a1', 'c1', SEND_CONFIRMATION),
       ).rejects.toBeInstanceOf(ConflictException);
     });
 
@@ -258,7 +264,7 @@ describe('SmsCampaignsService', () => {
       const service = makeService(prisma, smsService);
 
       await expect(
-        service.sendCampaign('c1', SEND_CONFIRMATION),
+        service.sendCampaign('a1', 'c1', SEND_CONFIRMATION),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
 
@@ -280,7 +286,7 @@ describe('SmsCampaignsService', () => {
       });
       const service = makeService(prisma, smsService);
 
-      const result = await service.sendCampaign('c1', SEND_CONFIRMATION);
+      const result = await service.sendCampaign('a1', 'c1', SEND_CONFIRMATION);
 
       expect(result).toEqual({
         status: 'COMPLETED',
@@ -314,7 +320,7 @@ describe('SmsCampaignsService', () => {
       smsService.sendSms.mockRejectedValue(new GonlineError(103, 'Invalid phone number'));
       const service = makeService(prisma, smsService);
 
-      const result = await service.sendCampaign('c1', SEND_CONFIRMATION);
+      const result = await service.sendCampaign('a1', 'c1', SEND_CONFIRMATION);
 
       expect(result.failed).toBe(1);
       expect(smsCampaignRecipient.update).toHaveBeenCalledWith(
@@ -336,7 +342,7 @@ describe('SmsCampaignsService', () => {
       const service = makeService(prisma, smsService);
 
       await expect(
-        service.sendCampaign('c1', SEND_CONFIRMATION),
+        service.sendCampaign('a1', 'c1', SEND_CONFIRMATION),
       ).rejects.toBeInstanceOf(GonlineError);
       // Campaign left in FAILED state.
       expect(smsCampaign.update).toHaveBeenCalledWith(
@@ -356,7 +362,7 @@ describe('SmsCampaignsService', () => {
       const service = makeService(prisma, smsService);
 
       await expect(
-        service.sendCampaign('c1', SEND_CONFIRMATION),
+        service.sendCampaign('a1', 'c1', SEND_CONFIRMATION),
       ).rejects.toBeInstanceOf(ServiceUnavailableException);
 
       // The recipient is NOT incorrectly marked FAILED (outcome is ambiguous).
