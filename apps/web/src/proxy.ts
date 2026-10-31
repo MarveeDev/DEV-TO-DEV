@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import {
+  normalizeCanonicalHost,
+  buildCanonicalRedirectUrl,
+} from './lib/canonical-host';
 
 const NOINDEX_PREFIXES = [
   '/dashboard',
@@ -64,13 +68,14 @@ function isAuthRequiredRoute(path: string): boolean {
 export function proxy(request: NextRequest) {
   const host = request.headers.get('host') || '';
 
-  // Collapse the Railway-generated domain into the canonical production domain
-  // so it can never be indexed as a duplicate site.
-  if (host.endsWith('.up.railway.app')) {
-    const url = new URL(request.url);
-    url.hostname = 'devtodev.online';
-    url.port = '';
-    return NextResponse.redirect(url, 308);
+  // Collapse Railway-generated domains into the configured canonical domain so
+  // they can never be indexed as duplicate sites. Only active when
+  // CANONICAL_HOST is set; when unset (e.g. staging), Railway domains are
+  // served directly instead of being redirected to production.
+  const canonicalHost = normalizeCanonicalHost(process.env.CANONICAL_HOST);
+  const redirectUrl = buildCanonicalRedirectUrl(request.url, host, canonicalHost);
+  if (redirectUrl) {
+    return NextResponse.redirect(redirectUrl, 308);
   }
 
   const token = request.cookies.get('session_id');
