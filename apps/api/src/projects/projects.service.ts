@@ -139,7 +139,7 @@ export class ProjectsService {
       }
     });
 
-    this.scoreService.award(userId, 'PROJECT_CREATED', 20, project.id).catch(e => console.error(e));
+    this.scoreService.award(userId, 'PROJECT_CREATED', project.id).catch(e => console.error(e));
 
     await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
 
@@ -330,7 +330,7 @@ export class ProjectsService {
       });
 
       // Impact: the project owner gains points when someone joins their project.
-      this.scoreService.award(userId, 'PROJECT_RECEIVED_CONTRIBUTOR', 10, `${projectId}:${request.developerProfileId}`).catch(e => console.error(e));
+      this.scoreService.award(userId, 'PROJECT_RECEIVED_CONTRIBUTOR', `${projectId}:${request.developerProfileId}`).catch(e => console.error(e));
     }
 
     return updatedRequest;

@@ -183,7 +183,7 @@ export class QuestionsService {
       }
     });
 
-    this.scoreService.award(userId, 'QUESTION_CREATED', 8, question.id).catch(e => console.error(e));
+    this.scoreService.award(userId, 'QUESTION_CREATED', question.id).catch(e => console.error(e));
 
     await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
 
@@ -339,7 +339,7 @@ export class QuestionsService {
     });
 
     if (userVote?.value === 1 && question && question.author.userId !== userId) {
-      this.scoreService.award(question.author.userId, 'QUESTION_UPVOTED', 3, `${id}:${profile.id}`).catch(e => console.error(e));
+      this.scoreService.award(question.author.userId, 'QUESTION_UPVOTED', `${id}:${profile.id}`).catch(e => console.error(e));
     }
 
     await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
@@ -365,9 +365,9 @@ export class QuestionsService {
       include: { author: true }
     });
 
-    this.scoreService.award(userId, 'ANSWER_CREATED', 10, answer.id).catch(e => console.error(e));
+    this.scoreService.award(userId, 'ANSWER_CREATED', answer.id).catch(e => console.error(e));
     if (question && question.author.userId !== userId) {
-      this.scoreService.award(question.author.userId, 'QUESTION_RECEIVED_ANSWER', 2, answer.id).catch(e => console.error(e));
+      this.scoreService.award(question.author.userId, 'QUESTION_RECEIVED_ANSWER', answer.id).catch(e => console.error(e));
     }
 
     await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
@@ -441,7 +441,7 @@ export class QuestionsService {
     });
 
     if (userVote?.value === 1 && answer && answer.author.userId !== userId) {
-      this.scoreService.award(answer.author.userId, 'ANSWER_UPVOTED', 3, `${id}:${profile.id}`).catch(e => console.error(e));
+      this.scoreService.award(answer.author.userId, 'ANSWER_UPVOTED', `${id}:${profile.id}`).catch(e => console.error(e));
     }
 
     await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);
@@ -472,7 +472,7 @@ export class QuestionsService {
     });
 
     if (answer.author.userId !== userId) {
-      this.scoreService.award(answer.author.userId, 'ANSWER_ACCEPTED', 25, answerId).catch(e => console.error(e));
+      this.scoreService.award(answer.author.userId, 'ANSWER_ACCEPTED', answerId).catch(e => console.error(e));
     }
 
     await this.publicCache.invalidateByPrefix(this.CACHE_PREFIX);

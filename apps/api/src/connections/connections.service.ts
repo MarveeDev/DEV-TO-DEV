@@ -131,8 +131,8 @@ export class ConnectionsService {
 
     // Impact: both the requester and the accepter earn points for a genuine
     // accepted connection (awarded exactly once per connection).
-    this.scoreService.award(connection.requesterId, 'CONNECTION_ACCEPTED', 5, connectionId).catch(e => console.error(e));
-    this.scoreService.award(userId, 'CONNECTION_ACCEPTED', 5, connectionId).catch(e => console.error(e));
+    this.scoreService.award(connection.requesterId, 'CONNECTION_ACCEPTED', connectionId).catch(e => console.error(e));
+    this.scoreService.award(userId, 'CONNECTION_ACCEPTED', connectionId).catch(e => console.error(e));
 
     return updated;
   }

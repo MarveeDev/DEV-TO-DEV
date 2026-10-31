@@ -4,8 +4,12 @@ const request = require('supertest');
 import { AppModule } from './../src/app.module';
 const cookieParser = require('cookie-parser');
 import { PrismaService } from '../src/prisma/prisma.service';
+import { provisionTestDb } from './test-db';
+
+jest.setTimeout(180_000);
 
 describe('ScoreController & Service (e2e)', () => {
+  let teardown: () => Promise<void>;
   let app: INestApplication;
   let prisma: PrismaService;
   
@@ -18,6 +22,7 @@ describe('ScoreController & Service (e2e)', () => {
   let usernameB = 'score_user_b';
 
   beforeAll(async () => {
+    teardown = await provisionTestDb('score');
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -53,6 +58,7 @@ describe('ScoreController & Service (e2e)', () => {
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { id: { in: [userAId, userBId] } } });
     await app.close();
+    if (teardown) await teardown();
   });
 
   const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -70,7 +76,7 @@ describe('ScoreController & Service (e2e)', () => {
     await request(app.getHttpServer())
       .post(`/api/v1/posts`)
       .set('Cookie', [`session_id=${tokenA}`])
-      .send({ content: 'My first post!' });
+      .send({ title: 'Post one', content: 'My first post!', skills: ['JavaScript'] });
     
     await delay(100); // Async activity recording
 
@@ -87,7 +93,7 @@ describe('ScoreController & Service (e2e)', () => {
     await request(app.getHttpServer())
       .post(`/api/v1/posts`)
       .set('Cookie', [`session_id=${tokenA}`])
-      .send({ content: 'My second post!' });
+      .send({ title: 'Post two', content: 'My second post!', skills: ['JavaScript'] });
     
     await delay(100);
 
@@ -121,7 +127,7 @@ describe('ScoreController & Service (e2e)', () => {
       .set('Cookie', [`session_id=${tokenA}`]);
     
     expect(resA.body.connectionsCount).toBe(1);
-    expect(resA.body.score).toBe(35); // 25 + 10 connection points
+    expect(resA.body.score).toBe(30); // 25 + 5 connection points
     expect(resA.body.streak).toBe(1);
 
     const resB = await request(app.getHttpServer())
@@ -129,8 +135,8 @@ describe('ScoreController & Service (e2e)', () => {
       .set('Cookie', [`session_id=${tokenB}`]);
     
     expect(resB.body.connectionsCount).toBe(1);
-    expect(resB.body.score).toBe(25); // 10 connection points + 15 streak
-    expect(resB.body.streak).toBe(1);
+    expect(resB.body.score).toBe(5); // 5 connection points; no streak (post-driven)
+    expect(resB.body.streak).toBe(0);
   });
 
   it('7. Max post cap blocks spam points', async () => {
@@ -138,7 +144,7 @@ describe('ScoreController & Service (e2e)', () => {
     await request(app.getHttpServer())
       .post(`/api/v1/posts`)
       .set('Cookie', [`session_id=${tokenA}`])
-      .send({ content: 'My third post!' });
+      .send({ title: 'Post three', content: 'My third post!', skills: ['JavaScript'] });
     
     await delay(100);
 
@@ -146,7 +152,7 @@ describe('ScoreController & Service (e2e)', () => {
     await request(app.getHttpServer())
       .post(`/api/v1/posts`)
       .set('Cookie', [`session_id=${tokenA}`])
-      .send({ content: 'My fourth post!' });
+      .send({ title: 'Post four', content: 'My fourth post!', skills: ['JavaScript'] });
     
     await delay(100);
 
@@ -155,8 +161,8 @@ describe('ScoreController & Service (e2e)', () => {
       .set('Cookie', [`session_id=${tokenA}`]);
     
     expect(res.body.postsCount).toBe(4); // Tracks all
-    // But points only awarded for 3. Previous score: 35. Post 3 adds 5 = 40. Post 4 adds 0.
-    expect(res.body.score).toBe(40);
+    // But points only awarded for 3. Previous score: 30. Post 3 adds 5 = 35. Post 4 adds 0.
+    expect(res.body.score).toBe(35);
   });
 
   it('9. Unauthorized users cannot modify another developers score', async () => {
@@ -164,7 +170,7 @@ describe('ScoreController & Service (e2e)', () => {
     const res = await request(app.getHttpServer())
       .get(`/api/v1/score/developers/${usernameB}`);
     expect(res.status).toBe(200);
-    expect(res.body.score).toBe(25);
+    expect(res.body.score).toBe(5);
   });
 
   it('10. Public score does not expose private fields', async () => {
