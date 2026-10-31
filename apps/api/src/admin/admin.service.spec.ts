@@ -21,6 +21,15 @@ describe('AdminService staff management', () => {
       updateMany: jest.fn(),
       findMany: jest.fn(),
     },
+    marketplaceListingReport: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+    violation: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+    },
     adminAuditLog: { create: jest.fn() },
   };
   const sessionsService = { revokeAllForUser: jest.fn().mockResolvedValue(undefined) };
@@ -315,6 +324,102 @@ describe('AdminService staff management', () => {
       expect(prisma.adminInvite.updateMany).toHaveBeenCalledWith(
         expect.objectContaining({ data: { status: 'REVOKED', tokenHash: null } }),
       );
+    });
+  });
+
+  describe('createViolation authorization', () => {
+    beforeEach(() => {
+      prisma.violation.create.mockResolvedValue({ id: 'v1', userId: 'u1', status: 'OPEN' });
+    });
+
+    it('rejects a MODERATOR creating a violation against a SUPER_ADMIN account', async () => {
+      mockUsers({ id: 'a1', role: 'MODERATOR' }, { id: 'sa1', role: 'SUPER_ADMIN' });
+      await expect(
+        service.createViolation('a1', { userId: 'sa1', type: 'SPAM', severity: 'HIGH' }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(prisma.violation.create).not.toHaveBeenCalled();
+    });
+
+    it('rejects a MODERATOR creating a violation against an ADMIN account', async () => {
+      mockUsers({ id: 'a1', role: 'MODERATOR' }, { id: 'ad1', role: 'ADMIN' });
+      await expect(
+        service.createViolation('a1', { userId: 'ad1', type: 'SPAM', severity: 'HIGH' }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('allows a MODERATOR to create a violation against an ordinary USER and audits it', async () => {
+      mockUsers({ id: 'a1', role: 'MODERATOR' }, { id: 'u1', role: 'USER' });
+      prisma.violation.create.mockResolvedValue({ id: 'v1', userId: 'u1', status: 'OPEN' });
+
+      await service.createViolation('a1', { userId: 'u1', type: 'SPAM', severity: 'HIGH' });
+
+      expect(prisma.violation.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ userId: 'u1', type: 'SPAM', severity: 'HIGH' }) }),
+      );
+      expect(prisma.adminAuditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ action: 'VIOLATION_CREATED', actorId: 'a1' }) }),
+      );
+    });
+
+    it('throws NotFound when the target user does not exist', async () => {
+      (prisma.user.findUnique as jest.Mock).mockImplementation((args: { where: { id: string } }) => {
+        if (args.where.id === 'a1') return Promise.resolve({ id: 'a1', role: 'MODERATOR' });
+        return Promise.resolve(null);
+      });
+      await expect(
+        service.createViolation('a1', { userId: 'missing', type: 'SPAM', severity: 'HIGH' }),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('report and violation status changes', () => {
+    it('updates a report status and audits the transition', async () => {
+      prisma.marketplaceListingReport.findUnique.mockResolvedValue({ id: 'r1', status: 'PENDING' });
+      prisma.marketplaceListingReport.update.mockResolvedValue({ id: 'r1', status: 'RESOLVED' });
+
+      await service.updateReportStatus('a1', 'r1', 'RESOLVED');
+
+      expect(prisma.marketplaceListingReport.update).toHaveBeenCalledWith({
+        where: { id: 'r1' },
+        data: { status: 'RESOLVED' },
+      });
+      expect(prisma.adminAuditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            action: 'REPORT_STATUS_CHANGED',
+            actorId: 'a1',
+            metadata: { from: 'PENDING', to: 'RESOLVED' },
+          }),
+        }),
+      );
+    });
+
+    it('throws NotFound when the report does not exist', async () => {
+      prisma.marketplaceListingReport.findUnique.mockResolvedValue(null);
+      await expect(service.updateReportStatus('a1', 'missing', 'RESOLVED')).rejects.toThrow(NotFoundException);
+    });
+
+    it('sets resolvedAt/resolvedById when resolving a violation and clears them on reopen', async () => {
+      prisma.violation.findUnique.mockResolvedValue({ id: 'v1', status: 'OPEN' });
+      prisma.violation.update.mockResolvedValue({ id: 'v1', status: 'RESOLVED' });
+
+      await service.updateViolationStatus('a1', 'v1', 'RESOLVED');
+
+      expect(prisma.violation.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'v1' },
+          data: expect.objectContaining({ status: 'RESOLVED', resolvedById: 'a1' }),
+        }),
+      );
+      expect(prisma.violation.update.mock.calls[0][0].data.resolvedAt).toBeInstanceOf(Date);
+      expect(prisma.adminAuditLog.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ action: 'VIOLATION_STATUS_CHANGED' }) }),
+      );
+    });
+
+    it('throws NotFound when the violation does not exist', async () => {
+      prisma.violation.findUnique.mockResolvedValue(null);
+      await expect(service.updateViolationStatus('a1', 'missing', 'RESOLVED')).rejects.toThrow(NotFoundException);
     });
   });
 });

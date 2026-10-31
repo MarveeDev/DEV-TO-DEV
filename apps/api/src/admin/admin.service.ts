@@ -739,8 +739,22 @@ export class AdminService {
   }
 
   async createViolation(actorId: string, data: CreateViolationDto) {
+    const actor = await this.prisma.user.findUnique({
+      where: { id: actorId },
+      select: { role: true },
+    });
+    if (!actor) throw new ForbiddenException('Actor not found');
+
     const user = await this.prisma.user.findUnique({ where: { id: data.userId } });
     if (!user) throw new NotFoundException('User not found');
+
+    // Reuse the established hierarchy: a moderator may only create a violation
+    // against a strictly lower-ranked account, mirroring setStaffStatus, so
+    // protected staff accounts (SUPER_ADMIN/ADMIN/PLATFORM_ADMIN) cannot be
+    // targeted by lower-ranked moderators.
+    if (!canAssignRole(actor.role, user.role)) {
+      throw new ForbiddenException('Insufficient permissions');
+    }
 
     if (data.reportId) {
       const report = await this.prisma.marketplaceListingReport.findUnique({ where: { id: data.reportId } });
