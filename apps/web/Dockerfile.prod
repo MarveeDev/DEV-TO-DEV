@@ -5,6 +5,15 @@ ENV NODE_ENV=production
 ENV NODE_OPTIONS="--dns-result-order=ipv4first"
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+
+# Build-time API rewrite target. Next.js bakes this into its routes manifest
+# during `next build`, so it must be supplied at image build time via
+# `docker build --build-arg INTERNAL_API_URL=...` (Railway build argument).
+# A runtime-only variable is ignored for rewrites. When omitted, Next.js falls
+# back to its own default in next.config.ts.
+ARG INTERNAL_API_URL
+ENV INTERNAL_API_URL=${INTERNAL_API_URL}
+
 RUN npm install -g pnpm@11.13.1
 
 COPY . .
