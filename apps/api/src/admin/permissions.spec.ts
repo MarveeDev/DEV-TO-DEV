@@ -82,6 +82,6 @@ describe('admin permissions matrix', () => {
     expect(staffWorkspacePath('MARKETING_MANAGER')).toBe('/admin/sms-campaigns');
     expect(staffWorkspacePath('SUPPORT')).toBe('/admin/support');
     expect(staffWorkspacePath('MODERATOR')).toBe('/admin/violations');
-    expect(staffWorkspacePath('ANALYTICS_VIEWER')).toBe('/admin');
+    expect(staffWorkspacePath('ANALYTICS_VIEWER')).toBe('/admin/analytics');
   });
 });

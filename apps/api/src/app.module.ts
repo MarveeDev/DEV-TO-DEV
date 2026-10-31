@@ -32,9 +32,10 @@ import { PhoneVerificationModule } from './phone-verification/phone-verification
 import { SmsCampaignsModule } from './sms-campaigns/sms-campaigns.module';
 import { CodeModule } from './code/code.module';
 import { SupportModule } from './support/support.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
-  imports: [PrismaModule, RedisModule, RateLimitModule, SessionsModule, AuthModule, ProfileModule, ConnectionsModule, DevelopersModule, NotificationsModule, PostsModule, ScoreModule, ProjectsModule, QuestionsModule, RoadmapsModule, SkillsModule, MediaModule, TrendingModule, VideosModule, MarketplaceModule, MessagesModule, AdminModule, SoundsModule, SmsModule, PhoneVerificationModule, SmsCampaignsModule, CodeModule, SupportModule],
+  imports: [PrismaModule, RedisModule, RateLimitModule, SessionsModule, AuthModule, ProfileModule, ConnectionsModule, DevelopersModule, NotificationsModule, PostsModule, ScoreModule, ProjectsModule, QuestionsModule, RoadmapsModule, SkillsModule, MediaModule, TrendingModule, VideosModule, MarketplaceModule, MessagesModule, AdminModule, SoundsModule, SmsModule, PhoneVerificationModule, SmsCampaignsModule, CodeModule, SupportModule, AnalyticsModule],
   controllers: [AppController],
   providers: [AppService],
 })

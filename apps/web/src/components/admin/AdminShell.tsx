@@ -23,6 +23,7 @@ import {
   ChevronRight,
   MessageSquareText,
   LifeBuoy,
+  BarChart3,
 } from 'lucide-react';
 
 interface NavItem {
@@ -34,6 +35,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, permission: 'overview.view' },
+  { name: 'Analytics', href: '/admin/analytics', icon: BarChart3, permission: 'analytics.view' },
   { name: 'Users', href: '/admin/users', icon: Users, permission: 'users.view' },
   { name: 'Staff', href: '/admin/staff', icon: UserCog, permission: 'staff.manage' },
   { name: 'Content', href: '/admin/content', icon: FileText, permission: 'content.moderate' },

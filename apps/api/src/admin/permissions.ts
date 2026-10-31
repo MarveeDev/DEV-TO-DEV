@@ -138,6 +138,8 @@ export function staffWorkspacePath(role: string): string {
       return '/admin/sms-campaigns';
     case 'MODERATOR':
       return '/admin/violations';
+    case 'ANALYTICS_VIEWER':
+      return '/admin/analytics';
     default:
       return '/admin';
   }
