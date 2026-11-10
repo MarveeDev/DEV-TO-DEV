@@ -28,7 +28,7 @@ describe('AuthService OAuth email linking', () => {
     process.env.GOOGLE_CLIENT_SECRET = 'test-google-secret';
     process.env.GITHUB_CLIENT_ID = 'test-github-client';
     process.env.GITHUB_CLIENT_SECRET = 'test-github-secret';
-    process.env.API_URL = 'http://localhost:3001';
+    process.env.FRONTEND_URL = 'http://localhost:3000';
   });
 
   afterAll(() => {
@@ -93,6 +93,21 @@ describe('AuthService OAuth email linking', () => {
             authIdentities: { create: { provider: 'google', providerAccountId: 'g1' } },
           }),
         }),
+      );
+    });
+
+    it('sends the frontend-origin redirect_uri to the Google token endpoint', async () => {
+      prisma.authIdentity.findUnique.mockResolvedValue(null);
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.create.mockResolvedValue({ id: 'u2', email: 'admin@example.com' });
+      const service = makeService();
+
+      await service.processGoogleCallback('code', 'new_login');
+
+      const [url, body] = (axiosMock.post as jest.Mock).mock.calls[0];
+      expect(url).toBe('https://oauth2.googleapis.com/token');
+      expect(body.redirect_uri).toBe(
+        'http://localhost:3000/api/v1/auth/google/callback',
       );
     });
   });

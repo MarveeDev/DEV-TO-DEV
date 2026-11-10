@@ -14,6 +14,7 @@ describe('AuthController OAuth error handling', () => {
     processGitHubCallback: jest.fn(),
     processGoogleCallback: jest.fn(),
     applyPendingStaffInvite: jest.fn().mockResolvedValue(undefined),
+    storeOAuthState: jest.fn().mockResolvedValue(undefined),
   };
   const sessionsService = { createSession: jest.fn(), validateSession: jest.fn() };
   const mailService = { sendSignInNotification: jest.fn() };
@@ -119,5 +120,60 @@ describe('AuthController OAuth error handling', () => {
     await expect(
       controller.githubCallback(undefined as never, undefined as never, req(), res()),
     ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('builds the Google authorization URL with the frontend-origin redirect_uri', async () => {
+    process.env.GOOGLE_CLIENT_ID = 'test-client';
+    const response = res();
+
+    await controller.googleAuth(req(), response);
+
+    const redirectUrl = response.redirect.mock.calls[0][0];
+    expect(redirectUrl).toContain('https://accounts.google.com/o/oauth2/v2/auth');
+    expect(redirectUrl).toContain('client_id=test-client');
+    expect(redirectUrl).toContain(
+      'redirect_uri=http://frontend.test/api/v1/auth/google/callback',
+    );
+    expect(authService.storeOAuthState).toHaveBeenCalled();
+  });
+
+  it('builds the GitHub authorization URL with the frontend-origin redirect_uri', async () => {
+    process.env.GITHUB_CLIENT_ID = 'test-github-client';
+    const response = res();
+
+    await controller.githubAuth(req(), response);
+
+    const redirectUrl = response.redirect.mock.calls[0][0];
+    expect(redirectUrl).toContain('https://github.com/login/oauth/authorize');
+    expect(redirectUrl).toContain('client_id=test-github-client');
+    expect(redirectUrl).toContain(
+      'redirect_uri=http://frontend.test/api/v1/auth/github/callback',
+    );
+  });
+
+  it('surfaces the provider error code without leaking description secrets (google)', async () => {
+    authService.consumeOAuthState.mockResolvedValue('new_login');
+    const axiosError = Object.assign(
+      new Error('Request failed with status code 400'),
+      {
+        response: {
+          data: {
+            error: 'redirect_uri_mismatch',
+            error_description: 'Bad request client_secret=SECRET999',
+          },
+        },
+      },
+    );
+    authService.processGoogleCallback.mockRejectedValue(axiosError);
+    const response = res();
+
+    await controller.googleCallback('thecode', 'thestate', req(), response);
+
+    expect(response.redirect.mock.calls[0][0]).toContain(
+      `login?error=${GENERIC_ERROR}`,
+    );
+    const logged = loggedMessages();
+    expect(logged).toContain('provider_error=redirect_uri_mismatch');
+    expect(logged).not.toContain('SECRET999');
   });
 });

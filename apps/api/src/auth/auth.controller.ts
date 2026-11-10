@@ -45,10 +45,6 @@ export class AuthController {
     private readonly mailService: MailService,
   ) {}
 
-  private get apiUrl(): string {
-    return process.env.API_URL || 'http://localhost:3001';
-  }
-
   private get frontendUrl(): string {
     return process.env.FRONTEND_URL || 'http://localhost:3000';
   }
@@ -80,19 +76,48 @@ export class AuthController {
   }
 
   /**
-   * Records a server-side-only diagnostic for an OAuth callback failure.
-   * Only the error name and a scrubbed message are logged; values following
-   * secret-bearing keys (tokens, secrets, codes, session ids) are redacted and
-   * the message is truncated. The browser never sees this content.
+   * Extracts the provider's structured OAuth error (Google/GitHub return
+   * `{ error, error_description }` in the token-exchange response body) without
+   * exposing any secret-bearing values. Returns an empty string when the error
+   * carries no structured provider detail (e.g. a network failure).
    */
+  private extractProviderErrorDetail(error: unknown): string {
+    if (!error || typeof error !== 'object') return '';
+    const response = (error as { response?: unknown }).response;
+    if (!response || typeof response !== 'object') return '';
+    const data = (response as { data?: unknown }).data;
+    if (!data || typeof data !== 'object') return '';
+
+    const body = data as Record<string, unknown>;
+    const code = typeof body.error === 'string' ? body.error : null;
+    if (!code) return '';
+
+    const description =
+      typeof body.error_description === 'string'
+        ? body.error_description
+        : typeof body.message === 'string'
+          ? body.message
+          : '';
+    const sanitizedDescription = description
+      .replace(SENSITIVE_KEY_PATTERN, '$1=[REDACTED]')
+      .slice(0, 300);
+
+    return sanitizedDescription
+      ? `provider_error=${code} ${sanitizedDescription}`
+      : `provider_error=${code}`;
+  }
+
   private logOAuthFailure(provider: 'github' | 'google', error: unknown): void {
     const name = error instanceof Error ? error.name : 'UnknownError';
     const rawMessage = error instanceof Error ? error.message : String(error);
     const sanitizedMessage = rawMessage
       .replace(SENSITIVE_KEY_PATTERN, '$1=[REDACTED]')
       .slice(0, 500);
+    const providerDetail = this.extractProviderErrorDetail(error);
     this.logger.error(
-      `OAuth (${provider}) callback failed: ${name}: ${sanitizedMessage}`,
+      `OAuth (${provider}) callback failed: ${name}: ${sanitizedMessage}${
+        providerDetail ? ` [${providerDetail}]` : ''
+      }`,
     );
   }
 
@@ -113,7 +138,7 @@ export class AuthController {
     await this.authService.storeOAuthState(state, currentUserId || 'new_login');
 
     const clientId = process.env.GITHUB_CLIENT_ID;
-    const redirectUri = `${this.apiUrl}/api/v1/auth/github/callback`;
+    const redirectUri = `${this.frontendUrl}/api/v1/auth/github/callback`;
     const url = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&scope=read:user user:email&state=${state}`;
 
     return res.redirect(url);
@@ -187,7 +212,7 @@ export class AuthController {
     await this.authService.storeOAuthState(state, currentUserId || 'new_login');
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
-    const redirectUri = `${this.apiUrl}/api/v1/auth/google/callback`;
+    const redirectUri = `${this.frontendUrl}/api/v1/auth/google/callback`;
     const scope = encodeURIComponent('openid email profile');
     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&state=${state}&access_type=offline`;
 
