@@ -1,15 +1,26 @@
 import type { Metadata } from "next";
+import { resolveCanonicalUrl } from "./robots-policy";
 
 export const SITE_NAME = "DEV-TO-DEV";
 export const TAGLINE = "Learn. Connect. Build. Grow.";
 
-// Centralized site URL. Override with NEXT_PUBLIC_SITE_URL once the final
-// domain is purchased; defaults to the currently configured production domain.
-export const BASE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  process.env.FRONTEND_URL ||
-  "https://devtodev.online"
+// Canonical production URL. Used for every <link rel=canonical>, Open Graph,
+// Twitter, and sitemap URL. NEXT_PUBLIC_* values are inlined by Next.js at
+// build time and are the correct source for both statically-generated routes
+// (robots.txt) and server-rendered metadata. It must always be the production
+// domain — never a staging/Railway preview domain.
+export const SITE_URL = resolveCanonicalUrl(process.env.NEXT_PUBLIC_SITE_URL);
+
+// URL this deployment is actually served from. Used ONLY by robots.txt to
+// decide whether this build is production (indexable) or staging (disallow).
+// Defaults to the canonical URL so production needs no extra config; staging
+// MUST set NEXT_PUBLIC_DEPLOYMENT_URL to its own (non-production) domain.
+export const DEPLOYMENT_URL = (
+  process.env.NEXT_PUBLIC_DEPLOYMENT_URL || SITE_URL
 ).replace(/\/+$/, "");
+
+// Legacy alias for SITE_URL (canonical production URL).
+export const BASE_URL = SITE_URL;
 
 export const SITE_DESCRIPTION =
   "DEV-TO-DEV is the professional network for developers. Learn, connect, build, and grow together — discover collaborators, share projects, ask and answer questions, and follow technology roadmaps.";

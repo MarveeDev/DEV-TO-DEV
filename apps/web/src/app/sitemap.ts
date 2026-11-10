@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { BASE_URL } from "../lib/seo";
+import { SITEMAP_STATIC_PATHS } from "../lib/sitemap-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -17,15 +18,12 @@ async function fetchJson(path: string) {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
 
-  const entries: MetadataRoute.Sitemap = [
-    { url: `${BASE_URL}/`, lastModified: now, changeFrequency: "daily", priority: 1 },
-    { url: `${BASE_URL}/developers`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
-    { url: `${BASE_URL}/roadmaps`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
-    { url: `${BASE_URL}/projects`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
-    { url: `${BASE_URL}/questions`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
-    { url: `${BASE_URL}/marketplace`, lastModified: now, changeFrequency: "daily", priority: 0.8 },
-    { url: `${BASE_URL}/videos`, lastModified: now, changeFrequency: "weekly", priority: 0.5 },
-  ];
+  const entries: MetadataRoute.Sitemap = SITEMAP_STATIC_PATHS.map((e) => ({
+    url: `${BASE_URL}${e.path}`,
+    lastModified: now,
+    changeFrequency: e.changeFrequency,
+    priority: e.priority,
+  }));
 
   // Roadmaps (public)
   const roadmaps = await fetchJson("/roadmaps");

@@ -55,3 +55,6 @@ export const getPublicDevelopers = cache((limit = 20) =>
 export const getPublicDeveloper = cache((username: string) =>
   fetchApi<any>(`/developers/public/${encodeURIComponent(username)}`)
 );
+export const getSkill = cache((slug: string) =>
+  fetchApi<{ name?: string }>(`/skills/${encodeURIComponent(slug)}`)
+);
